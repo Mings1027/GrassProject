@@ -35,7 +35,7 @@ namespace Grass.Editor
 
         [HideInInspector]
         public int toolbarIntEdit;
-        
+
         public List<GrassData> grassData = new();
 
         private int _grassAmount;
@@ -165,11 +165,9 @@ namespace Grass.Editor
                 case 1: // flood
                     ShowFloodPanel();
                     break;
-
                 case 2: // generate
                     ShowGeneratePanel();
                     break;
-
                 case 3: //settings
                     ShowMainSettingsPanel();
                     break;
@@ -322,7 +320,7 @@ namespace Grass.Editor
             toolSettings.paintMask = InternalEditorUtility.ConcatenatedLayersMaskToLayerMask(tempMask2);
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Paint Status (Right-Mouse Button to paint)", EditorStyles.boldLabel);
-            toolbarInt = GUILayout.Toolbar(toolbarInt, _toolbarStrings);
+            toolbarInt = GUILayout.Toolbar(toolbarInt, _toolbarStrings, GUILayout.Height(30));
 
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Brush Settings", EditorStyles.boldLabel);
@@ -332,6 +330,10 @@ namespace Grass.Editor
             {
                 toolSettings.normalLimit = EditorGUILayout.Slider("Normal Limit", toolSettings.normalLimit, 0f, 1f);
                 toolSettings.density = EditorGUILayout.Slider("Density", toolSettings.density, 0.1f, 10f);
+                var grassToPlace = (int)(toolSettings.density * toolSettings.brushSize);
+                EditorGUILayout.LabelField($"Brush Size x Density = {grassToPlace}", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField("The product of brush size and density must be at least 1.",
+                    EditorStyles.boldLabel);
             }
 
             if (toolbarInt == 2)
@@ -350,14 +352,19 @@ namespace Grass.Editor
                 toolSettings.adjustLength =
                     EditorGUILayout.Slider("Grass Length Adjustment", toolSettings.adjustLength, -1f, 1f);
 
-                toolSettings.adjustWidthMax = EditorGUILayout.Slider("Grass Width Adjustment Max Clamp",
-                    toolSettings.adjustWidthMax, 0.01f, 3f);
-                toolSettings.adjustHeightMax = EditorGUILayout.Slider("Grass Length Adjustment Max Clamp",
-                    toolSettings.adjustHeightMax, 0.01f, 3f);
+                GUIStyle labelStyle = new GUIStyle(EditorStyles.label);
+                labelStyle.wordWrap = true; // 자동 줄 바꿈
+
+                EditorGUILayout.LabelField("Grass Width Adjustment Max Clamp", labelStyle);
+                toolSettings.adjustWidthMax = EditorGUILayout.Slider(toolSettings.adjustWidthMax, 0.01f, 3f);
+
+                EditorGUILayout.LabelField("Grass Length Adjustment Max Clamp", labelStyle);
+                toolSettings.adjustHeightMax = EditorGUILayout.Slider(toolSettings.adjustHeightMax, 0.01f, 3f);
+
                 EditorGUILayout.Separator();
             }
 
-            if (toolbarInt == 0 || toolbarInt == 2)
+            if (toolbarInt is 0 or 2)
             {
                 EditorGUILayout.Separator();
 
@@ -392,7 +399,7 @@ namespace Grass.Editor
 
         private void ShowMainSettingsPanel()
         {
-            EditorGUILayout.LabelField("Blade Mix/Max Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Blade Min/Max Settings", EditorStyles.boldLabel);
             EditorGUILayout.BeginHorizontal();
             _grassComputeScript.currentPresets.minWidth =
                 EditorGUILayout.FloatField(_grassComputeScript.currentPresets.minWidth);
@@ -408,7 +415,7 @@ namespace Grass.Editor
                 EditorGUILayout.FloatField(_grassComputeScript.currentPresets.maxHeight);
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.MinMaxSlider("Blade Height Min/Max", ref _grassComputeScript.currentPresets.minHeight,
-                ref _grassComputeScript.currentPresets.maxHeight, 0.01f, 1f);
+                ref _grassComputeScript.currentPresets.maxHeight, 0.01f, 3f);
 
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Random Height", EditorStyles.boldLabel);
@@ -442,7 +449,7 @@ namespace Grass.Editor
             _grassComputeScript.currentPresets.windSpeed =
                 EditorGUILayout.Slider("Wind Speed", _grassComputeScript.currentPresets.windSpeed, -2f, 2f);
             _grassComputeScript.currentPresets.windStrength = EditorGUILayout.Slider("Wind Strength",
-                _grassComputeScript.currentPresets.windStrength, -2f, 2f);
+                _grassComputeScript.currentPresets.windStrength, 0, 2f);
 
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Tinting Settings", EditorStyles.boldLabel);

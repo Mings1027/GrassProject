@@ -21,8 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Grass
-  m_Shader: {fileID: -6465566751694194690, guid: 5c7f9faaeb09e4ef993c0c38f1be68b6,
-    type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 5c7f9faaeb09e4ef993c0c38f1be68b6, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -53,8 +52,8 @@ Material:
     m_Ints: []
     m_Floats:
     - _Blend: 0
-    - _BlendMult: 0.93
-    - _BlendOff: 0.199
+    - _BlendMult: 0.89
+    - _BlendOff: 0.267
     - _QueueControl: 0
     - _QueueOffset: 0
     m_Colors: []
