@@ -18,8 +18,8 @@ public class SoGrassSettings : ScriptableObject
     [Range(0, 1)] public float bottomWidth = 0.1f;
 
     public float minWidth = 0.01f;
-    public float minHeight = 0.01f;
     public float maxWidth = 1f;
+    public float minHeight = 0.01f;
     public float maxHeight = 1f;
 
     // Wind

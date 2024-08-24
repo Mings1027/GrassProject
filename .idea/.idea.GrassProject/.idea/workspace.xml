@@ -11,10 +11,15 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/Assets/ComputeShaderTest/ComputeShaderTest.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/Downloads/Grass System BIRP URP.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/Downloads/GrassProject-main/Assets/Grass/GrassComputeScript.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/Downloads/GrassProject-main/Assets/Grass/Shader/GrassBlades.compute" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/5adbe44f02794f36b5caaf5e7baf42cd1dce00/36/464a1a7f/MaterialPropertyBlock.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/5adbe44f02794f36b5caaf5e7baf42cd1dce00/41/3480a1fe/Graphics.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/5adbe44f02794f36b5caaf5e7baf42cd1dce00/84/d8e2551e/Vector2.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/5adbe44f02794f36b5caaf5e7baf42cd1dce00/c4/e4f17337/SystemInfo.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/5adbe44f02794f36b5caaf5e7baf42cd1dce00/d3/8413f9dd/ComputeShader.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/9813d164b8404166af09825a040c4c789ace00/e9/5bb2b1ff/EditorGUILayout.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/c96ca9f80c03444cac6295b9415f9cb430e00/ee/355454a2/Event.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3ea01e77be99618395f448b16bd7cc2bd4248bd9e5d8474964b2d97f39c5d74/System.cs" root0="SKIP_HIGHLIGHTING" />
@@ -27,18 +32,19 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "com.codeium.enabled": "true"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;rider.external.source.directories&quot;: [
-      &quot;/Users/mings/Library/Application Support/JetBrains/Rider2024.1/resharper-host/DecompilerCache&quot;,
-      &quot;/Users/mings/Library/Application Support/JetBrains/Rider2024.1/resharper-host/SourcesCache&quot;,
-      &quot;/Users/mings/Library/Application Support/Symbols/src&quot;
+  "keyToStringList": {
+    "rider.external.source.directories": [
+      "/Users/mings/Library/Application Support/JetBrains/Rider2024.1/resharper-host/DecompilerCache",
+      "/Users/mings/Library/Application Support/JetBrains/Rider2024.1/resharper-host/SourcesCache",
+      "/Users/mings/Library/Application Support/Symbols/src"
     ]
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected="Attach to Unity Editor.Attach to Unity Editor">
     <configuration name="Start Unity" type="RunUnityExe" factoryName="Unity Executable">
       <option name="EXE_PATH" value="/Applications/Unity/Unity Editor/6000.0.14f1/Unity.app/Contents/MacOS/Unity" />

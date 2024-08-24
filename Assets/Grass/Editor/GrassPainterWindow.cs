@@ -30,11 +30,9 @@ namespace Grass.Editor
         [SerializeField] private SoGrassToolSettings toolSettings;
 
         // options
-        [HideInInspector]
-        public int toolbarInt;
+        [HideInInspector] public int toolbarInt;
 
-        [HideInInspector]
-        public int toolbarIntEdit;
+        [HideInInspector] public int toolbarIntEdit;
 
         public List<GrassData> grassData = new();
 
@@ -94,6 +92,7 @@ namespace Grass.Editor
             {
                 _grassComputeScript.Reset();
             }
+
             grassObject =
                 (GameObject)EditorGUILayout.ObjectField("Grass Compute Object", grassObject, typeof(GameObject), true);
 
@@ -138,10 +137,12 @@ namespace Grass.Editor
                         CreateNewGrassObject();
                     }
                 }
+
                 EditorGUILayout.LabelField("No Grass System Holder found, create a new one", EditorStyles.label);
                 EditorGUILayout.EndScrollView();
                 return;
             }
+
             EditorGUILayout.Separator();
 
             EditorGUILayout.BeginHorizontal();
@@ -197,10 +198,12 @@ namespace Grass.Editor
             {
                 FloodLengthAndWidth();
             }
+
             if (GUILayout.Button("Flood Colors"))
             {
                 FloodColor();
             }
+
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Separator();
@@ -284,6 +287,7 @@ namespace Grass.Editor
                     }
                 }
             }
+
             if (GUILayout.Button("Regenerate on current Mesh (Clears Current)"))
             {
                 if (selection == null)
@@ -291,6 +295,7 @@ namespace Grass.Editor
                     // no object selected
                     return;
                 }
+
                 ClearMesh();
                 Undo.RegisterCompleteObjectUndo(this, "Regenerated Positions on Mesh(es)");
                 for (var i = 0; i < selection.Length; i++)
@@ -319,7 +324,7 @@ namespace Grass.Editor
                 InternalEditorUtility.layers);
             toolSettings.paintMask = InternalEditorUtility.ConcatenatedLayersMaskToLayerMask(tempMask2);
             EditorGUILayout.Separator();
-            EditorGUILayout.LabelField("Paint Status (Right-Mouse Button to paint)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Paint Status (Control + Alt + Left Mouse to paint)", EditorStyles.boldLabel);
             toolbarInt = GUILayout.Toolbar(toolbarInt, _toolbarStrings, GUILayout.Height(30));
 
             EditorGUILayout.Separator();
@@ -394,6 +399,7 @@ namespace Grass.Editor
                 toolSettings.reprojectOffset = EditorGUILayout.FloatField(toolSettings.reprojectOffset);
                 EditorGUILayout.EndHorizontal();
             }
+
             EditorGUILayout.Separator();
         }
 
@@ -601,6 +607,8 @@ namespace Grass.Editor
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
 
+        private readonly Collider[] _colliders = new Collider[1];
+
         public void GeneratePositions(GameObject selection)
         {
             // mesh
@@ -638,24 +646,22 @@ namespace Grass.Editor
                 }
 
                 var point = new NativeArray<Vector3>(1, Allocator.Temp);
-
                 var normals = new NativeArray<Vector3>(1, Allocator.Temp);
-
                 var lengthWidth = new NativeArray<float>(1, Allocator.Temp);
                 var job = new MyJob
                 {
-                    cumulativeSizes = _cumulativeSizes,
-                    meshColors = meshColors,
-                    meshTriangles = meshTriangles,
-                    meshVertices = meshVertices,
-                    meshNormals = meshNormals,
-                    total = _total,
-                    sizes = _sizes,
-                    point = point,
-                    normals = normals,
-                    vertexColorSettings = toolSettings.vertexColorSettings,
-                    vertexFade = toolSettings.vertexFade,
-                    lengthWidth = lengthWidth,
+                    CumulativeSizes = _cumulativeSizes,
+                    MeshColors = meshColors,
+                    MeshTriangles = meshTriangles,
+                    MeshVertices = meshVertices,
+                    MeshNormals = meshNormals,
+                    Total = _total,
+                    Sizes = _sizes,
+                    Point = point,
+                    Normals = normals,
+                    VertexColorSettings = toolSettings.vertexColorSettings,
+                    VertexFade = toolSettings.vertexFade,
+                    LengthWidth = lengthWidth,
                 };
 
                 var bounds = sourceMesh.sharedMesh.bounds;
@@ -678,9 +684,9 @@ namespace Grass.Editor
                     var newPoint = point[0];
                     newData.position = localToWorld.MultiplyPoint3x4(newPoint);
 
-                    var cols = Physics.OverlapBox(newData.position, Vector3.one * 0.2f, Quaternion.identity,
-                        toolSettings.paintBlockMask);
-                    if (cols.Length > 0)
+                    var size = Physics.OverlapBoxNonAlloc(newData.position, Vector3.one * 0.2f, _colliders,
+                        Quaternion.identity, toolSettings.paintBlockMask);
+                    if (size > 0)
                     {
                         newPoint = Vector3.zero;
                     }
@@ -734,9 +740,9 @@ namespace Grass.Editor
                         ref newNormal);
                     newData.position = newPoint;
 
-                    var cols = Physics.OverlapBox(newData.position, Vector3.one * 0.2f, Quaternion.identity,
-                        toolSettings.paintBlockMask);
-                    if (cols.Length > 0)
+                    var size = Physics.OverlapBoxNonAlloc(newData.position, Vector3.one * 0.2f, _colliders,
+                        Quaternion.identity, toolSettings.paintBlockMask);
+                    if (size > 0)
                     {
                         newPoint = Vector3.zero;
                     }
@@ -764,6 +770,7 @@ namespace Grass.Editor
                         }
                     }
                 }
+
                 RebuildMesh();
             }
         }
@@ -816,112 +823,95 @@ namespace Grass.Editor
         [BurstCompile(CompileSynchronously = true)]
         private struct MyJob : IJob
         {
-            [ReadOnly]
-            public NativeArray<float> sizes;
+            [ReadOnly] public NativeArray<float> Sizes;
+            [ReadOnly] public NativeArray<float> Total;
+            [ReadOnly] public NativeArray<float> CumulativeSizes;
+            [ReadOnly] public NativeArray<Color> MeshColors;
+            [ReadOnly] public NativeArray<Vector4> MeshVertices;
+            [ReadOnly] public NativeArray<Vector3> MeshNormals;
+            [ReadOnly] public NativeArray<int> MeshTriangles;
+            [WriteOnly] public NativeArray<Vector3> Point;
+            [WriteOnly] public NativeArray<float> LengthWidth;
+            [WriteOnly] public NativeArray<Vector3> Normals;
 
-            [ReadOnly]
-            public NativeArray<float> total;
-
-            [ReadOnly]
-            public NativeArray<float> cumulativeSizes;
-
-            [ReadOnly]
-            public NativeArray<Color> meshColors;
-
-            [ReadOnly]
-            public NativeArray<Vector4> meshVertices;
-
-            [ReadOnly]
-            public NativeArray<Vector3> meshNormals;
-
-            [ReadOnly]
-            public NativeArray<int> meshTriangles;
-
-            [WriteOnly]
-            public NativeArray<Vector3> point;
-
-            [WriteOnly]
-            public NativeArray<float> lengthWidth;
-
-            [WriteOnly]
-            public NativeArray<Vector3> normals;
-
-            public SoGrassToolSettings.VertexColorSetting vertexColorSettings;
-
-            public SoGrassToolSettings.VertexColorSetting vertexFade;
+            public SoGrassToolSettings.VertexColorSetting VertexColorSettings;
+            public SoGrassToolSettings.VertexColorSetting VertexFade;
 
             public void Execute()
             {
-                var randomsample = Random.value * total[0];
+                var randomSample = Random.value * Total[0];
                 var triIndex = -1;
 
-                for (var i = 0; i < sizes.Length; i++)
+                for (var i = 0; i < Sizes.Length; i++)
                 {
-                    if (randomsample <= cumulativeSizes[i])
+                    if (randomSample <= CumulativeSizes[i])
                     {
                         triIndex = i;
                         break;
                     }
                 }
-                if (triIndex == -1)
-                    Debug.LogError("triIndex should never be -1");
 
-                switch (vertexColorSettings)
+                if (triIndex == -1) Debug.LogError("triIndex should never be -1");
+
+                switch (VertexColorSettings)
                 {
                     case SoGrassToolSettings.VertexColorSetting.Red:
-                        if (meshColors[meshTriangles[triIndex * 3]].r > 0.5f)
+                        if (MeshColors[MeshTriangles[triIndex * 3]].r > 0.5f)
                         {
-                            point[0] = Vector3.zero;
+                            Point[0] = Vector3.zero;
                             return;
                         }
+
                         break;
                     case SoGrassToolSettings.VertexColorSetting.Green:
-                        if (meshColors[meshTriangles[triIndex * 3]].g > 0.5f)
+                        if (MeshColors[MeshTriangles[triIndex * 3]].g > 0.5f)
                         {
-                            point[0] = Vector3.zero;
+                            Point[0] = Vector3.zero;
                             return;
                         }
+
                         break;
                     case SoGrassToolSettings.VertexColorSetting.Blue:
-                        if (meshColors[meshTriangles[triIndex * 3]].b > 0.5f)
+                        if (MeshColors[MeshTriangles[triIndex * 3]].b > 0.5f)
                         {
-                            point[0] = Vector3.zero;
+                            Point[0] = Vector3.zero;
                             return;
                         }
+
                         break;
                 }
 
-                switch (vertexFade)
+                switch (VertexFade)
                 {
                     case SoGrassToolSettings.VertexColorSetting.Red:
-                        var red = meshColors[meshTriangles[triIndex * 3]].r;
-                        var red2 = meshColors[meshTriangles[triIndex * 3 + 1]].r;
-                        var red3 = meshColors[meshTriangles[triIndex * 3 + 2]].r;
+                        var red = MeshColors[MeshTriangles[triIndex * 3]].r;
+                        var red2 = MeshColors[MeshTriangles[triIndex * 3 + 1]].r;
+                        var red3 = MeshColors[MeshTriangles[triIndex * 3 + 2]].r;
 
-                        lengthWidth[0] = 1.0f - (red + red2 + red3) * 0.3f;
+                        LengthWidth[0] = 1.0f - (red + red2 + red3) * 0.3f;
                         break;
                     case SoGrassToolSettings.VertexColorSetting.Green:
-                        var green = meshColors[meshTriangles[triIndex * 3]].g;
-                        var green2 = meshColors[meshTriangles[triIndex * 3 + 1]].g;
-                        var green3 = meshColors[meshTriangles[triIndex * 3 + 2]].g;
+                        var green = MeshColors[MeshTriangles[triIndex * 3]].g;
+                        var green2 = MeshColors[MeshTriangles[triIndex * 3 + 1]].g;
+                        var green3 = MeshColors[MeshTriangles[triIndex * 3 + 2]].g;
 
-                        lengthWidth[0] = 1.0f - (green + green2 + green3) * 0.3f;
+                        LengthWidth[0] = 1.0f - (green + green2 + green3) * 0.3f;
                         break;
                     case SoGrassToolSettings.VertexColorSetting.Blue:
-                        var blue = meshColors[meshTriangles[triIndex * 3]].b;
-                        var blue2 = meshColors[meshTriangles[triIndex * 3 + 1]].b;
-                        var blue3 = meshColors[meshTriangles[triIndex * 3 + 2]].b;
+                        var blue = MeshColors[MeshTriangles[triIndex * 3]].b;
+                        var blue2 = MeshColors[MeshTriangles[triIndex * 3 + 1]].b;
+                        var blue3 = MeshColors[MeshTriangles[triIndex * 3 + 2]].b;
 
-                        lengthWidth[0] = 1.0f - (blue + blue2 + blue3) * 0.3f;
+                        LengthWidth[0] = 1.0f - (blue + blue2 + blue3) * 0.3f;
                         break;
                     case SoGrassToolSettings.VertexColorSetting.None:
-                        lengthWidth[0] = 1.0f;
+                        LengthWidth[0] = 1.0f;
                         break;
                 }
 
-                Vector3 a = meshVertices[meshTriangles[triIndex * 3]];
-                Vector3 b = meshVertices[meshTriangles[triIndex * 3 + 1]];
-                Vector3 c = meshVertices[meshTriangles[triIndex * 3 + 2]];
+                Vector3 a = MeshVertices[MeshTriangles[triIndex * 3]];
+                Vector3 b = MeshVertices[MeshTriangles[triIndex * 3 + 1]];
+                Vector3 c = MeshVertices[MeshTriangles[triIndex * 3 + 2]];
 
                 // Generate random barycentric coordinates
                 var r = Random.value;
@@ -933,12 +923,12 @@ namespace Grass.Editor
                     s = 1 - s;
                 }
 
-                normals[0] = meshNormals[meshTriangles[triIndex * 3 + 1]];
+                Normals[0] = MeshNormals[MeshTriangles[triIndex * 3 + 1]];
 
                 // Turn point back to a Vector3
                 var pointOnMesh = a + r * (b - a) + s * (c - a);
 
-                point[0] = pointOnMesh;
+                Point[0] = pointOnMesh;
             }
         }
 
@@ -952,6 +942,7 @@ namespace Grass.Editor
                     verts[tris[i * 3 + 1]] - verts[tris[i * 3]],
                     verts[tris[i * 3 + 2]] - verts[tris[i * 3]]).magnitude;
             }
+
             return sizes;
         }
 
@@ -964,6 +955,7 @@ namespace Grass.Editor
                 newData.color = GetRandomColor();
                 grassData[i] = newData;
             }
+
             RebuildMesh();
         }
 
@@ -976,6 +968,7 @@ namespace Grass.Editor
                 newData.length = new Vector2(toolSettings.sizeWidth, toolSettings.sizeLength);
                 grassData[i] = newData;
             }
+
             RebuildMesh();
         }
 
@@ -1011,7 +1004,7 @@ namespace Grass.Editor
                 // ray for gizmo(disc)
                 _ray = scene.camera.ScreenPointToRay(_mousePos);
                 // undo system
-                if (e.type == EventType.MouseDown && e.button == 1)
+                if (e.type == EventType.MouseDown && e.button == 0 && e.control && e.alt)
                 {
                     switch (toolbarInt)
                     {
@@ -1029,7 +1022,8 @@ namespace Grass.Editor
                             break;
                     }
                 }
-                if (e.type == EventType.MouseDrag && e.button == 1)
+
+                if (e.type == EventType.MouseDrag && e.button == 0 && e.control && e.alt)
                 {
                     switch (toolbarInt)
                     {
@@ -1046,11 +1040,12 @@ namespace Grass.Editor
                             ReprojectGrassPainting(_terrainHit, e);
                             break;
                     }
+
                     RebuildMeshFast();
                 }
 
                 // on up
-                if (e.type == EventType.MouseUp && e.button == 1)
+                if (e.type == EventType.MouseUp && e.button == 0 && e.control && e.alt)
                 {
                     RebuildMesh();
                 }
@@ -1148,6 +1143,7 @@ namespace Grass.Editor
                     }
                 }
             }
+
             e.Use();
         }
 
@@ -1155,7 +1151,6 @@ namespace Grass.Editor
         {
             var hits = Physics.RaycastNonAlloc(_ray, terrainHit, 200f, toolSettings.hitMask.value);
             for (var i = 0; i < hits; i++)
-
             {
                 _hitPos = terrainHit[i].point;
                 _hitNormal = terrainHit[i].normal;
@@ -1184,14 +1179,15 @@ namespace Grass.Editor
                         if (_flowTimer > toolSettings.flow)
                         {
                             // edit colors
-                            if (toolbarIntEdit == 0 || toolbarIntEdit == 2)
+                            if (toolbarIntEdit is 0 or 2)
                             {
                                 var newData = grassData[j];
                                 newData.color = Vector3.Lerp(newCol, origColor, falloff);
                                 grassData[j] = newData;
                             }
+
                             // edit grass length
-                            if (toolbarIntEdit == 1 || toolbarIntEdit == 2)
+                            if (toolbarIntEdit is 1 or 2)
                             {
                                 var newData = grassData[j];
                                 newData.length = Vector2.Lerp(origLength + newLength, origLength, falloff);
@@ -1199,11 +1195,13 @@ namespace Grass.Editor
                                 newData.length.y = Mathf.Clamp(newData.length.y, 0, toolSettings.adjustHeightMax);
                                 grassData[j] = newData;
                             }
+
                             _flowTimer = 0;
                         }
                     }
                 }
             }
+
             e.Use();
         }
 
@@ -1236,6 +1234,7 @@ namespace Grass.Editor
                     }
                 }
             }
+
             e.Use();
         }
 
@@ -1253,6 +1252,7 @@ namespace Grass.Editor
                 // if its within the radius of the brush, remove all info
                 return dist <= toolSettings.brushSize;
             }
+
             return false;
         }
 

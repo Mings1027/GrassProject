@@ -92,7 +92,10 @@ public class CullingTreeNode
                 if (_grassIDHeld.Count > 0)
                 {
                     list.Add(_bounds);
-                    visibleIDList.AddRange(_grassIDHeld);
+                    for (int i = 0; i < _grassIDHeld.Count; i++)
+                    {
+                        visibleIDList.Add(_grassIDHeld[i]);
+                    }
                 }
             }
             // 하위 노드가 있으면 재귀적으로 하위 노드의 RetrieveLeaves를 호출합니다.
@@ -188,16 +191,17 @@ public class CullingTreeNode
 
         if (_children.Count == 0)
         {
-            grassList.AddRange(_grassIDHeld);
+            for (int i = 0; i < _grassIDHeld.Count; i++)
+            {
+                grassList.Add(_grassIDHeld[i]);
+            }
         }
         else
         {
             for (var i = 0; i < _children.Count; i++)
             {
                 var child = _children[i];
-                var expandedBoundsChild = child._bounds;
-                expandedBoundsChild.Expand(radius * 2);
-                if (expandedBoundsChild.Contains(point))
+                if (child._bounds.SqrDistance(point) <= radius * radius)
                 {
                     child.ReturnLeafList(point, grassList, radius);
                 }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class TestCutting : MonoBehaviour
 {
@@ -18,8 +19,6 @@ public class TestCutting : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.C)) updateCuts = !updateCuts;
-
         if (updateCuts)
         {
             var distance = Vector3.Distance(transform.position, _cachedPos);
@@ -36,5 +35,10 @@ public class TestCutting : MonoBehaviour
     {
         Gizmos.color = new Color(1, 0, 0);
         Gizmos.DrawWireSphere(transform.position, radius);
+    }
+
+    private void OnCut(InputValue value)
+    {
+        updateCuts = !updateCuts;
     }
 }

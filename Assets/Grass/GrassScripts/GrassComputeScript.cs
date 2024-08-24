@@ -1,8 +1,3 @@
-// @Minionsart version
-// credits  to  forkercat https://gist.github.com/junhaowww/fb6c030c17fe1e109a34f1c92571943f
-// and  NedMakesGames https://gist.github.com/NedMakesGames/3e67fabe49e2e3363a657ef8a6a09838
-// for the base setup for compute shaders
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -102,7 +97,7 @@ public class GrassComputeScript : MonoBehaviour
         _view = scene;
         if (!Application.isPlaying)
         {
-            if (_view.camera != null)
+            if (_view.camera)
             {
                 _mainCamera = _view.camera;
             }
@@ -118,7 +113,7 @@ public class GrassComputeScript : MonoBehaviour
         // Set up components
         if (!Application.isPlaying)
         {
-            if (_view != null)
+            if (_view)
             {
                 _mainCamera = _view.camera;
             }
@@ -159,6 +154,7 @@ public class GrassComputeScript : MonoBehaviour
             OnDisable();
             OnEnable();
         }
+
         // If not initialized, do nothing (creating zero-length buffer will crash)
         if (!_initialized)
         {
@@ -182,6 +178,7 @@ public class GrassComputeScript : MonoBehaviour
             // make sure the compute shader is dispatched even when theres very little grass
             _dispatchSize += 1;
         }
+
         if (_dispatchSize > 0)
         {
             // Dispatch the grass shader. It will run on the GPU
@@ -208,6 +205,7 @@ public class GrassComputeScript : MonoBehaviour
                 DestroyImmediate(_instComputeShader);
                 DestroyImmediate(instantiatedMaterial);
             }
+
             // Release each buffer
             _sourceVertBuffer?.Release();
             _drawBuffer?.Release();
@@ -216,6 +214,7 @@ public class GrassComputeScript : MonoBehaviour
             // added for cutting
             _cutBuffer?.Release();
         }
+
         _initialized = false;
     }
 
@@ -232,6 +231,7 @@ public class GrassComputeScript : MonoBehaviour
                 {
                     Gizmos.DrawWireCube(_boundsListVis[i].center, _boundsListVis[i].size);
                 }
+
                 Gizmos.color = new Color(1, 0, 0, 0.3f);
                 Gizmos.DrawWireCube(_bounds.center, _bounds.size);
             }
@@ -249,7 +249,7 @@ public class GrassComputeScript : MonoBehaviour
         SceneView.duringSceneGui += OnScene;
         if (!Application.isPlaying)
         {
-            if (_view != null && _view.camera != null)
+            if (_view && _view.camera)
             {
                 _mainCamera = _view.camera;
             }
@@ -349,6 +349,7 @@ public class GrassComputeScript : MonoBehaviour
         {
             UpdateBounds();
         }
+
         SetupQuadTree(full);
     }
 
@@ -376,6 +377,7 @@ public class GrassComputeScript : MonoBehaviour
             {
                 _cullingTree.FindLeaf(grassData[i].position, i);
             }
+
             _cullingTree.ClearEmpty();
         }
         else
@@ -449,6 +451,7 @@ public class GrassComputeScript : MonoBehaviour
                 _instComputeShader.SetFloat(MaxFadeDist, currentPresets.maxDrawDistance);
             }
         }
+
         _instComputeShader.SetFloat(InteractorStrength, currentPresets.affectStrength);
         _instComputeShader.SetFloat(BladeRadius, currentPresets.bladeRadius);
         _instComputeShader.SetFloat(BladeForward, currentPresets.bladeForwardAmount);
@@ -492,6 +495,7 @@ public class GrassComputeScript : MonoBehaviour
                 var pos = _interactors[i].transform.position;
                 positions[i] = new Vector4(pos.x, pos.y, pos.z, _interactors[i].radius);
             }
+
             _instComputeShader.SetVectorArray(_shaderID, positions);
             _instComputeShader.SetFloat(InteractorsLength, interectors);
         }
@@ -503,7 +507,7 @@ public class GrassComputeScript : MonoBehaviour
         }
 
 #if UNITY_EDITOR
-        else if (_view != null && _view.camera != null)
+        else if (_view && _view.camera)
         {
             _instComputeShader.SetVector(CameraPositionWs, _view.camera.transform.position);
         }
@@ -545,11 +549,13 @@ public class GrassComputeScript : MonoBehaviour
                         SpawnCuttingParticle(grassPosition, new Color(grassData[currentIndex].color.x,
                             grassData[currentIndex].color.y, grassData[currentIndex].color.z));
                     }
+
                     // store cutting point
                     _cutIDs[currentIndex] = hitPoint.y;
                 }
             }
         }
+
         _cutBuffer.SetData(_cutIDs);
     }
 
@@ -559,12 +565,29 @@ public class GrassComputeScript : MonoBehaviour
         leafParticle.startColor = new ParticleSystem.MinMaxGradient(col);
     }
 
+
+    // ComputeShader에 선언한 _SourceVertices버퍼에 grassData리스트를 넘김
     private static readonly int SourceVertices = Shader.PropertyToID("_SourceVertices");
+
+    // _SourceVertices버퍼에서 리스트의 원소를 가져와 연산한 뒤 _DrawTriangles버퍼에 Append함
+    // Append한걸 Grass.hlsl에서 out으로 뽑아서 그래프에서 vertex에 넣음
+    // fragment에서 한번 더 가공한 뒤 출력
     private static readonly int DrawTriangles = Shader.PropertyToID("_DrawTriangles");
-    private static readonly int IndirectArgsBuffer = Shader.PropertyToID("_IndirectArgsBuffer");
-    private static readonly int VisibleIDBuffer = Shader.PropertyToID("_VisibleIDBuffer");
-    private static readonly int CutBuffer = Shader.PropertyToID("_CutBuffer");
+    
+    // InterlockedAdd에 사용됨
+    private static readonly int IndirectArgsBuffer = Shader.PropertyToID("_IndirectArgsBuffer"); 
+
+    // 현재 풀 개수만큼만 kernel을 실행함
     private static readonly int NumSourceVertices = Shader.PropertyToID("_NumSourceVertices");
+
+    /*
+     *    그리기 위한 최소 조건이 위 네개인거로 판담됨 아래는 전부 옵션 
+     */
+
+    // 컬링을 위해 사용됨 .compute에 Main에서 visibleID로 가져올 때
+    private static readonly int VisibleIDBuffer = Shader.PropertyToID("_VisibleIDBuffer");
+    private static readonly int CutBuffer = Shader.PropertyToID("_CutBuffer");   // shader graph에서 이거 값으로 alpha를 조정해서 잘린거처럼 표현해줌
+
     private static readonly int Time1 = Shader.PropertyToID("_Time");
     private static readonly int GrassRandomHeightMin = Shader.PropertyToID("_GrassRandomHeightMin");
     private static readonly int GrassRandomHeightMax = Shader.PropertyToID("_GrassRandomHeightMax");
@@ -573,6 +596,7 @@ public class GrassComputeScript : MonoBehaviour
     private static readonly int MinFadeDist = Shader.PropertyToID("_MinFadeDist");
     private static readonly int MaxFadeDist = Shader.PropertyToID("_MaxFadeDist");
     private static readonly int InteractorStrength = Shader.PropertyToID("_InteractorStrength");
+    private static readonly int InteractorsLength = Shader.PropertyToID("_InteractorsLength");
     private static readonly int BladeRadius = Shader.PropertyToID("_BladeRadius");
     private static readonly int BladeForward = Shader.PropertyToID("_BladeForward");
     private static readonly int BladeCurve = Shader.PropertyToID("_BladeCurve");
@@ -583,11 +607,13 @@ public class GrassComputeScript : MonoBehaviour
     private static readonly int MinWidth = Shader.PropertyToID("_MinWidth");
     private static readonly int MaxHeight = Shader.PropertyToID("_MaxHeight");
     private static readonly int MaxWidth = Shader.PropertyToID("_MaxWidth");
+
+    private static readonly int LocalToWorld = Shader.PropertyToID("_LocalToWorld");
+    private static readonly int CameraPositionWs = Shader.PropertyToID("_CameraPositionWS");
+
+    // shared graph에 프로퍼티로 아래 두개를 씀
     private static readonly int TopTint = Shader.PropertyToID("_TopTint");
     private static readonly int BottomTint = Shader.PropertyToID("_BottomTint");
-    private static readonly int LocalToWorld = Shader.PropertyToID("_LocalToWorld");
-    private static readonly int InteractorsLength = Shader.PropertyToID("_InteractorsLength");
-    private static readonly int CameraPositionWs = Shader.PropertyToID("_CameraPositionWS");
 }
 
 [Serializable]
