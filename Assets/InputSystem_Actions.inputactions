@@ -87,12 +87,12 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Lift",
+                    "name": "Cut",
                     "type": "Button",
-                    "id": "f5df1ffb-4adb-4781-bab2-38afdcfee0c0",
+                    "id": "9707afc5-bc85-4239-8213-832f48704d78",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": "Press(behavior=2)",
+                    "interactions": "",
                     "initialStateCheck": false
                 }
             ],
@@ -484,12 +484,12 @@
                 },
                 {
                     "name": "",
-                    "id": "ec06cf1a-19bd-40e6-9e2f-3a07268ad5f3",
-                    "path": "<Keyboard>/l",
+                    "id": "ca04bd3f-9c10-4cf8-8a9c-fd5c82dc293a",
+                    "path": "<Keyboard>/c",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Lift",
+                    "action": "Cut",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

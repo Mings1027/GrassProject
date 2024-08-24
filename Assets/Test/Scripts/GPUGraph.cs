@@ -19,7 +19,7 @@ public class GPUGraph : MonoBehaviour
 
     [SerializeField] private Mesh mesh;
 
-    [SerializeField, Range(10, MaxResolution)]
+    [SerializeField, Range(1, MaxResolution)]
     private int resolution = 10;
 
     [SerializeField] private FunctionLibrary.FunctionName function;

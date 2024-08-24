@@ -2,15 +2,16 @@ using UnityEngine;
 
 public class ObstacleCheck : MonoBehaviour
 {
+    private Vector3 _inputDirection; // 사용자가 입력한 방향
+
     [SerializeField] private float capsuleHeight = 2.0f; // 캡슐의 높이
     [SerializeField] private float capsuleRadius = 0.5f; // 캡슐의 반지름
     [SerializeField] private float capsuleDistance = 1.0f; // 캡슐의 이동 거리
     [SerializeField] private LayerMask wallLayer; // 벽 레이어
-    [SerializeField] private Vector3 inputDirection = Vector3.forward; // 사용자가 입력한 방향
 
     public bool CanMove(Vector3 direction)
     {
-        inputDirection = direction;
+        _inputDirection = direction;
         var offset = direction.normalized * capsuleDistance;
         var capsuleCenter = transform.position + offset;
         var capsuleBottom = capsuleCenter - Vector3.up * (capsuleHeight / 2 - capsuleRadius);
@@ -21,7 +22,7 @@ public class ObstacleCheck : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        var offset = inputDirection.normalized * capsuleDistance;
+        var offset = _inputDirection.normalized * capsuleDistance;
         var capsuleCenter = transform.position + offset;
         var capsuleBottom = capsuleCenter - Vector3.up * (capsuleHeight / 2 - capsuleRadius);
         var capsuleTop = capsuleCenter + Vector3.up * (capsuleHeight / 2 - capsuleRadius);
