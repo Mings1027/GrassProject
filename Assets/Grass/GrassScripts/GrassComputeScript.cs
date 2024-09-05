@@ -13,7 +13,7 @@ public class GrassComputeScript : MonoBehaviour
     public bool autoUpdate; // very slow, but will update always
     private Camera _mainCamera; // main camera
     public SoGrassSettings currentPresets; // grass settings to send to the compute shader
-    private ShaderInteractor[] _interactors;
+    private List<ShaderInteractor> _interactors;
     [SerializeField, HideInInspector] private List<GrassData> grassData = new(); // base data lists
     private readonly List<int> _grassList = new();
     private List<int> _grassVisibleIDList = new(); // list of all visible grass ids, rest are culled
@@ -129,7 +129,7 @@ public class GrassComputeScript : MonoBehaviour
      =============================================================================================================*/
     private void Awake()
     {
-        _interactors = FindObjectsByType<ShaderInteractor>(FindObjectsSortMode.None);
+        _interactors = FindObjectsByType<ShaderInteractor>(FindObjectsSortMode.None).ToList();
     }
 
     private void OnEnable()
@@ -292,7 +292,7 @@ public class GrassComputeScript : MonoBehaviour
         var maxBladesPerVertex = Mathf.Max(1, currentPresets.allowedBladesPerVertex);
         var maxSegmentsPerBlade = Mathf.Max(1, currentPresets.allowedSegmentsPerBlade);
         // -1 is because the top part of the grass only has 1 triangle
-        var maxBladeTriangles = maxBladesPerVertex * ((maxSegmentsPerBlade - 1) * 2 + 1);
+        // var maxBladeTriangles = maxBladesPerVertex * ((maxSegmentsPerBlade - 1) * 2 + 1);
 
         // Create compute buffers
         // The stride is the size, in bytes, each object in the buffer takes up
@@ -435,7 +435,7 @@ public class GrassComputeScript : MonoBehaviour
         {
             _instComputeShader.SetFloat(MinFadeDist, currentPresets.minFadeDistance);
             _instComputeShader.SetFloat(MaxFadeDist, currentPresets.maxDrawDistance);
-            _interactors = FindObjectsByType<ShaderInteractor>(FindObjectsSortMode.None);
+            _interactors = FindObjectsByType<ShaderInteractor>(FindObjectsSortMode.None).ToList();
         }
         else
         {
@@ -485,9 +485,9 @@ public class GrassComputeScript : MonoBehaviour
         _instComputeShader.SetMatrix(LocalToWorld, transform.localToWorldMatrix);
 
         // Update interactors data if interactors exist
-        if (_interactors.Length > 0)
+        if (_interactors.Count > 0)
         {
-            var interectors = _interactors.Length;
+            var interectors = _interactors.Count;
             var positions = new Vector4[interectors];
 
             for (var i = 0; i < interectors; i++)
@@ -513,6 +513,16 @@ public class GrassComputeScript : MonoBehaviour
         }
 
 #endif
+    }
+
+    public void SetInteractors(ShaderInteractor shaderInteractor)
+    {
+        _interactors.Add(shaderInteractor);
+    }
+
+    public void RemoveInteractor(ShaderInteractor shaderInteractor)
+    {
+        _interactors.Remove(shaderInteractor);
     }
 
     // newly added for cutting
@@ -573,20 +583,20 @@ public class GrassComputeScript : MonoBehaviour
     // Append한걸 Grass.hlsl에서 out으로 뽑아서 그래프에서 vertex에 넣음
     // fragment에서 한번 더 가공한 뒤 출력
     private static readonly int DrawTriangles = Shader.PropertyToID("_DrawTriangles");
-    
+
     // InterlockedAdd에 사용됨
-    private static readonly int IndirectArgsBuffer = Shader.PropertyToID("_IndirectArgsBuffer"); 
+    private static readonly int IndirectArgsBuffer = Shader.PropertyToID("_IndirectArgsBuffer");
 
     // 현재 풀 개수만큼만 kernel을 실행함
     private static readonly int NumSourceVertices = Shader.PropertyToID("_NumSourceVertices");
 
-    /*
-     *    그리기 위한 최소 조건이 위 네개인거로 판담됨 아래는 전부 옵션 
-     */
+    // 그리기 위한 최소 조건이 위 네개인거로 판담됨 아래는 전부 옵션
 
     // 컬링을 위해 사용됨 .compute에 Main에서 visibleID로 가져올 때
     private static readonly int VisibleIDBuffer = Shader.PropertyToID("_VisibleIDBuffer");
-    private static readonly int CutBuffer = Shader.PropertyToID("_CutBuffer");   // shader graph에서 이거 값으로 alpha를 조정해서 잘린거처럼 표현해줌
+
+    // shader graph에서 이거 값으로 alpha를 조정해서 잘린거처럼 표현해줌
+    private static readonly int CutBuffer = Shader.PropertyToID("_CutBuffer");
 
     private static readonly int Time1 = Shader.PropertyToID("_Time");
     private static readonly int GrassRandomHeightMin = Shader.PropertyToID("_GrassRandomHeightMin");

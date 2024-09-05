@@ -3,39 +3,37 @@ using UnityEngine;
 public class ObstacleCheck : MonoBehaviour
 {
     private Vector3 _inputDirection; // 사용자가 입력한 방향
+    private bool _isHit; // Will store if there was a hit
 
-    [SerializeField] private float capsuleHeight = 2.0f; // 캡슐의 높이
-    [SerializeField] private float capsuleRadius = 0.5f; // 캡슐의 반지름
-    [SerializeField] private float capsuleDistance = 1.0f; // 캡슐의 이동 거리
+    [SerializeField] private float sphereRadius = 1.0f; // 구의 반지름
+    [SerializeField] private float sphereDistance = 1.0f; // 구의 이동 거리
     [SerializeField] private LayerMask wallLayer; // 벽 레이어
+#if UNITY_EDITOR
+    [SerializeField] private bool drawGizmos;
+#endif
 
     public bool CanMove(Vector3 direction)
     {
         _inputDirection = direction;
-        var offset = direction.normalized * capsuleDistance;
-        var capsuleCenter = transform.position + offset;
-        var capsuleBottom = capsuleCenter - Vector3.up * (capsuleHeight / 2 - capsuleRadius);
-        var capsuleTop = capsuleCenter + Vector3.up * (capsuleHeight / 2 - capsuleRadius);
+        var offset = direction.normalized * sphereDistance;
+        var sphereCenter = transform.position + offset;
 
-        return !Physics.CheckCapsule(capsuleBottom, capsuleTop, capsuleRadius, wallLayer);
+        _isHit = Physics.CheckSphere(sphereCenter, sphereRadius, wallLayer);
+        return !_isHit;
     }
 
+#if UNITY_EDITOR
     private void OnDrawGizmos()
     {
-        var offset = _inputDirection.normalized * capsuleDistance;
-        var capsuleCenter = transform.position + offset;
-        var capsuleBottom = capsuleCenter - Vector3.up * (capsuleHeight / 2 - capsuleRadius);
-        var capsuleTop = capsuleCenter + Vector3.up * (capsuleHeight / 2 - capsuleRadius);
+        if (!drawGizmos) return;
 
-        var hit = Physics.CheckCapsule(capsuleBottom, capsuleTop, capsuleRadius, wallLayer);
+        // Calculate the sphere parameters
+        var offset = _inputDirection.normalized * sphereDistance;
+        var sphereCenter = transform.position + offset;
 
-        // Draw the capsule as a gizmo
-        Gizmos.color = hit ? Color.red : Color.green;
-        Gizmos.DrawWireSphere(capsuleBottom, capsuleRadius);
-        Gizmos.DrawWireSphere(capsuleTop, capsuleRadius);
-        Gizmos.DrawLine(capsuleBottom + Vector3.right * capsuleRadius, capsuleTop + Vector3.right * capsuleRadius);
-        Gizmos.DrawLine(capsuleBottom - Vector3.right * capsuleRadius, capsuleTop - Vector3.right * capsuleRadius);
-        Gizmos.DrawLine(capsuleBottom + Vector3.forward * capsuleRadius, capsuleTop + Vector3.forward * capsuleRadius);
-        Gizmos.DrawLine(capsuleBottom - Vector3.forward * capsuleRadius, capsuleTop - Vector3.forward * capsuleRadius);
+        // Set the color and transparency based on hit status
+        Gizmos.color = _isHit ? new Color(1, 0, 0, 0.5f) : new Color(0, 1, 0, 0.5f);
+        Gizmos.DrawSphere(sphereCenter, sphereRadius);
     }
+#endif
 }
