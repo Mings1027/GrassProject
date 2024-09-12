@@ -39,14 +39,15 @@ public class RenderTerrainMap : MonoBehaviour
         _tempTex = new RenderTexture(resolution, resolution, 24);
         GetBounds();
         SetUpCam();
-        DrawDiffuseMap();
+        DrawToMap(TerrainDiffuse);
+
     }
 
     private void Start()
     {
         GetBounds();
         SetUpCam();
-        DrawDiffuseMap();
+        DrawToMap(TerrainDiffuse);
         if (realTimeDiffuse)
         {
             UpdateTex().Forget();
@@ -55,12 +56,11 @@ public class RenderTerrainMap : MonoBehaviour
 
     private async UniTaskVoid UpdateTex()
     {
-        var token = this.GetCancellationTokenOnDestroy();
-        await UniTask.Delay(1000, cancellationToken: token);
+        await UniTask.Delay(1000, cancellationToken: destroyCancellationToken);
 
-        while (!token.IsCancellationRequested)
+        while (!destroyCancellationToken.IsCancellationRequested)
         {
-            await UniTask.Delay(TimeSpan.FromSeconds(repeatRate), cancellationToken: token);
+            await UniTask.Delay(TimeSpan.FromSeconds(repeatRate), cancellationToken: destroyCancellationToken);
             camToDrawWith.enabled = true;
             camToDrawWith.targetTexture = _tempTex;
             Shader.SetGlobalTexture(TerrainDiffuse, _tempTex);
@@ -108,11 +108,6 @@ public class RenderTerrainMap : MonoBehaviour
         camToDrawWith.transform.parent = null;
         camToDrawWith.transform.position = _bounds.center + new Vector3(0, _bounds.extents.y + 5f, 0);
         camToDrawWith.transform.parent = gameObject.transform;
-    }
-
-    private void DrawDiffuseMap()
-    {
-        DrawToMap(TerrainDiffuse);
     }
 
     private void DrawToMap(int target)

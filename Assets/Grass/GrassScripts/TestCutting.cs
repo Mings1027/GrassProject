@@ -6,7 +6,7 @@ public class TestCutting : MonoBehaviour
     [SerializeField] GrassComputeScript grassComputeScript;
 
     [SerializeField] private float radius = 1f;
-    [SerializeField] private float minMoveDistance = 0.5f;
+    [SerializeField, Range(0, 1)] private float minMoveDistance = 0.5f;
 
     public bool updateCuts;
 

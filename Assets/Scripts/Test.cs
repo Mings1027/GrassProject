@@ -1,21 +1,21 @@
 using System;
+using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Profiling;
+using Random = UnityEngine.Random;
 
-public class Test : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerClickHandler
+public class Test : MonoBehaviour
 {
-    public void OnPointerDown(PointerEventData eventData)
-    {
-        Debug.Log("OnPointerDown");
-    }
+    [SerializeField] private LayerMask testLayer;
 
-    public void OnPointerUp(PointerEventData eventData)
+    [ContextMenu("Test")]
+    private void CompareLayer()
     {
-        Debug.Log("OnPointerUp");
-    }
-
-    public void OnPointerClick(PointerEventData eventData)
-    {
-        Debug.Log("OnPointerClick");
+        if (((1 << gameObject.layer) & testLayer) != 0)
+        {
+            Debug.Log("Test");
+        }
     }
 }

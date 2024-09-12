@@ -13,8 +13,8 @@ public class GrassComputeScript : MonoBehaviour
     public bool autoUpdate; // very slow, but will update always
     private Camera _mainCamera; // main camera
     public SoGrassSettings currentPresets; // grass settings to send to the compute shader
-    private List<ShaderInteractor> _interactors;
-    [SerializeField, HideInInspector] private List<GrassData> grassData = new(); // base data lists
+    private List<GrassInteractor> _interactors;
+    [SerializeField,] private List<GrassData> grassData = new(); // base data lists
     private readonly List<int> _grassList = new();
     private List<int> _grassVisibleIDList = new(); // list of all visible grass ids, rest are culled
     private bool _initialized; // A state variable to help keep track of whether compute buffers have been set up
@@ -54,7 +54,7 @@ public class GrassComputeScript : MonoBehaviour
     private float _cameraOriginalFarPlane;
 
     // list of -1 to overwrite the grassvisible buffer with
-    private List<int> _empty = new();
+    // private List<int> _empty = new();
 
     // speeding up the editor a bit
     private Vector3 _cachedCamPos;
@@ -127,13 +127,10 @@ public class GrassComputeScript : MonoBehaviour
     /*=============================================================================================================
      *                                            Unity Event Functions
      =============================================================================================================*/
-    private void Awake()
-    {
-        _interactors = FindObjectsByType<ShaderInteractor>(FindObjectsSortMode.None).ToList();
-    }
 
     private void OnEnable()
     {
+        _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
         // If initialized, call on disable to clean things up
         if (_initialized)
         {
@@ -171,8 +168,7 @@ public class GrassComputeScript : MonoBehaviour
         _drawBuffer.SetCounterValue(0);
         _argsBuffer.SetData(_argsBufferReset);
         // _dispatchSize = Mathf.CeilToInt((int)(_grassVisibleIDList.Count / _threadGroupSize));
-        _dispatchSize = (_grassVisibleIDList.Count + (int)_threadGroupSize - 1) >>
-                        (int)Math.Log((int)_threadGroupSize, 2);
+        _dispatchSize = (_grassVisibleIDList.Count + (int)_threadGroupSize - 1) >> (int)Math.Log(_threadGroupSize, 2);
         if (_grassVisibleIDList.Count > 0)
         {
             // make sure the compute shader is dispatched even when theres very little grass
@@ -191,6 +187,7 @@ public class GrassComputeScript : MonoBehaviour
 
     private void OnDisable()
     {
+        _interactors.Clear();
         // Dispose of buffers and copied shaders here
         if (_initialized)
         {
@@ -262,24 +259,21 @@ public class GrassComputeScript : MonoBehaviour
 
         // Don't do anything if resources are not found,
         // or no vertex is put on the mesh.
-        if (grassData.Count == 0)
-        {
-            return;
-        }
+        if (grassData.Count == 0) return;
 
-        if (currentPresets.shaderToUse == null || currentPresets.materialToUse == null)
+        if (!currentPresets.shaderToUse || !currentPresets.materialToUse)
         {
             Debug.LogWarning("Missing Compute Shader/Material in grass Settings", this);
             return;
         }
 
-        if (currentPresets.cuttingParticles == null)
+        if (!currentPresets.cuttingParticles)
         {
             Debug.LogWarning("Missing Cut Particles in grass Settings", this);
         }
 
         // empty array to replace the visible grass with
-        PopulateEmptyList(grassData.Count);
+        // PopulateEmptyList(grassData.Count);
         _initialized = true;
 
         // Instantiate the shaders so they can point to their own buffers
@@ -289,8 +283,8 @@ public class GrassComputeScript : MonoBehaviour
         var numSourceVertices = grassData.Count;
 
         // amount of segmets
-        var maxBladesPerVertex = Mathf.Max(1, currentPresets.allowedBladesPerVertex);
-        var maxSegmentsPerBlade = Mathf.Max(1, currentPresets.allowedSegmentsPerBlade);
+        // var maxBladesPerVertex = Mathf.Max(1, currentPresets.allowedBladesPerVertex);
+        // var maxSegmentsPerBlade = Mathf.Max(1, currentPresets.allowedSegmentsPerBlade);
         // -1 is because the top part of the grass only has 1 triangle
         // var maxBladeTriangles = maxBladesPerVertex * ((maxSegmentsPerBlade - 1) * 2 + 1);
 
@@ -337,8 +331,7 @@ public class GrassComputeScript : MonoBehaviour
 
         // Calculate the number of threads to use. Get the thread size from the kernel
         // Then, divide the number of triangles by that size
-        _instComputeShader.GetKernelThreadGroupSizes(_idGrassKernel,
-            out _threadGroupSize, out _, out _);
+        _instComputeShader.GetKernelThreadGroupSizes(_idGrassKernel, out _threadGroupSize, out _, out _);
         //set once only
         // _dispatchSize = Mathf.CeilToInt((int)(grassData.Count / _threadGroupSize));
         _dispatchSize = (grassData.Count + (int)_threadGroupSize - 1) >> (int)Math.Log((int)_threadGroupSize, 2);
@@ -361,7 +354,6 @@ public class GrassComputeScript : MonoBehaviour
         for (var i = 0; i < grassData.Count; i++)
         {
             var target = grassData[i].position;
-
             _bounds.Encapsulate(target);
         }
     }
@@ -388,11 +380,11 @@ public class GrassComputeScript : MonoBehaviour
         }
     }
 
-    private void PopulateEmptyList(int count)
-    {
-        _empty = new List<int>(count);
-        _empty.InsertRange(0, Enumerable.Repeat(-1, count));
-    }
+    // private void PopulateEmptyList(int count)
+    // {
+    //     _empty = new List<int>(count);
+    //     _empty.InsertRange(0, Enumerable.Repeat(-1, count));
+    // }
 
     private void GetFrustumData()
     {
@@ -425,7 +417,7 @@ public class GrassComputeScript : MonoBehaviour
     private void SetGrassDataBase(bool full)
     {
         // Send things to compute shader that dont need to be set every frame
-        _instComputeShader.SetFloat(Time1, Time.time);
+        _instComputeShader.SetFloat(Time, UnityEngine.Time.time);
         _instComputeShader.SetFloat(GrassRandomHeightMin, currentPresets.grassRandomHeightMin);
         _instComputeShader.SetFloat(GrassRandomHeightMax, currentPresets.grassRandomHeightMax);
         _instComputeShader.SetFloat(WindSpeed, currentPresets.windSpeed);
@@ -435,7 +427,7 @@ public class GrassComputeScript : MonoBehaviour
         {
             _instComputeShader.SetFloat(MinFadeDist, currentPresets.minFadeDistance);
             _instComputeShader.SetFloat(MaxFadeDist, currentPresets.maxDrawDistance);
-            _interactors = FindObjectsByType<ShaderInteractor>(FindObjectsSortMode.None).ToList();
+            _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
         }
         else
         {
@@ -481,7 +473,7 @@ public class GrassComputeScript : MonoBehaviour
     private void SetGrassDataUpdate()
     {
         // Variables sent to the shader every frame
-        _instComputeShader.SetFloat(Time1, Time.time);
+        _instComputeShader.SetFloat(Time, UnityEngine.Time.time);
         _instComputeShader.SetMatrix(LocalToWorld, transform.localToWorldMatrix);
 
         // Update interactors data if interactors exist
@@ -515,16 +507,6 @@ public class GrassComputeScript : MonoBehaviour
 #endif
     }
 
-    public void SetInteractors(ShaderInteractor shaderInteractor)
-    {
-        _interactors.Add(shaderInteractor);
-    }
-
-    public void RemoveInteractor(ShaderInteractor shaderInteractor)
-    {
-        _interactors.Remove(shaderInteractor);
-    }
-
     // newly added for cutting
     public void UpdateCutBuffer(Vector3 hitPoint, float radius)
     {
@@ -535,15 +517,13 @@ public class GrassComputeScript : MonoBehaviour
             // Get the list of IDS that are near the hitpoint within the radius
             _cullingTree.ReturnLeafList(hitPoint, _grassList, radius);
 
-            var brushPosition = transform.position;
-
             // Compute the squared radius to avoid square root calculations
             var squaredRadius = radius * radius;
 
             for (var i = 0; i < _grassList.Count; i++)
             {
                 var currentIndex = _grassList[i];
-                var grassPosition = grassData[currentIndex].position + brushPosition;
+                var grassPosition = grassData[currentIndex].position /*+ brushPosition*/;
 
                 // Calculate the squared distance
                 var squaredDistance = (hitPoint - grassPosition).sqrMagnitude;
@@ -598,7 +578,7 @@ public class GrassComputeScript : MonoBehaviour
     // shader graph에서 이거 값으로 alpha를 조정해서 잘린거처럼 표현해줌
     private static readonly int CutBuffer = Shader.PropertyToID("_CutBuffer");
 
-    private static readonly int Time1 = Shader.PropertyToID("_Time");
+    private static readonly int Time = Shader.PropertyToID("_Time");
     private static readonly int GrassRandomHeightMin = Shader.PropertyToID("_GrassRandomHeightMin");
     private static readonly int GrassRandomHeightMax = Shader.PropertyToID("_GrassRandomHeightMax");
     private static readonly int WindSpeed = Shader.PropertyToID("_WindSpeed");
