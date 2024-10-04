@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Unity.Burst;
 using Unity.Collections;
@@ -7,6 +8,7 @@ using UnityEditor.SceneManagement;
 using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Random = UnityEngine.Random;
 
 namespace Grass.Editor
 {
@@ -90,6 +92,7 @@ namespace Grass.Editor
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
             if (GUILayout.Button("Manual Update", GUILayout.Height(50)))
             {
+                _grassComputeScript.SetGrassPaintedDataList = grassData;
                 _grassComputeScript.Reset();
             }
 
@@ -151,7 +154,7 @@ namespace Grass.Editor
 
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.Separator();
-            EditorGUILayout.LabelField("Total Grass Amount: " + _grassAmount.ToString(), EditorStyles.label);
+            EditorGUILayout.LabelField("Total Grass Amount: " + _grassAmount, EditorStyles.label);
             EditorGUILayout.BeginHorizontal();
             _mainTabCurrent = GUILayout.Toolbar(_mainTabCurrent, _mainTabBarStrings, GUILayout.Height(30));
             EditorGUILayout.EndHorizontal();
@@ -162,6 +165,12 @@ namespace Grass.Editor
             EditorGUILayout.LabelField("Paint Mode:", EditorStyles.boldLabel);
             _paintModeActive = EditorGUILayout.Toggle(_paintModeActive);
             EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Auto Update", EditorStyles.boldLabel);
+            _grassComputeScript.autoUpdate = EditorGUILayout.Toggle(_grassComputeScript.autoUpdate);
+            EditorGUILayout.EndHorizontal();
+
             EditorGUILayout.Separator();
 
             switch (_mainTabCurrent)
@@ -180,10 +189,25 @@ namespace Grass.Editor
                     break;
             }
 
-            if (GUILayout.Button("Clear Grass"))
+            if (GUILayout.Button("Clear current mesh"))
+            {
+                if (EditorUtility.DisplayDialog("Clear Selected Mesh Grass?", "Clear grass from the selected object?",
+                        "Clear", "Don't Clear"))
+                {
+                    var selectedObjects = Selection.gameObjects;
+                    for (int i = 0; i < selectedObjects.Length; i++)
+                    {
+                        RemoveGrassOnSelectObject(selectedObjects[i]);
+                    }
+
+                    RebuildMesh();
+                }
+            }
+
+            if (GUILayout.Button("Clear All Grass"))
             {
                 if (EditorUtility.DisplayDialog("Clear All Grass?",
-                        "Are you sure you want to clear the grass?", "Clear", "Don't Clear"))
+                        "Clear all existing grass?", "Clear", "Don't Clear"))
                 {
                     ClearMesh();
                 }
@@ -225,8 +249,10 @@ namespace Grass.Editor
             EditorGUILayout.Separator();
 
             EditorGUILayout.LabelField("Width and Height ", EditorStyles.boldLabel);
-            toolSettings.sizeWidth = EditorGUILayout.Slider("Grass Width", toolSettings.sizeWidth, 0.01f, 2f);
-            toolSettings.sizeHeight = EditorGUILayout.Slider("Grass Height", toolSettings.sizeHeight, 0.01f, 2f);
+            toolSettings.sizeWidth = EditorGUILayout.Slider("Grass Width", toolSettings.sizeWidth,
+                toolSettings.MinSizeWidth, toolSettings.MaxSizeWidth);
+            toolSettings.sizeHeight = EditorGUILayout.Slider("Grass Height", toolSettings.sizeHeight,
+                toolSettings.MinSizeHeight, toolSettings.MaxSizeHeight);
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Color", EditorStyles.boldLabel);
             toolSettings.adjustedColor = EditorGUILayout.ColorField("Brush Color", toolSettings.adjustedColor);
@@ -239,7 +265,7 @@ namespace Grass.Editor
         private void ShowGeneratePanel()
         {
             toolSettings.grassAmountToGenerate =
-                EditorGUILayout.IntField("Grass Place Max Amount", toolSettings.grassAmountToGenerate);
+                (int)EditorGUILayout.Slider("Grass Place Max Amount", toolSettings.grassAmountToGenerate, 0, 100000);
             toolSettings.generationDensity =
                 EditorGUILayout.Slider("Grass Place Density", toolSettings.generationDensity, 0.01f, 1f);
 
@@ -263,8 +289,10 @@ namespace Grass.Editor
 
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Width and Height ", EditorStyles.boldLabel);
-            toolSettings.sizeWidth = EditorGUILayout.Slider("Grass Width", toolSettings.sizeWidth, 0.01f, 2f);
-            toolSettings.sizeHeight = EditorGUILayout.Slider("Grass Height", toolSettings.sizeHeight, 0.01f, 2f);
+            toolSettings.sizeWidth = EditorGUILayout.Slider("Grass Width", toolSettings.sizeWidth,
+                toolSettings.MinSizeWidth, toolSettings.MaxSizeWidth);
+            toolSettings.sizeHeight = EditorGUILayout.Slider("Grass Height", toolSettings.sizeHeight,
+                toolSettings.MinSizeHeight, toolSettings.MaxSizeHeight);
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Color", EditorStyles.boldLabel);
             toolSettings.adjustedColor = EditorGUILayout.ColorField("Brush Color", toolSettings.adjustedColor);
@@ -295,11 +323,8 @@ namespace Grass.Editor
 
             if (GUILayout.Button("Add Positions From Mesh"))
             {
-                if (selection == null)
-                {
-                    // no objects selected
-                }
-                else
+                // no objects selected
+                if (selection != null)
                 {
                     Undo.RegisterCompleteObjectUndo(this, "Add new Positions from Mesh(es)");
                     for (var i = 0; i < selection.Length; i++)
@@ -311,11 +336,7 @@ namespace Grass.Editor
 
             if (GUILayout.Button("Regenerate on current Mesh (Clears Current)"))
             {
-                if (selection == null)
-                {
-                    // no object selected
-                    return;
-                }
+                if (selection == null) return; // no object selected
 
                 // ClearMesh();
                 for (int i = 0; i < selection.Length; i++)
@@ -351,7 +372,8 @@ namespace Grass.Editor
 
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Brush Settings", EditorStyles.boldLabel);
-            toolSettings.brushSize = EditorGUILayout.Slider("Brush Size", toolSettings.brushSize, 0.1f, 50f);
+            toolSettings.brushSize = EditorGUILayout.Slider("Brush Size", toolSettings.brushSize,
+                toolSettings.MinBrushSize, toolSettings.MaxBrushSize);
 
             if (toolbarInt == 0)
             {
@@ -370,10 +392,11 @@ namespace Grass.Editor
                 toolSettings.flow = EditorGUILayout.Slider("Brush Flow", toolSettings.flow, 0.1f, 10f);
                 EditorGUILayout.Separator();
                 EditorGUILayout.LabelField("Adjust Width and Height Gradually", EditorStyles.boldLabel);
-                toolSettings.adjustWidth =
-                    EditorGUILayout.Slider("Grass Width Adjustment", toolSettings.adjustWidth, -1f, 1f);
-                toolSettings.adjustHeight =
-                    EditorGUILayout.Slider("Grass Length Adjustment", toolSettings.adjustHeight, -1f, 1f);
+                toolSettings.AdjustWidth =
+                    EditorGUILayout.Slider("Grass Width Adjustment", toolSettings.AdjustWidth, toolSettings.MinAdjust,
+                        toolSettings.MaxAdjust);
+                toolSettings.AdjustHeight =
+                    EditorGUILayout.Slider("Grass Height Adjustment", toolSettings.AdjustHeight, -1f, 1f);
 
                 var labelStyle = new GUIStyle(EditorStyles.label)
                 {
@@ -383,7 +406,7 @@ namespace Grass.Editor
                 EditorGUILayout.LabelField("Grass Width Adjustment Max Clamp", labelStyle);
                 toolSettings.adjustWidthMax = EditorGUILayout.Slider(toolSettings.adjustWidthMax, 0.01f, 3f);
 
-                EditorGUILayout.LabelField("Grass Length Adjustment Max Clamp", labelStyle);
+                EditorGUILayout.LabelField("Grass Height Adjustment Max Clamp", labelStyle);
                 toolSettings.adjustHeightMax = EditorGUILayout.Slider(toolSettings.adjustHeightMax, 0.01f, 3f);
 
                 EditorGUILayout.Separator();
@@ -396,27 +419,19 @@ namespace Grass.Editor
                 if (toolbarInt == 0)
                 {
                     EditorGUILayout.LabelField("Width and Height ", EditorStyles.boldLabel);
-                    toolSettings.sizeWidth = EditorGUILayout.Slider("Grass Width", toolSettings.sizeWidth, 0.01f, 2f);
-                    toolSettings.sizeHeight =
-                        EditorGUILayout.Slider("Grass Height", toolSettings.sizeHeight, 0.01f, 2f);
-                    if (toolSettings.sizeHeight > _grassComputeScript.currentPresets.maxHeight)
+                    toolSettings.sizeWidth = EditorGUILayout.Slider("Grass Width", toolSettings.sizeWidth,
+                        toolSettings.MinSizeWidth, toolSettings.MaxSizeWidth);
+                    toolSettings.sizeHeight = EditorGUILayout.Slider("Grass Height", toolSettings.sizeHeight,
+                        toolSettings.MinSizeHeight, toolSettings.MaxSizeHeight);
+
+                    var curPresets = _grassComputeScript.currentPresets;
+
+                    if (toolSettings.sizeHeight > curPresets.maxHeight)
                     {
                         EditorGUILayout.HelpBox(
                             "Grass Height must be less than Blade Height Max in the General Settings",
                             MessageType.Warning, true);
                     }
-
-                    EditorGUILayout.BeginHorizontal();
-
-                    EditorGUILayout.LabelField("Random Height Min/Max");
-                    EditorGUILayout.MinMaxSlider(ref _grassComputeScript.currentPresets.grassRandomHeightMin,
-                        ref _grassComputeScript.currentPresets.grassRandomHeightMax, 0f, 5f);
-                    _grassComputeScript.currentPresets.grassRandomHeightMin =
-                        EditorGUILayout.FloatField(_grassComputeScript.currentPresets.grassRandomHeightMin);
-                    _grassComputeScript.currentPresets.grassRandomHeightMax =
-                        EditorGUILayout.FloatField(_grassComputeScript.currentPresets.grassRandomHeightMax);
-
-                    EditorGUILayout.EndHorizontal();
                 }
 
                 EditorGUILayout.Separator();
@@ -444,87 +459,101 @@ namespace Grass.Editor
         private void ShowMainSettingsPanel()
         {
             EditorGUILayout.LabelField("Blade Min/Max Settings", EditorStyles.boldLabel);
+            var curPresets = _grassComputeScript.currentPresets;
 
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.MinMaxSlider("Blade Width Min/Max", ref _grassComputeScript.currentPresets.minWidth,
-                ref _grassComputeScript.currentPresets.maxWidth, 0.01f, 1f);
-            _grassComputeScript.currentPresets.minWidth =
-                EditorGUILayout.FloatField(_grassComputeScript.currentPresets.minWidth);
-            _grassComputeScript.currentPresets.maxWidth =
-                EditorGUILayout.FloatField(_grassComputeScript.currentPresets.maxWidth);
-            EditorGUILayout.EndHorizontal();
+            {
+                EditorGUILayout.MinMaxSlider("Blade Width Min/Max", ref curPresets.minWidth,
+                    ref curPresets.maxWidth, curPresets.MinWidthLimit, curPresets.MaxWidthLimit);
 
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.MinMaxSlider("Blade Height Min/Max", ref _grassComputeScript.currentPresets.minHeight,
-                ref _grassComputeScript.currentPresets.maxHeight, 0.01f, 3f);
-            _grassComputeScript.currentPresets.minHeight =
-                EditorGUILayout.FloatField(_grassComputeScript.currentPresets.minHeight);
-            _grassComputeScript.currentPresets.maxHeight =
-                EditorGUILayout.FloatField(_grassComputeScript.currentPresets.maxHeight);
-            EditorGUILayout.EndHorizontal();
+                EditorGUILayout.BeginHorizontal();
+                curPresets.minWidth = EditorGUILayout.FloatField(curPresets.minWidth);
+                curPresets.maxWidth = EditorGUILayout.FloatField(curPresets.maxWidth);
+                EditorGUILayout.EndHorizontal();
+            }
 
             EditorGUILayout.Separator();
-            // EditorGUILayout.LabelField("Random Height", EditorStyles.boldLabel);
-            // _grassComputeScript.currentPresets.grassRandomHeightMin = EditorGUILayout.FloatField("Min Random:",
-            //     _grassComputeScript.currentPresets.grassRandomHeightMin);
-            // _grassComputeScript.currentPresets.grassRandomHeightMax = EditorGUILayout.FloatField("Max Random:",
-            //     _grassComputeScript.currentPresets.grassRandomHeightMax);
-            //
-            // EditorGUILayout.MinMaxSlider("Random Grass Height",
-            //     ref _grassComputeScript.currentPresets.grassRandomHeightMin,
-            //     ref _grassComputeScript.currentPresets.grassRandomHeightMax, -5f, 5f);
+
+            {
+                EditorGUILayout.MinMaxSlider("Blade Height Min/Max", ref curPresets.minHeight,
+                    ref curPresets.maxHeight, curPresets.MinHeightLimit, curPresets.MaxHeightLimit);
+
+                EditorGUILayout.BeginHorizontal();
+                curPresets.minHeight = EditorGUILayout.FloatField(curPresets.minHeight);
+                curPresets.maxHeight = EditorGUILayout.FloatField(curPresets.maxHeight);
+                EditorGUILayout.EndHorizontal();
+            }
+
             EditorGUILayout.Separator();
+            EditorGUILayout.Separator();
+
+            EditorGUILayout.LabelField("Random Height Min/Max");
+            EditorGUILayout.MinMaxSlider(ref curPresets.randomHeightMin, ref curPresets.randomHeightMax,
+                curPresets.RandomHeightMinLimit, curPresets.RandomHeightMaxLimit);
+
+            EditorGUILayout.BeginHorizontal();
+
+            curPresets.randomHeightMin = EditorGUILayout.FloatField(curPresets.randomHeightMin);
+            curPresets.randomHeightMax = EditorGUILayout.FloatField(curPresets.randomHeightMax);
+
+            EditorGUILayout.EndHorizontal();
+
             EditorGUILayout.LabelField("Blade Shape Settings", EditorStyles.boldLabel);
-            _grassComputeScript.currentPresets.bladeRadius = EditorGUILayout.Slider("Blade Radius",
-                _grassComputeScript.currentPresets.bladeRadius, 0f, 2f);
-            _grassComputeScript.currentPresets.bladeForwardAmount = EditorGUILayout.Slider("Blade Forward",
-                _grassComputeScript.currentPresets.bladeForwardAmount, 0f, 2f);
-            _grassComputeScript.currentPresets.bladeCurveAmount = EditorGUILayout.Slider("Blade Curve",
-                _grassComputeScript.currentPresets.bladeCurveAmount, 0f, 2f);
-            _grassComputeScript.currentPresets.bottomWidth = EditorGUILayout.Slider("Bottom Width",
-                _grassComputeScript.currentPresets.bottomWidth, 0f, 2f);
-            EditorGUILayout.Separator();
-            EditorGUILayout.LabelField("Blade Amount Settings", EditorStyles.boldLabel);
-            _grassComputeScript.currentPresets.allowedBladesPerVertex = EditorGUILayout.IntSlider(
-                "Allowed Blades Per Vertex", _grassComputeScript.currentPresets.allowedBladesPerVertex, 1, 10);
-            _grassComputeScript.currentPresets.allowedSegmentsPerBlade = EditorGUILayout.IntSlider(
-                "Allowed Segments Per Blade", _grassComputeScript.currentPresets.allowedSegmentsPerBlade, 1, 4);
+            curPresets.bladeRadius = EditorGUILayout.Slider("Blade Radius",
+                curPresets.bladeRadius, curPresets.MinBladeRadius, curPresets.MaxBladeRadius);
+            curPresets.bladeForward = EditorGUILayout.Slider("Blade Forward",
+                curPresets.bladeForward, curPresets.MinBladeForward, curPresets.MaxBladeForward);
+            curPresets.bladeCurve = EditorGUILayout.Slider("Blade Curve",
+                curPresets.bladeCurve, curPresets.MinBladeCurve, curPresets.MaxBladeCurve);
+            curPresets.bottomWidth = EditorGUILayout.Slider("Bottom Width",
+                curPresets.bottomWidth, curPresets.MinBottomWidth, curPresets.MaxBottomWidth);
 
             EditorGUILayout.Separator();
+
+            EditorGUILayout.LabelField("Blade Amount Settings", EditorStyles.boldLabel);
+            curPresets.bladesPerVertex = EditorGUILayout.IntSlider(
+                "Blades Per Vertex", curPresets.bladesPerVertex, curPresets.MinBladesPerVertex,
+                curPresets.MaxBladesPerVertex);
+            curPresets.segmentsPerBlade = EditorGUILayout.IntSlider(
+                "Segments Per Blade", curPresets.segmentsPerBlade, curPresets.MinSegmentsPerBlade,
+                curPresets.MaxSegmentsPerBlade);
+
+            EditorGUILayout.Separator();
+
             EditorGUILayout.LabelField("Wind Settings", EditorStyles.boldLabel);
-            _grassComputeScript.currentPresets.windSpeed =
-                EditorGUILayout.Slider("Wind Speed", _grassComputeScript.currentPresets.windSpeed, -2f, 2f);
-            _grassComputeScript.currentPresets.windStrength = EditorGUILayout.Slider("Wind Strength",
-                _grassComputeScript.currentPresets.windStrength, 0, 2f);
+            curPresets.windSpeed =
+                EditorGUILayout.Slider("Wind Speed", curPresets.windSpeed, curPresets.MinWindSpeed,
+                    curPresets.MaxWindSpeed);
+            curPresets.windStrength = EditorGUILayout.Slider("Wind Strength",
+                curPresets.windStrength, curPresets.MinWindStrength, curPresets.MaxWindStrength);
 
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Tinting Settings", EditorStyles.boldLabel);
-            _grassComputeScript.currentPresets.topTint =
-                EditorGUILayout.ColorField("Top Tint", _grassComputeScript.currentPresets.topTint);
-            _grassComputeScript.currentPresets.bottomTint =
-                EditorGUILayout.ColorField("Bottom Tint", _grassComputeScript.currentPresets.bottomTint);
+            curPresets.topTint =
+                EditorGUILayout.ColorField("Top Tint", curPresets.topTint);
+            curPresets.bottomTint =
+                EditorGUILayout.ColorField("Bottom Tint", curPresets.bottomTint);
 
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("LOD/Culling Settings", EditorStyles.boldLabel);
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Show Culling Bounds:", EditorStyles.boldLabel);
-            _grassComputeScript.currentPresets.drawBounds =
-                EditorGUILayout.Toggle(_grassComputeScript.currentPresets.drawBounds);
+            curPresets.drawBounds =
+                EditorGUILayout.Toggle(curPresets.drawBounds);
             EditorGUILayout.EndHorizontal();
-            _grassComputeScript.currentPresets.minFadeDistance = EditorGUILayout.FloatField("Min Fade Distance",
-                _grassComputeScript.currentPresets.minFadeDistance);
-            _grassComputeScript.currentPresets.maxDrawDistance = EditorGUILayout.FloatField("Max Draw Distance",
-                _grassComputeScript.currentPresets.maxDrawDistance);
-            _grassComputeScript.currentPresets.cullingTreeDepth = EditorGUILayout.IntField("Culling Tree Depth",
-                _grassComputeScript.currentPresets.cullingTreeDepth);
+            curPresets.minFadeDistance = EditorGUILayout.FloatField("Min Fade Distance",
+                curPresets.minFadeDistance);
+            curPresets.maxDrawDistance = EditorGUILayout.FloatField("Max Draw Distance",
+                curPresets.maxDrawDistance);
+            curPresets.cullingTreeDepth = EditorGUILayout.IntField("Culling Tree Depth",
+                curPresets.cullingTreeDepth);
 
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Other Settings", EditorStyles.boldLabel);
-            _grassComputeScript.currentPresets.affectStrength = EditorGUILayout.FloatField("Interactor Strength",
-                _grassComputeScript.currentPresets.affectStrength);
-            _grassComputeScript.currentPresets.castShadow =
+            curPresets.interactorStrength = EditorGUILayout.FloatField("Interactor Strength",
+                curPresets.interactorStrength);
+            curPresets.castShadow =
                 (UnityEngine.Rendering.ShadowCastingMode)EditorGUILayout.EnumPopup("Shadow Settings",
-                    _grassComputeScript.currentPresets.castShadow);
+                    curPresets.castShadow);
         }
 
         private void CreateNewGrassObject()
@@ -578,8 +607,7 @@ namespace Grass.Editor
                     Handles.color = discColor;
                     Handles.DrawWireDisc(_hitPos, _hitNormal, toolSettings.brushFalloffSize * toolSettings.brushSize);
                     Handles.color = discColor2;
-                    Handles.DrawSolidDisc(_hitPos, _hitNormal,
-                        toolSettings.brushFalloffSize * toolSettings.brushSize);
+                    Handles.DrawSolidDisc(_hitPos, _hitNormal, toolSettings.brushFalloffSize * toolSettings.brushSize);
 
                     break;
                 case 3:
@@ -761,8 +789,6 @@ namespace Grass.Editor
                 meshNormals.Dispose();
                 point.Dispose();
                 lengthWidth.Dispose();
-
-                RebuildMesh();
             }
 
             else if (selection.TryGetComponent(out Terrain terrain))
@@ -815,9 +841,9 @@ namespace Grass.Editor
                         }
                     }
                 }
-
-                RebuildMesh();
             }
+
+            RebuildMesh();
         }
 
         private void RemoveGrassOnSelectObject(GameObject selection)
@@ -826,11 +852,6 @@ namespace Grass.Editor
             {
                 var localToWorld = selection.transform.localToWorldMatrix;
                 var bounds = sourceMesh.sharedMesh.bounds;
-                var meshSize = new Vector3(
-                    bounds.size.x * sourceMesh.transform.lossyScale.x,
-                    bounds.size.y * sourceMesh.transform.lossyScale.y,
-                    bounds.size.z * sourceMesh.transform.lossyScale.z);
-                meshSize += Vector3.one;
 
                 var worldBounds = new Bounds(
                     localToWorld.MultiplyPoint3x4(bounds.center),
@@ -1068,6 +1089,16 @@ namespace Grass.Editor
 
                 // ray for gizmo(disc)
                 _ray = scene.camera.ScreenPointToRay(_mousePos);
+
+                if (e.type == EventType.ScrollWheel && e.control && e.alt)
+                {
+                    toolSettings.brushSize += e.delta.y;
+                    toolSettings.brushSize = Mathf.Clamp(toolSettings.brushSize, toolSettings.MinBrushSize,
+                        toolSettings.MaxBrushSize);
+                    e.Use();
+                    return;
+                }
+
                 // undo system
                 if (e.type == EventType.MouseDown && e.button == 0 && e.control && e.alt)
                 {
@@ -1093,7 +1124,7 @@ namespace Grass.Editor
                     switch (toolbarInt)
                     {
                         case 0:
-                            AddGrass(e);
+                            AddGrassTest(e);
                             break;
                         case 1:
                             RemoveAtPoint(_terrainHit, e);
@@ -1152,6 +1183,55 @@ namespace Grass.Editor
                 length = new Vector2(toolSettings.sizeWidth, toolSettings.sizeHeight),
                 normal = normal
             };
+        }
+
+        private void AddGrassTest(Event e)
+        {
+            // var paintBlockMaskValue = toolSettings.paintBlockMask.value;
+            var paintMaskValue = toolSettings.paintMask.value;
+            var brushSize = toolSettings.brushSize;
+            var density = toolSettings.density;
+            var normalLimit = toolSettings.normalLimit;
+
+            // Position to shoot rays from (you can modify this as needed)
+            Vector3 startPos = _hitPos + Vector3.up * 3f; // Starting a bit above the hit position
+
+            for (int i = 0; i < density; i++)
+            {
+                // Random point within the brush size to shoot rays
+                var randomPoint = Random.insideUnitCircle * brushSize;
+                var randomPos = new Vector3(startPos.x + randomPoint.x, startPos.y, startPos.z + randomPoint.y);
+
+                if (Physics.Raycast(_ray, out var hit2, 200f))
+                {
+                    var hitLayer = hit2.transform.gameObject.layer;
+                    if (((1 << hitLayer) & paintMaskValue) != 0)
+                    {
+                        if (((1 << hitLayer) & paintMaskValue) > 0 && _hitNormal.y <= 1 + normalLimit &&
+                            _hitNormal.y >= 1 - normalLimit)
+                        {
+                            // Cast a ray downward
+                            if (Physics.Raycast(randomPos + Vector3.up * 3f, Vector3.down, out var hit, float.MaxValue))
+                            {
+                                var hitLayer2 = hit.collider.gameObject.layer;
+
+                                // Check if the hit is in paintMask
+                                if (((1 << hitLayer2) & paintMaskValue) != 0)
+                                {
+                                    _hitPos = hit.point;
+                                    _hitNormal = hit.normal;
+                                    var newData = CreateGrassData(_hitPos, _hitNormal);
+                                    grassData.Add(newData);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                _lastPosition = _hitPos;
+            }
+
+            e.Use();
         }
 
         private void AddGrass(Event e)
@@ -1238,7 +1318,7 @@ namespace Grass.Editor
                         var newCol = GetRandomColor();
 
                         var origLength = grassData[j].length;
-                        var newLength = new Vector2(toolSettings.adjustWidth, toolSettings.adjustHeight);
+                        var newLength = new Vector2(toolSettings.AdjustWidth, toolSettings.AdjustHeight);
 
                         _flowTimer++;
                         if (_flowTimer > toolSettings.flow)

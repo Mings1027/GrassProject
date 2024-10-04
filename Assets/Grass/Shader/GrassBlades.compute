@@ -131,12 +131,25 @@ float3x3 AngleAxis3x3(float angle, float3 axis)
 
 // 잔디 정점을 생성 
 DrawVertex GrassVertex(float3 positionWS, float width, float height,
-                       float offset, float curve, float2 uv, float3x3 rotation, float3 growthDirection)
+                       float offset, float curve, float2 uv, float3x3 rotation)
 {
     DrawVertex output;
-    output.positionWS = positionWS + mul(rotation, float3(width, height, curve + offset)) + growthDirection * height;
+    output.positionWS = positionWS + mul(rotation, float3(width, height, curve + offset));
     output.uv = uv;
     return output;
+}
+
+float3 WindCalculation(float3 positionWS)
+{
+    float timeWind = _Time.x * _WindSpeed; // 바람 속도에 따른 시간 값
+    float posX = positionWS.x; // 정점의 X 위치
+    float posZ = positionWS.z; // 정점의 Z 위치
+    float3 wind = float3(
+        sin(timeWind + posX) + sin(timeWind + posZ * 2) + sin(timeWind * 0.1 + posX),
+        0,
+        cos(timeWind + posX * 2) + cos(timeWind + posZ)); // 바람 벡터 계산
+    wind *= _WindStrength; // 바람 강도 적용 
+    return wind;
 }
 
 // ----------------------------------------
@@ -176,7 +189,7 @@ void Main(uint id : SV_DispatchThreadID)
 
     // 노멀 설정
     float3 faceNormal = sv.normalOS; // 객체 공간의 노멀
-    float3 growthDirection = normalize(faceNormal + float3(0, -1, 0) * 0.5); // 풀이 자라는 방향 설정
+    // float3 growthDirection = normalize(faceNormal + float3(0, -1, 0) * 0.5); // 풀이 자라는 방향 설정
 
     // 컷팅 값 가져옴
     float cut = _CutBuffer[visibleID];
@@ -186,15 +199,8 @@ void Main(uint id : SV_DispatchThreadID)
     // }
 
     // 바람 계산
-    float timeWind = _Time.x * _WindSpeed;  // 바람 속도에 따른 시간 값
-    float posX = sv.positionWS.x;   // 정점의 X 위치
-    float posZ = sv.positionWS.z;   // 정점의 Z 위치
-    float3 wind = float3(
-        sin(timeWind + posX) + sin(timeWind + posZ * 2) + sin(timeWind * 0.1 + posX),
-        0,
-        cos(timeWind + posX * 2) + cos(timeWind + posZ));   // 바람 벡터 계산
-    wind *= _WindStrength;  // 바람 강도 적용
-    
+    float3 wind = WindCalculation(sv.positionWS);
+
     _GrassHeight = sv.uv.y;
     _GrassWidth = sv.uv.x; // UV.x == width multiplier (set in GrassPainter.cs)
     float randomisedPos = rand(sv.positionWS.xyz);
@@ -220,11 +226,12 @@ void Main(uint id : SV_DispatchThreadID)
         float offset = (1 - bladeRadius) * _BladeRadius;
 
         float3 totalMovement = 0; // 모든 인터렉터에 의한 총합 이동량
-        if (cut == -1)
+        
+        // 풀이 잘렸으면 interactor에 반응하지 않도록 처리
+        if (cut < sv.positionWS.y + 0.5)
         {
-            // GrassInteractor.cs로 풀 상호작용을 위한 for문
             float3 offsetWorldPos = sv.positionWS + mul(facingRotationMatrix, float3(0, 0, offset));
-            // 월드 공간에서 오프셋된 정점 위치
+            // GrassInteractor.cs로 풀 상호작용을 위한 for문
             for (int p = 0; p < _InteractorsLength; p++)
             {
                 // 정점에서 인터랙터(상호작용 객체)까지의 벡터 계산
@@ -268,22 +275,22 @@ void Main(uint id : SV_DispatchThreadID)
 
             float segmentForward = pow(abs(t), _BladeCurve) * _BladeForward; // 위쪽 꼭짓점 z값 조절하는거임 xz평면에서 forward임
             // First grass (0) segment does not get displaced by interactor
+            // 노멀 방향으로 위치 조정
             float3 newPos = i == 0
                                 ? sv.positionWS
-                                : sv.positionWS + growthDirection * segmentHeight + totalMovement * t +
-                                wind * t; // 노멀 방향으로 위치 조정
+                                : sv.positionWS + totalMovement * t + wind * t + faceNormal * _GrassHeight * t;
 
             // Append First Vertex        
             drawVertices[i * 2] = GrassVertex(newPos, segmentWidth, segmentHeight, offset, segmentForward,
-                                              float2(0, t), facingRotationMatrix, growthDirection);
+                                              float2(0, t), facingRotationMatrix);
             // Append Second Vertex
             drawVertices[i * 2 + 1] = GrassVertex(newPos, -segmentWidth, segmentHeight, offset, segmentForward,
-                                                  float2(1, t), facingRotationMatrix, growthDirection);
+                                                  float2(1, t), facingRotationMatrix);
         }
         // Append Top Vertex
         float3 topPosOS = sv.positionWS + totalMovement + wind + faceNormal * _GrassHeight;
         drawVertices[numSegmentsPerBlade * 2] = GrassVertex(topPosOS, 0, _GrassHeight, offset, _BladeForward,
-                                                            float2(0.5, 1), facingRotationMatrix, growthDirection);
+                                                            float2(0.5, 1), facingRotationMatrix);
 
         // add to indirect arguments buffer with the correct vertexcount       
         // InterlockedAdd(_IndirectArgsBuffer[0].numVerticesPerInstance, numTrianglesPerBlade * 3);

@@ -20,7 +20,7 @@ float _OrthographicCamSizeTerrain;
 float3 _OrthographicCamPosTerrain;
 
 //get the data from the compute shader
-void GetComputeData_float(float vertexID, out float3 worldPos, out float3 normal, out float2 uv, out float3 col,
+void GetComputeData_float(uint vertexID, out float3 worldPos, out float3 normal, out float2 uv, out float3 col,
                           out float4 extraBuffer)
 {
     DrawTriangle tri = _DrawTriangles[vertexID / 3];
@@ -29,6 +29,7 @@ void GetComputeData_float(float vertexID, out float3 worldPos, out float3 normal
     normal = tri.normalOS;
     uv = input.uv;
     col = tri.diffuseColor;
+
     // for some reason doing this with a comparison node results in a glitchy alpha, so we're doing it here, if your grass is at a point higher than 99999 Y position then you should make this even higher or find a different solution
     if (tri.extraBuffer.x == -1)
     {
@@ -40,7 +41,7 @@ void GetComputeData_float(float vertexID, out float3 worldPos, out float3 normal
     }
 }
 
-// world space uv for blending
+// Calculate world space UV for blending
 void GetWorldUV_float(float3 worldPos, out float2 worldUV)
 {
     float2 uv = worldPos.xz - _OrthographicCamPosTerrain.xz;

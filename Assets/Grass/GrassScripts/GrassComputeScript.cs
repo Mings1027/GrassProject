@@ -10,11 +10,11 @@ using UnityEditor;
 [ExecuteInEditMode]
 public class GrassComputeScript : MonoBehaviour
 {
-    public bool autoUpdate; // very slow, but will update always
+    [HideInInspector] public bool autoUpdate; // very slow, but will update always
     private Camera _mainCamera; // main camera
     public SoGrassSettings currentPresets; // grass settings to send to the compute shader
     private List<GrassInteractor> _interactors;
-    [SerializeField,] private List<GrassData> grassData = new(); // base data lists
+    [SerializeField, HideInInspector] private List<GrassData> grassData = new(); // base data lists
     private readonly List<int> _grassList = new();
     private List<int> _grassVisibleIDList = new(); // list of all visible grass ids, rest are culled
     private bool _initialized; // A state variable to help keep track of whether compute buffers have been set up
@@ -363,6 +363,7 @@ public class GrassComputeScript : MonoBehaviour
         if (full)
         {
             _cullingTree = new CullingTreeNode(_bounds, currentPresets.cullingTreeDepth);
+            _leaves.Clear();
             _cullingTree.RetrieveAllLeaves(_leaves);
             //add the id of each grass point into the right cullingtree
             for (var i = 0; i < grassData.Count; i++)
@@ -418,8 +419,8 @@ public class GrassComputeScript : MonoBehaviour
     {
         // Send things to compute shader that dont need to be set every frame
         _instComputeShader.SetFloat(Time, UnityEngine.Time.time);
-        _instComputeShader.SetFloat(GrassRandomHeightMin, currentPresets.grassRandomHeightMin);
-        _instComputeShader.SetFloat(GrassRandomHeightMax, currentPresets.grassRandomHeightMax);
+        _instComputeShader.SetFloat(GrassRandomHeightMin, currentPresets.randomHeightMin);
+        _instComputeShader.SetFloat(GrassRandomHeightMax, currentPresets.randomHeightMax);
         _instComputeShader.SetFloat(WindSpeed, currentPresets.windSpeed);
         _instComputeShader.SetFloat(WindStrength, currentPresets.windStrength);
 
@@ -444,14 +445,14 @@ public class GrassComputeScript : MonoBehaviour
             }
         }
 
-        _instComputeShader.SetFloat(InteractorStrength, currentPresets.affectStrength);
+        _instComputeShader.SetFloat(InteractorStrength, currentPresets.interactorStrength);
         _instComputeShader.SetFloat(BladeRadius, currentPresets.bladeRadius);
-        _instComputeShader.SetFloat(BladeForward, currentPresets.bladeForwardAmount);
-        _instComputeShader.SetFloat(BladeCurve, Mathf.Max(0, currentPresets.bladeCurveAmount));
+        _instComputeShader.SetFloat(BladeForward, currentPresets.bladeForward);
+        _instComputeShader.SetFloat(BladeCurve, Mathf.Max(0, currentPresets.bladeCurve));
         _instComputeShader.SetFloat(BottomWidth, currentPresets.bottomWidth);
 
-        _instComputeShader.SetInt(MaxBladesPerVertex, currentPresets.allowedBladesPerVertex);
-        _instComputeShader.SetInt(MaxSegmentsPerBlade, currentPresets.allowedSegmentsPerBlade);
+        _instComputeShader.SetInt(MaxBladesPerVertex, currentPresets.bladesPerVertex);
+        _instComputeShader.SetInt(MaxSegmentsPerBlade, currentPresets.segmentsPerBlade);
 
         _instComputeShader.SetFloat(MinHeight, currentPresets.minHeight);
         _instComputeShader.SetFloat(MinWidth, currentPresets.minWidth);
@@ -510,42 +511,43 @@ public class GrassComputeScript : MonoBehaviour
     // newly added for cutting
     public void UpdateCutBuffer(Vector3 hitPoint, float radius)
     {
-        // can't cut grass if there is no grass in the scene
+        // 씬에 풀이 없으면 자르지 않음
         if (grassData.Count > 0)
         {
             _grassList.Clear();
-            // Get the list of IDS that are near the hitpoint within the radius
+            // 히트 지점 근처의 반경 내에 있는 ID 목록 가져옴
             _cullingTree.ReturnLeafList(hitPoint, _grassList, radius);
 
-            // Compute the squared radius to avoid square root calculations
+            // 제곱근 계산을 피하기 위해 반경을 제곱한 값을 계산
             var squaredRadius = radius * radius;
 
             for (var i = 0; i < _grassList.Count; i++)
             {
                 var currentIndex = _grassList[i];
-                var grassPosition = grassData[currentIndex].position /*+ brushPosition*/;
+                var grassPosition = grassData[currentIndex].position;
 
-                // Calculate the squared distance
+                // 제곱 거리 계산
                 var squaredDistance = (hitPoint - grassPosition).sqrMagnitude;
 
-                // Check if the squared distance is within the squared radius
-                // Check if there is grass to cut, or of the grass is uncut(-1)
+                // 제곱 거리가 제곱 반경 내에 있는지 확인
+                // 풀이 자를 수 있는 상태인지, 풀이 자르지 않은 상태(-1)인지 확인
                 if (squaredDistance <= squaredRadius &&
                     (_cutIDs[currentIndex] > hitPoint.y || Mathf.Approximately(_cutIDs[currentIndex], -1)))
                 {
-                    // check if the current cut is lower than the existing cut (with a small margin)
+                    // 현재 자르는 위치가 기존의 자른 위치보다 낮은지 확인 (약간 여유를 둠)
                     if (_cutIDs[currentIndex] - 0.1f > hitPoint.y || Mathf.Approximately(_cutIDs[currentIndex], -1))
                     {
                         SpawnCuttingParticle(grassPosition, new Color(grassData[currentIndex].color.x,
                             grassData[currentIndex].color.y, grassData[currentIndex].color.z));
                     }
 
-                    // store cutting point
+                    // 자르는 지점 저장
                     _cutIDs[currentIndex] = hitPoint.y;
                 }
             }
         }
 
+        // 자른 지점 데이터를 버퍼에 저장
         _cutBuffer.SetData(_cutIDs);
     }
 

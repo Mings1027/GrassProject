@@ -9,47 +9,68 @@ public class SoGrassSettings : ScriptableObject
     public Material materialToUse;
 
     // Blade
-    [Header("Blade")]
-    [Range(0, 5)] public float grassRandomHeightMin = 0.0f;
-    [Range(0, 5)] public float grassRandomHeightMax = 0.0f;
-    [Range(0, 1)] public float bladeRadius = 0.2f;
-    [Range(0, 1)] public float bladeForwardAmount = 0.38f;
-    [Range(1, 5)] public float bladeCurveAmount = 2;
-    [Range(0, 1)] public float bottomWidth = 0.1f;
+    [Header("Blade")] public float randomHeightMin;
+    public float RandomHeightMinLimit => 0f;
+    public float randomHeightMax = 1f;
+    public float RandomHeightMaxLimit => 5f;
+
+    public float bladeRadius = 0.3f;
+    public float MinBladeRadius => 0f;
+    public float MaxBladeRadius => 2f;
+
+    public float bladeForward = 1f;
+    public float MinBladeForward => 0f;
+    public float MaxBladeForward => 2f;
+
+    public float bladeCurve = 2f;
+    public float MinBladeCurve => 0f;
+    public float MaxBladeCurve => 2f;
+
+    public float bottomWidth = 0.2f;
+    public float MinBottomWidth => 0f;
+    public float MaxBottomWidth => 2f;
 
     public float minWidth = 0.01f;
+    public float MinWidthLimit => 0.01f;
     public float maxWidth = 1f;
+    public float MaxWidthLimit => 3f;
+
     public float minHeight = 0.01f;
-    public float maxHeight = 1f;
+    public float MinHeightLimit => 0.01f;
+    public float maxHeight = 3f;
+    public float MaxHeightLimit => 3f;
 
     // Wind
-    [Header("Wind")]
-    public float windSpeed = 10;
-    public float windStrength = 0.05f;
+    [Header("Wind")] public float windSpeed = 0.05f;
+    public float MinWindSpeed => -10f;
+    public float MaxWindSpeed => 10f;
+
+    public float windStrength = 0.3f;
+    public float MinWindStrength => 0f;
+    public float MaxWindStrength => 2f;
 
     //Grass
-    [Header("Grass")]
-    [Range(1, 8)] public int allowedBladesPerVertex = 4;
-    [Range(1, 5)] public int allowedSegmentsPerBlade = 4;
+    [Header("Grass")] public int bladesPerVertex = 4;
+    public int MinBladesPerVertex => 1;
+    public int MaxBladesPerVertex => 10;
+
+    public int segmentsPerBlade = 3;
+    public int MinSegmentsPerBlade => 1;
+    public int MaxSegmentsPerBlade => 4;
 
     // Interactor
-    [Header("Interactor Strength")]
-    public float affectStrength = 1;
+    [Header("Interactor Strength")] public float interactorStrength = 1;
 
     // Material
-    [Header("Material")]
-    public Color topTint = new(1, 1, 1);
+    [Header("Material")] public Color topTint = new(1, 1, 1);
     public Color bottomTint = new(0, 0, 1);
 
-    [Header("LOD/ Culling")]
-    public bool drawBounds;
+    [Header("LOD/ Culling")] public bool drawBounds;
     public float minFadeDistance = 40;
     public float maxDrawDistance = 125;
     public int cullingTreeDepth = 1;
 
-    [Header("Particles")]
-    public GameObject cuttingParticles;
+    [Header("Particles")] public GameObject cuttingParticles;
 
-    [Header("Other")]
-    public UnityEngine.Rendering.ShadowCastingMode castShadow;
+    [Header("Other")] public UnityEngine.Rendering.ShadowCastingMode castShadow;
 }
