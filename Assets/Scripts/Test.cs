@@ -10,12 +10,18 @@ public class Test : MonoBehaviour
 {
     [SerializeField] private LayerMask testLayer;
 
-    [ContextMenu("Test")]
-    private void CompareLayer()
+    [SerializeField] private int a;
+
+    [ContextMenu("Print hash code")]
+    private void PrintHashCode()
     {
-        if (((1 << gameObject.layer) & testLayer) != 0)
-        {
-            Debug.Log("Test");
-        }
+        print(a.GetTypeCode());
+        Heal(ref a);
+    }
+
+    private void Heal(ref int hp)
+    {
+        print(hp.GetTypeCode());
+        hp += 10;
     }
 }

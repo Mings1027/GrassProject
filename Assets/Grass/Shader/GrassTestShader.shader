@@ -6,9 +6,15 @@ Shader "Custom/TestGrass"
 		_BlendMult("Blend Multiply", Range(0, 5)) = 1
 		_BlendOff("Blend Offset", Range(0, 1)) = 1
 		[HDR] _AmbientAdjustmentColor("Ambient Adjustment Color", Color) = (0.5, 0.5, 0.5, 1)
-		_AdditionalLightIntensity("Additional Light Intensity", Range(0, 1)) = 0.3
+		[Header(Main Light)]
+		_ShadowStrength("Shadow Strength", Range(0, 1)) = 0.5
 		[HDR] _ShadowColor("Shadow Color", Color) = (0.5, 0.5, 0.5, 1)
 		[HideInInspector] _BaseMap("Base Color", 2D) = "white" {}
+		[Header(Additional Light)]
+		_AdditionalLightIntensity("Additional Light Intensity", Range(0, 1)) = 0.3
+		_AdditionalLightShadowStrength("Additional Light Shadow Strength", Range(0, 1)) = 0.5
+		[HDR] _AdditionalLightShadowColor("Additional Light Shadow Color", Color) = (0.5, 0.5, 0.5, 1)
+
 	}
 
 	SubShader
@@ -63,6 +69,9 @@ Shader "Custom/TestGrass"
 				uniform SAMPLER(sampler_TerrainDiffuse);
 				float4 _AmbientAdjustmentColor;
 				float _AdditionalLightIntensity;
+				float _AdditionalLightShadowStrength;
+				float4 _AdditionalLightShadowColor;
+				float _ShadowStrength;
 				float4 _ShadowColor;
 			CBUFFER_END
 
@@ -105,9 +114,8 @@ Shader "Custom/TestGrass"
 
 				float4 terrainForBlending = SAMPLE_TEXTURE2D(_TerrainDiffuse, sampler_TerrainDiffuse, uv);
 				return lerp(terrainForBlending,
-				            terrainForBlending + (_TopTint * float4(input.diffuseColor, 1) *
-					            _AmbientAdjustmentColor),
-				            verticalFade);
+				            terrainForBlending + _TopTint * float4(input.diffuseColor, 1) *
+				            _AmbientAdjustmentColor, verticalFade);
 			}
 
 			void CalculateCutOff(float extraBufferX, float worldPosY)
@@ -120,7 +128,7 @@ Shader "Custom/TestGrass"
 				// }
 			}
 
-			float GetMainLightShadow(Varyings input)
+			float4 ApplyMainLightShadow(Varyings input, float4 finalColor)
 			{
 				float shadow = 0;
 				#if _MAIN_LIGHT_SHADOWS_CASCADE || _MAIN_LIGHT_SHADOWS
@@ -130,20 +138,20 @@ Shader "Custom/TestGrass"
 				Light mainLight = GetMainLight();
 				#endif
 				shadow = mainLight.shadowAttenuation;
-				return shadow;
+
+				if (shadow <= 0)
+				{
+					finalColor.rgb *= lerp(float3(1, 1, 1), _ShadowColor.rgb, _ShadowStrength);
+				}
+				return finalColor;
 			}
 
 			Varyings vert(Attributes input)
 			{
 				Varyings output;
-				output.worldPos = float3(0, 0, 0);
-				output.normalWS = float3(0, 0, 0);
-				output.uv = float2(0, 0);
-				output.diffuseColor = float3(0, 0, 0);
-				output.extraBuffer = float4(0, 0, 0, 0);
 
 				GetComputeData_float(input.vertexID, output.worldPos, output.normalWS, output.uv, output.diffuseColor,
-				                                                      output.extraBuffer);
+				                     output.extraBuffer);
 				output.positionHCS = TransformObjectToHClip(output.worldPos);
 
 				return output;
@@ -151,30 +159,21 @@ Shader "Custom/TestGrass"
 
 			float4 frag(Varyings input) : SV_Target
 			{
-				// Calculate vertical fade factor
 				float verticalFade = CalculateVerticalFade(input);
 
-				// Calculate base color
 				float4 finalColor = CalculateBaseColor(input, verticalFade);
 
-				// Blend with terrain if the BLEND toggle is enabled
 				#if defined(BLEND)
 				finalColor = BlendWithTerrain(input, verticalFade);
 				#endif
 
-				// Apply cut-off based on the extra buffer value
 				CalculateCutOff(input.extraBuffer.x, input.worldPos.y);
 
-				// Shadow calculation
-				float mainLightShadow = GetMainLightShadow(input);
+				finalColor = ApplyMainLightShadow(input, finalColor);
+				finalColor = ApplyAdditionalLight(input.worldPos, input.normalWS, finalColor,
+				                                  _AdditionalLightIntensity, _AdditionalLightShadowStrength,
+				                                  _AdditionalLightShadowColor);
 
-				if (mainLightShadow <= 0)
-				{
-					finalColor.rgb *= _ShadowColor.rgb;
-				}
-
-				finalColor = AdditionalLights(input.worldPos, input.normalWS, finalColor, _ShadowColor,
-			                     _AdditionalLightIntensity, mainLightShadow);
 				return finalColor;
 			}
 			ENDHLSL
