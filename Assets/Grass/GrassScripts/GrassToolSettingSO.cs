@@ -2,7 +2,7 @@ using UnityEngine;
 
 [System.Serializable]
 [CreateAssetMenu(fileName = "Grass Tool Settings", menuName = "Utility/GrassToolSettings")]
-public class SoGrassToolSettings : ScriptableObject
+public class GrassToolSettingSO : ScriptableObject
 {
     public enum VertexColorSetting
     {

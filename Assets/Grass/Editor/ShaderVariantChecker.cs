@@ -27,7 +27,6 @@ public class ShaderVariantChecker : EditorWindow
     }
 
 
-
     public void OnGUI()
     {
         _shader = EditorGUILayout.ObjectField("Shader", _shader, typeof(Shader), true) as Shader;
@@ -60,6 +59,7 @@ public class ShaderVariantChecker : EditorWindow
             GUI.color = defaultColor;
             EditorGUILayout.EndHorizontal();
         }
+
         EditorGUILayout.EndScrollView();
     }
 
@@ -68,13 +68,15 @@ public class ShaderVariantChecker : EditorWindow
         if (!shader) return;
 
 
-        GetShaderDetails(shader, out var variantCount, out var usedVariantCount, out string[] localKeywords, out string[] globalKeywords);
+        GetShaderDetails(shader, out var variantCount, out var usedVariantCount, out string[] localKeywords,
+            out string[] globalKeywords);
 
         _materialKeywords.Clear();
         for (int i = 0; i < localKeywords.Length; i++)
         {
             _materialKeywords.Add(localKeywords[i], 0);
         }
+
         for (int i = 0; i < globalKeywords.Length; i++)
         {
             if (_materialKeywords.ContainsKey(globalKeywords[i])) continue;
@@ -106,11 +108,15 @@ public class ShaderVariantChecker : EditorWindow
         _isChecked = true;
     }
 
-    void GetShaderDetails(Shader requestedShader, out ulong shaderVariantCount, out ulong usedShaderVariantCount, out string[] localKeywords, out string[] globalKeywords)
+    void GetShaderDetails(Shader requestedShader, out ulong shaderVariantCount, out ulong usedShaderVariantCount,
+                          out string[] localKeywords, out string[] globalKeywords)
     {
-        if (GetVariantCount == null) GetVariantCount = typeof(ShaderUtil).GetMethod("GetVariantCount", (BindingFlags)(-1));
-        if (GetShaderGlobalKeywords == null) GetShaderGlobalKeywords = typeof(ShaderUtil).GetMethod("GetShaderGlobalKeywords", (BindingFlags)(-1));
-        if (GetShaderLocalKeywords == null) GetShaderLocalKeywords = typeof(ShaderUtil).GetMethod("GetShaderLocalKeywords", (BindingFlags)(-1));
+        if (GetVariantCount == null)
+            GetVariantCount = typeof(ShaderUtil).GetMethod("GetVariantCount", (BindingFlags)(-1));
+        if (GetShaderGlobalKeywords == null)
+            GetShaderGlobalKeywords = typeof(ShaderUtil).GetMethod("GetShaderGlobalKeywords", (BindingFlags)(-1));
+        if (GetShaderLocalKeywords == null)
+            GetShaderLocalKeywords = typeof(ShaderUtil).GetMethod("GetShaderLocalKeywords", (BindingFlags)(-1));
 
         if (GetVariantCount == null || GetShaderGlobalKeywords == null || GetShaderLocalKeywords == null)
         {
@@ -150,5 +156,4 @@ public class ShaderVariantChecker : EditorWindow
 
         return materialsUsingShader;
     }
-
 }

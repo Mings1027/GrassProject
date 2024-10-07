@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using PoolControl;
 using UnityEngine;
+using UnityEngine.Profiling;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -12,7 +13,7 @@ public class GrassComputeScript : MonoBehaviour
 {
     [HideInInspector] public bool autoUpdate; // very slow, but will update always
     private Camera _mainCamera; // main camera
-    public SoGrassSettings currentPresets; // grass settings to send to the compute shader
+    public GrassSettingSO currentPresets; // grass settings to send to the compute shader
     private List<GrassInteractor> _interactors;
     [SerializeField, HideInInspector] private List<GrassData> grassData = new(); // base data lists
     private readonly List<int> _grassList = new();
@@ -130,6 +131,7 @@ public class GrassComputeScript : MonoBehaviour
 
     private void OnEnable()
     {
+        // Application.targetFrameRate = 60;
         _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
         // If initialized, call on disable to clean things up
         if (_initialized)
@@ -272,8 +274,6 @@ public class GrassComputeScript : MonoBehaviour
             Debug.LogWarning("Missing Cut Particles in grass Settings", this);
         }
 
-        // empty array to replace the visible grass with
-        // PopulateEmptyList(grassData.Count);
         _initialized = true;
 
         // Instantiate the shaders so they can point to their own buffers
@@ -281,12 +281,6 @@ public class GrassComputeScript : MonoBehaviour
         instantiatedMaterial = Instantiate(currentPresets.materialToUse);
 
         var numSourceVertices = grassData.Count;
-
-        // amount of segmets
-        // var maxBladesPerVertex = Mathf.Max(1, currentPresets.allowedBladesPerVertex);
-        // var maxSegmentsPerBlade = Mathf.Max(1, currentPresets.allowedSegmentsPerBlade);
-        // -1 is because the top part of the grass only has 1 triangle
-        // var maxBladeTriangles = maxBladesPerVertex * ((maxSegmentsPerBlade - 1) * 2 + 1);
 
         // Create compute buffers
         // The stride is the size, in bytes, each object in the buffer takes up
@@ -381,12 +375,6 @@ public class GrassComputeScript : MonoBehaviour
         }
     }
 
-    // private void PopulateEmptyList(int count)
-    // {
-    //     _empty = new List<int>(count);
-    //     _empty.InsertRange(0, Enumerable.Repeat(-1, count));
-    // }
-
     private void GetFrustumData()
     {
         if (!_mainCamera) return;
@@ -475,7 +463,6 @@ public class GrassComputeScript : MonoBehaviour
     {
         // Variables sent to the shader every frame
         _instComputeShader.SetFloat(Time, UnityEngine.Time.time);
-        _instComputeShader.SetMatrix(LocalToWorld, transform.localToWorldMatrix);
 
         // Update interactors data if interactors exist
         if (_interactors.Count > 0)
@@ -508,17 +495,13 @@ public class GrassComputeScript : MonoBehaviour
 #endif
     }
 
-    // newly added for cutting
     public void UpdateCutBuffer(Vector3 hitPoint, float radius)
     {
-        // 씬에 풀이 없으면 자르지 않음
         if (grassData.Count > 0)
         {
             _grassList.Clear();
-            // 히트 지점 근처의 반경 내에 있는 ID 목록 가져옴
             _cullingTree.ReturnLeafList(hitPoint, _grassList, radius);
 
-            // 제곱근 계산을 피하기 위해 반경을 제곱한 값을 계산
             var squaredRadius = radius * radius;
 
             for (var i = 0; i < _grassList.Count; i++)
@@ -526,28 +509,22 @@ public class GrassComputeScript : MonoBehaviour
                 var currentIndex = _grassList[i];
                 var grassPosition = grassData[currentIndex].position;
 
-                // 제곱 거리 계산
                 var squaredDistance = (hitPoint - grassPosition).sqrMagnitude;
 
-                // 제곱 거리가 제곱 반경 내에 있는지 확인
-                // 풀이 자를 수 있는 상태인지, 풀이 자르지 않은 상태(-1)인지 확인
                 if (squaredDistance <= squaredRadius &&
                     (_cutIDs[currentIndex] > hitPoint.y || Mathf.Approximately(_cutIDs[currentIndex], -1)))
                 {
-                    // 현재 자르는 위치가 기존의 자른 위치보다 낮은지 확인 (약간 여유를 둠)
                     if (_cutIDs[currentIndex] - 0.1f > hitPoint.y || Mathf.Approximately(_cutIDs[currentIndex], -1))
                     {
                         SpawnCuttingParticle(grassPosition, new Color(grassData[currentIndex].color.x,
                             grassData[currentIndex].color.y, grassData[currentIndex].color.z));
                     }
 
-                    // 자르는 지점 저장
                     _cutIDs[currentIndex] = hitPoint.y;
                 }
             }
         }
 
-        // 자른 지점 데이터를 버퍼에 저장
         _cutBuffer.SetData(_cutIDs);
     }
 
@@ -557,29 +534,15 @@ public class GrassComputeScript : MonoBehaviour
         leafParticle.startColor = new ParticleSystem.MinMaxGradient(col);
     }
 
-
-    // ComputeShader에 선언한 _SourceVertices버퍼에 grassData리스트를 넘김
     private static readonly int SourceVertices = Shader.PropertyToID("_SourceVertices");
-
-    // _SourceVertices버퍼에서 리스트의 원소를 가져와 연산한 뒤 _DrawTriangles버퍼에 Append함
-    // Append한걸 Grass.hlsl에서 out으로 뽑아서 그래프에서 vertex에 넣음
-    // fragment에서 한번 더 가공한 뒤 출력
     private static readonly int DrawTriangles = Shader.PropertyToID("_DrawTriangles");
-
-    // InterlockedAdd에 사용됨
     private static readonly int IndirectArgsBuffer = Shader.PropertyToID("_IndirectArgsBuffer");
-
-    // 현재 풀 개수만큼만 kernel을 실행함
     private static readonly int NumSourceVertices = Shader.PropertyToID("_NumSourceVertices");
 
-    // 그리기 위한 최소 조건이 위 네개인거로 판담됨 아래는 전부 옵션
-
-    // 컬링을 위해 사용됨 .compute에 Main에서 visibleID로 가져올 때
+    // For culling
     private static readonly int VisibleIDBuffer = Shader.PropertyToID("_VisibleIDBuffer");
 
-    // shader graph에서 이거 값으로 alpha를 조정해서 잘린거처럼 표현해줌
     private static readonly int CutBuffer = Shader.PropertyToID("_CutBuffer");
-
     private static readonly int Time = Shader.PropertyToID("_Time");
     private static readonly int GrassRandomHeightMin = Shader.PropertyToID("_GrassRandomHeightMin");
     private static readonly int GrassRandomHeightMax = Shader.PropertyToID("_GrassRandomHeightMax");
@@ -600,10 +563,8 @@ public class GrassComputeScript : MonoBehaviour
     private static readonly int MaxHeight = Shader.PropertyToID("_MaxHeight");
     private static readonly int MaxWidth = Shader.PropertyToID("_MaxWidth");
 
-    private static readonly int LocalToWorld = Shader.PropertyToID("_LocalToWorld");
     private static readonly int CameraPositionWs = Shader.PropertyToID("_CameraPositionWS");
-
-    // shared graph에 프로퍼티로 아래 두개를 씀
+    
     private static readonly int TopTint = Shader.PropertyToID("_TopTint");
     private static readonly int BottomTint = Shader.PropertyToID("_BottomTint");
 }

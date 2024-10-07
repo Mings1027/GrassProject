@@ -1,183 +1,184 @@
 Shader "Custom/TestGrass"
 {
-    Properties
-    {
-        [Toggle(BLEND)] _BlendFloor("Blend with floor", Float) = 0
-        _BlendMult("Blend Multiply", Range(0, 5)) = 1
-        _BlendOff("Blend Offset", Range(0, 1)) = 1
-        [HDR] _AmbientAdjustmentColor("Ambient Adjustment Color", Color) = (0.5, 0.5, 0.5, 1)
-        [HDR] _ShadowColor("Shadow Color", Color) = (0.5, 0.5, 0.5, 1)
-        [HideInInspector] _BaseMap("Base Color", 2D) = "white" {}
-    }
+	Properties
+	{
+		[Toggle(BLEND)] _BlendFloor("Blend with floor", Float) = 0
+		_BlendMult("Blend Multiply", Range(0, 5)) = 1
+		_BlendOff("Blend Offset", Range(0, 1)) = 1
+		[HDR] _AmbientAdjustmentColor("Ambient Adjustment Color", Color) = (0.5, 0.5, 0.5, 1)
+		_AdditionalLightIntensity("Additional Light Intensity", Range(0, 1)) = 0.3
+		[HDR] _ShadowColor("Shadow Color", Color) = (0.5, 0.5, 0.5, 1)
+		[HideInInspector] _BaseMap("Base Color", 2D) = "white" {}
+	}
 
-    SubShader
-    {
-        Tags
-        {
-            "RenderPipeline" = "UniversalPipeline"
-            //            "RenderType" = "Opaque"
-            //            "UniversalMaterialType" = "Lit"
-            //            "Queue" = "AlphaTest"
-        }
+	SubShader
+	{
+		Tags
+		{
+			"RenderPipeline" = "UniversalPipeline"
+			//            "RenderType" = "Opaque"
+			//            "UniversalMaterialType" = "Lit"
+			//            "Queue" = "AlphaTest"
+		}
 
-        Pass
-        {
-            Name "Universal Forward"
-            Tags
-            {
-                "LightMode" = "UniversalForward"
-            }
+		Pass
+		{
+			Name "Universal Forward"
+			Tags
+			{
+				"LightMode" = "UniversalForward"
+			}
 
-            Cull Off
-            //            Blend One Zero
-            //            ZTest LEqual
-            //            ZWrite On
-            //            AlphaToMask On
+			Cull Off
+			//            Blend One Zero
+			//            ZTest LEqual
+			//            ZWrite On
+			//            AlphaToMask On
 
-            HLSLPROGRAM
-            #pragma target 4.5
-            #pragma vertex vert
-            #pragma fragment frag
-            #pragma shader_feature BLEND
+			HLSLPROGRAM
+			#pragma target 4.5
+			#pragma vertex vert
+			#pragma fragment frag
+			#pragma shader_feature BLEND
 
-            // #pragma multi_compile_instancing
+			// #pragma multi_compile_instancing
 
-            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE /*_MAIN_LIGHT_SHADOWS_SCREEN*/
-            // #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
-            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
-            #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
+			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+			#pragma multi_compile _ _FORWARD_PLUS
+			#pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
+			// #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+			// #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
 
-            #pragma multi_compile _ _FORWARD_PLUS
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
-            #include "Grass.hlsl"
-            #include "CustomLighting.hlsl"
+			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+			#include "Grass.hlsl"
+			#include "CustomLighting.hlsl"
 
-            CBUFFER_START(UnityPerMaterial)
-                float4 _TopTint;
-                float4 _BottomTint;
-                float _BlendMult, _BlendOff;
-                uniform TEXTURE2D(_TerrainDiffuse);
-                uniform SAMPLER(sampler_TerrainDiffuse);
-                float4 _AmbientAdjustmentColor;
-                float4 _ShadowColor;
-            CBUFFER_END
+			CBUFFER_START(UnityPerMaterial)
+				float4 _TopTint;
+				float4 _BottomTint;
+				float _BlendMult, _BlendOff;
+				uniform TEXTURE2D(_TerrainDiffuse);
+				uniform SAMPLER(sampler_TerrainDiffuse);
+				float4 _AmbientAdjustmentColor;
+				float _AdditionalLightIntensity;
+				float4 _ShadowColor;
+			CBUFFER_END
 
-            struct Attributes
-            {
-                float4 positionOS : POSITION;
-                float3 normalOS : NORMAL;
-                float2 uv : TEXCOORD0;
-                uint vertexID : SV_VertexID;
-            };
+			struct Attributes
+			{
+				float4 positionOS : POSITION;
+				float3 normalOS : NORMAL;
+				float2 uv : TEXCOORD0;
+				uint vertexID : SV_VertexID;
+			};
 
-            struct Varyings
-            {
-                float4 positionHCS : SV_POSITION;
-                float3 worldPos : TEXCOORD0;
-                float3 normalWS : TEXCOORD1;
-                float2 uv : TEXCOORD2;
-                float3 diffuseColor : TEXCOORD3;
-                float4 extraBuffer : TEXCOORD4;
-            };
+			struct Varyings
+			{
+				float4 positionHCS : SV_POSITION;
+				float3 worldPos : TEXCOORD0;
+				float3 normalWS : TEXCOORD1;
+				float2 uv : TEXCOORD2;
+				float3 diffuseColor : TEXCOORD3;
+				float4 extraBuffer : TEXCOORD4;
+			};
 
-            float GetMainLightShadow(Varyings input)
-            {
-                float shadow = 0;
-                half4 shadowCoord = TransformWorldToShadowCoord(input.worldPos);
-                #if _MAIN_LIGHT_SHADOWS_CASCADE || _MAIN_LIGHT_SHADOWS
+			float CalculateVerticalFade(Varyings input)
+			{
+				float blendMul = input.uv.y * _BlendMult;
+				float blendAdd = blendMul + _BlendOff;
+				return saturate(blendAdd);
+			}
+
+			float4 CalculateBaseColor(Varyings input, float verticalFade)
+			{
+				return lerp(_BottomTint, _TopTint * _AmbientAdjustmentColor, verticalFade) * float4(
+					input.diffuseColor, 1);
+			}
+
+			float4 BlendWithTerrain(Varyings input, float verticalFade)
+			{
+				float2 uv = input.worldPos.xz - _OrthographicCamPosTerrain.xz;
+				uv /= _OrthographicCamSizeTerrain * 2;
+				uv += 0.5;
+
+				float4 terrainForBlending = SAMPLE_TEXTURE2D(_TerrainDiffuse, sampler_TerrainDiffuse, uv);
+				return lerp(terrainForBlending,
+				            terrainForBlending + (_TopTint * float4(input.diffuseColor, 1) *
+					            _AmbientAdjustmentColor),
+				            verticalFade);
+			}
+
+			void CalculateCutOff(float extraBufferX, float worldPosY)
+			{
+				float cutOffTop = extraBufferX >= worldPosY ? 1 : 0;
+				clip(cutOffTop - 0.01);
+				// if (cutOffTop == 0)
+				// {
+				//     clip(-1);
+				// }
+			}
+
+			float GetMainLightShadow(Varyings input)
+			{
+				float shadow = 0;
+				#if _MAIN_LIGHT_SHADOWS_CASCADE || _MAIN_LIGHT_SHADOWS
+                    half4 shadowCoord = TransformWorldToShadowCoord(input.worldPos);
                     Light mainLight = GetMainLight(shadowCoord);
-                    shadow = mainLight.shadowAttenuation;
-                #else
-                Light mainLight = GetMainLight();
-                shadow = mainLight.shadowAttenuation;
-                #endif
-                return shadow;
-            }
+				#else
+				Light mainLight = GetMainLight();
+				#endif
+				shadow = mainLight.shadowAttenuation;
+				return shadow;
+			}
 
-            float CalculateVerticalFade(Varyings input)
-            {
-                float blendMul = input.uv.y * _BlendMult;
-                float blendAdd = blendMul + _BlendOff;
-                return saturate(blendAdd);
-            }
+			Varyings vert(Attributes input)
+			{
+				Varyings output;
+				output.worldPos = float3(0, 0, 0);
+				output.normalWS = float3(0, 0, 0);
+				output.uv = float2(0, 0);
+				output.diffuseColor = float3(0, 0, 0);
+				output.extraBuffer = float4(0, 0, 0, 0);
 
-            float4 CalculateBaseColor(Varyings input, float verticalFade)
-            {
-                return lerp(_BottomTint, _TopTint * _AmbientAdjustmentColor, verticalFade) * float4(
-                    input.diffuseColor, 1);
-            }
+				GetComputeData_float(input.vertexID, output.worldPos, output.normalWS, output.uv, output.diffuseColor,
+				                                                      output.extraBuffer);
+				output.positionHCS = TransformObjectToHClip(output.worldPos);
 
-            float4 BlendWithTerrain(Varyings input, float verticalFade)
-            {
-                float2 uv = input.worldPos.xz - _OrthographicCamPosTerrain.xz;
-                uv /= _OrthographicCamSizeTerrain * 2;
-                uv += 0.5;
+				return output;
+			}
 
-                float4 terrainForBlending = SAMPLE_TEXTURE2D(_TerrainDiffuse, sampler_TerrainDiffuse, uv);
-                return lerp(terrainForBlending,
-                            terrainForBlending + (_TopTint * float4(input.diffuseColor, 1) * _AmbientAdjustmentColor),
-                            verticalFade);
-            }
+			float4 frag(Varyings input) : SV_Target
+			{
+				// Calculate vertical fade factor
+				float verticalFade = CalculateVerticalFade(input);
 
-            void CalculateCutOff(float extraBufferX, float worldPosY)
-            {
-                float cutOffTop = extraBufferX >= worldPosY ? 1 : 0;
-                if (cutOffTop == 0)
-                {
-                    clip(-1);
-                }
-            }
+				// Calculate base color
+				float4 finalColor = CalculateBaseColor(input, verticalFade);
 
-            float3 CalculateLighting(float3 worldPos, float3 normalWS)
-            {
-                float3 lightingColor;
-                AdditionalLights(worldPos, normalWS, lightingColor);
-                return lightingColor;
-            }
+				// Blend with terrain if the BLEND toggle is enabled
+				#if defined(BLEND)
+				finalColor = BlendWithTerrain(input, verticalFade);
+				#endif
 
-            Varyings vert(Attributes input)
-            {
-                Varyings output;
-                GetComputeData_float(input.vertexID, output.worldPos, output.normalWS, output.uv,
-                       output.diffuseColor, output.extraBuffer);
-                output.positionHCS = TransformObjectToHClip(output.worldPos);
+				// Apply cut-off based on the extra buffer value
+				CalculateCutOff(input.extraBuffer.x, input.worldPos.y);
 
-                return output;
-            }
+				// Shadow calculation
+				float mainLightShadow = GetMainLightShadow(input);
 
-            float4 frag(Varyings input) : SV_Target
-            {
-                // Calculate vertical fade factor
-                float verticalFade = CalculateVerticalFade(input);
+				if (mainLightShadow <= 0)
+				{
+					finalColor.rgb *= _ShadowColor.rgb;
+				}
 
-                // Calculate base color
-                float4 finalColor = CalculateBaseColor(input, verticalFade);
-
-                // Blend with terrain if the BLEND toggle is enabled
-                #if defined(BLEND)
-                finalColor = BlendWithTerrain(input, verticalFade);
-                #endif
-
-                // Apply cut-off based on the extra buffer value
-                CalculateCutOff(input.extraBuffer.x, input.worldPos.y);
-
-                finalColor.rgb += CalculateLighting(input.worldPos, input.normalWS);
-
-                // Shadow calculation
-                float mainLightShadow = GetMainLightShadow(input);
-
-                if (mainLightShadow <= 0)
-                {
-                    finalColor.rgb *= _ShadowColor.rgb;
-                }
-
-                return finalColor;
-            }
-            ENDHLSL
-        }
-    }
-    Fallback "Hidden/InternalErrorShader"
+				finalColor = AdditionalLights(input.worldPos, input.normalWS, finalColor, _ShadowColor,
+			                     _AdditionalLightIntensity, mainLightShadow);
+				return finalColor;
+			}
+			ENDHLSL
+		}
+	}
+	//    Fallback "Universal Render Pipeline/Lit"
 }

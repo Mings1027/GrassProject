@@ -36,4 +36,4 @@ MonoBehaviour:
   maxDrawDistance: 100
   cullingTreeDepth: 5
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}
-  castShadow: 0
+  castShadow: 1

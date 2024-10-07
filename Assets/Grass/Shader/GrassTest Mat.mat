@@ -29,6 +29,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _AdditionalLightIntensity: 0.35
     - _BlendFloor: 0
     - _BlendMult: 1
     - _BlendOff: 0.2
@@ -38,9 +39,9 @@ Material:
     - _Metallic: 1
     - _Stretch: 2.36
     m_Colors:
-    - _AmbientAdjustmentColor: {r: 1.2490518, g: 1.2490518, b: 1.2490518, a: 1}
+    - _AmbientAdjustmentColor: {r: 1.295392, g: 1.295392, b: 1.295392, a: 1}
     - _BottomTint: {r: 0.754717, g: 0.18867925, b: 0.18867925, a: 1}
-    - _ShadowColor: {r: 0.3490566, g: 0.3490566, b: 0.3490566, a: 1}
+    - _ShadowColor: {r: 0.31132078, g: 0.31132078, b: 0.31132078, a: 1}
     - _TopTint: {r: 0.9150943, g: 0.8935119, b: 0.8935119, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

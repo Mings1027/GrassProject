@@ -2,7 +2,7 @@ using UnityEngine;
 
 [System.Serializable]
 [CreateAssetMenu(fileName = "Grass Settings", menuName = "Utility/GrassSettings")]
-public class SoGrassSettings : ScriptableObject
+public class GrassSettingSO : ScriptableObject
 {
     public ComputeShader shaderToUse;
 

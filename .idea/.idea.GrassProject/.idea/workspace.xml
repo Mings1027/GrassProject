@@ -7,30 +7,27 @@
     <list default="true" id="84e81331-7910-473f-9ad1-7a03a025416d" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/ShaderVariantChecker.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/ShaderVariantChecker.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/SOGrassSettings.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/SOGrassSettings.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/SOGrassToolSettings.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/SOGrassToolSettings.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Material/ObstacleMat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Material/ObstacleMat.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Material/RedGroundMat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Material/RedGroundMat.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/SOGrassSettings.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/SOGrassSettings.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/SOGrassToolSettings.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassToolSettingSO.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/SOGrassToolSettings.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassToolSettingSO.cs.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Blend Grass Shader.shadergraph" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Blend Grass Shader.shadergraph.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Blend Grass.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Blend Grass.mat.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/CustomLighting.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/CustomLighting.hlsl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Grass Shader.shadergraph" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/Grass Shader.shadergraph" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Grass.hlsl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Grass.hlsl.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Grass.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Grass.mat.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassBlades.compute" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassBlades.compute" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassUnlitBasic shadergraph.shadergraph" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassUnlitBasic shadergraph.shadergraph.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassTest Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassTest Mat.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassTestShader.shader" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassTestShader.shader" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Settings/Mobile_RPAsset.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Settings/Mobile_RPAsset.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/TestScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/TestScene.unity" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Settings/UniversalRenderPipelineGlobalSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Settings/UniversalRenderPipelineGlobalSettings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Packages/manifest.json" beforeDir="false" afterPath="$PROJECT_DIR$/Packages/manifest.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Packages/packages-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Packages/packages-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Test/Scripts/Custom_GrassInstancing.mat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Test/Scripts/Custom_GrassInstancing.mat.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Test/Scripts/NewUnlitShader.shader" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Test/Scripts/NewUnlitShader.shader.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/GraphicsSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/GraphicsSettings.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -45,20 +42,26 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.cyanilux.shadergraph-customlighting/CustomLighting.hlsl" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file:///Applications/Unity/Unity Editor/6000.0.18f1/Unity.app/Contents/CGIncludes/UnityShaderVariables.cginc" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.cyanilux.shadergraph-customlighting/CustomLighting.hlsl" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.cysharp.unitask/Runtime/Internal/ArrayPool.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.core/Runtime/Common/SerializedDictionary.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.core/Runtime/Debugging/DebugUpdater.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.core/Runtime/Volume/Volume.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.core/ShaderLibrary/SpaceTransforms.hlsl" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal-config/Runtime/ShaderConfig.cs.hlsl" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/Editor/UniversalRenderPipelineAsset/SerializedUniversalRenderPipelineAsset.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/Runtime/ForwardLights.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/Runtime/UniversalAdditionalLightData.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/ShaderLibrary/BRDF.hlsl" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/ShaderLibrary/Clustering.hlsl" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/ShaderLibrary/Input.hlsl" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/ShaderLibrary/RealtimeLights.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/ShaderLibrary/ShaderTypes.cs.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/ShaderLibrary/ShaderVariablesFunctions.deprecated.hlsl" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/ShaderLibrary/UnityInput.hlsl" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/Shaders/Lit.shader" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/Shaders/LitForwardPass.hlsl" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl" root0="FORCE_HIGHLIGHTING" />
@@ -131,18 +134,18 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Attach to Unity Editor.Attach to Unity Editor.executor&quot;: &quot;Debug&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;ShowUsagesActions.previewPropertyKey&quot;: &quot;true&quot;,
-    &quot;com.codeium.enabled&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Attach to Unity Editor.Attach to Unity Editor.executor": "Debug",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "ShowUsagesActions.previewPropertyKey": "true",
+    "com.codeium.enabled": "true",
+    "git-widget-placeholder": "main",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.sourceCode.ShaderLab",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected="Attach to Unity Editor.Attach to Unity Editor">
     <configuration name="Start Unity" type="RunUnityExe" factoryName="Unity Executable">
       <option name="EXE_PATH" value="/Applications/Unity/Unity Editor/6000.0.18f1/Unity.app/Contents/MacOS/Unity" />
@@ -240,7 +243,15 @@
       <workItem from="1727957783775" duration="317000" />
       <workItem from="1727958119938" duration="6914000" />
       <workItem from="1727966043920" duration="1155000" />
-      <workItem from="1728001391153" duration="28347000" />
+      <workItem from="1728001391153" duration="28953000" />
+      <workItem from="1728052141180" duration="1437000" />
+      <workItem from="1728090026551" duration="5873000" />
+      <workItem from="1728115260059" duration="665000" />
+      <workItem from="1728118265478" duration="1006000" />
+      <workItem from="1728130539654" duration="12111000" />
+      <workItem from="1728175025122" duration="11602000" />
+      <workItem from="1728223327282" duration="936000" />
+      <workItem from="1728257113020" duration="12887000" />
     </task>
     <servers />
   </component>
