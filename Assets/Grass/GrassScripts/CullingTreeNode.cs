@@ -134,6 +134,7 @@ public class CullingTreeNode
                 return true;
             }
         }
+
         return false;
     }
 
@@ -169,13 +170,16 @@ public class CullingTreeNode
                 {
                     _children.RemoveAt(i);
                 }
+
                 i--;
             }
         }
+
         if (_grassIDHeld.Count == 0 && _children.Count == 0)
         {
             delete = true;
         }
+
         return delete;
     }
 

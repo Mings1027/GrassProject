@@ -32,15 +32,14 @@ namespace Grass.Editor
         [SerializeField] private GrassToolSettingSO toolSettings;
 
         // options
-        private int toolbarInt;
-
-        private int toolbarIntEdit;
+        private int _toolbarInt;
+        private int _toolbarIntEdit;
 
         public List<GrassData> grassData = new();
 
         private int _grassAmount;
 
-        private Ray _ray;
+        private Ray _mousePointRay;
 
         private Vector3 _mousePos;
 
@@ -92,13 +91,13 @@ namespace Grass.Editor
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
             if (GUILayout.Button("Manual Update", GUILayout.Height(50)))
             {
-                _grassComputeScript.SetGrassPaintedDataList = grassData;
+                _grassComputeScript.GrassDataList = grassData;
                 _grassComputeScript.Reset();
             }
 
             toolSettings = (GrassToolSettingSO)EditorGUILayout.ObjectField("Grass Tool Settings", toolSettings,
                 typeof(GrassToolSettingSO), false);
-            
+
             grassObject =
                 (GameObject)EditorGUILayout.ObjectField("Grass Compute Object", grassObject, typeof(GameObject), true);
 
@@ -114,9 +113,9 @@ namespace Grass.Editor
                     "Grass Settings Object",
                     _grassComputeScript.currentPresets, typeof(GrassSettingSO), false);
 
-                if (_grassComputeScript.SetGrassPaintedDataList.Count > 0)
+                if (_grassComputeScript.GrassDataList.Count > 0)
                 {
-                    grassData = _grassComputeScript.SetGrassPaintedDataList;
+                    grassData = _grassComputeScript.GrassDataList;
                     _grassAmount = grassData.Count;
                 }
                 else
@@ -194,16 +193,20 @@ namespace Grass.Editor
 
             if (GUILayout.Button("Clear current mesh"))
             {
-                if (EditorUtility.DisplayDialog("Clear Selected Mesh Grass?", "Clear grass from the selected object?",
-                        "Clear", "Don't Clear"))
+                var selectedObjects = Selection.gameObjects;
+                if (selectedObjects.Length > 0)
                 {
-                    var selectedObjects = Selection.gameObjects;
-                    for (int i = 0; i < selectedObjects.Length; i++)
+                    if (EditorUtility.DisplayDialog("Clear Selected Mesh Grass?",
+                            "Clear grass from the selected object?",
+                            "Clear", "Don't Clear"))
                     {
-                        RemoveGrassOnSelectObject(selectedObjects[i]);
-                    }
+                        for (int i = 0; i < selectedObjects.Length; i++)
+                        {
+                            RemoveGrassOnSelectObject(selectedObjects[i]);
+                        }
 
-                    RebuildMesh();
+                        RebuildMesh();
+                    }
                 }
             }
 
@@ -371,22 +374,25 @@ namespace Grass.Editor
 
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Paint Status (Control + Alt + Left Mouse to paint)", EditorStyles.boldLabel);
-            toolbarInt = GUILayout.Toolbar(toolbarInt, _toolbarStrings, GUILayout.Height(25));
+            _toolbarInt = GUILayout.Toolbar(_toolbarInt, _toolbarStrings, GUILayout.Height(25));
 
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Brush Settings", EditorStyles.boldLabel);
-            toolSettings.brushSize = EditorGUILayout.Slider("Brush Size", toolSettings.brushSize,
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Brush Size", GUILayout.Width(100));
+            toolSettings.brushSize = EditorGUILayout.Slider(toolSettings.brushSize,
                 toolSettings.MinBrushSize, toolSettings.MaxBrushSize);
+            EditorGUILayout.EndHorizontal();
 
-            if (toolbarInt == 0)
+            if (_toolbarInt == 0)
             {
                 toolSettings.normalLimit = EditorGUILayout.Slider("Normal Limit", toolSettings.normalLimit, 0f, 1f);
-                toolSettings.density = EditorGUILayout.IntSlider("Density", toolSettings.density, 0, 100);
+                toolSettings.density = EditorGUILayout.IntSlider("Density", toolSettings.density, 1, 100);
             }
 
-            if (toolbarInt == 2)
+            if (_toolbarInt == 2)
             {
-                toolbarIntEdit = GUILayout.Toolbar(toolbarIntEdit, _toolbarStringsEdit);
+                _toolbarIntEdit = GUILayout.Toolbar(_toolbarIntEdit, _toolbarStringsEdit);
                 EditorGUILayout.Separator();
 
                 EditorGUILayout.LabelField("Soft Falloff Settings", EditorStyles.boldLabel);
@@ -415,11 +421,11 @@ namespace Grass.Editor
                 EditorGUILayout.Separator();
             }
 
-            if (toolbarInt is 0 or 2)
+            if (_toolbarInt is 0 or 2)
             {
                 EditorGUILayout.Separator();
 
-                if (toolbarInt == 0)
+                if (_toolbarInt == 0)
                 {
                     EditorGUILayout.LabelField("Width and Height ", EditorStyles.boldLabel);
                     toolSettings.sizeWidth = EditorGUILayout.Slider("Grass Width", toolSettings.sizeWidth,
@@ -446,7 +452,7 @@ namespace Grass.Editor
                 toolSettings.rangeB = EditorGUILayout.Slider("Blue", toolSettings.rangeB, 0f, 1f);
             }
 
-            if (toolbarInt == 3)
+            if (_toolbarInt == 3)
             {
                 EditorGUILayout.Separator();
                 EditorGUILayout.BeginHorizontal();
@@ -543,10 +549,23 @@ namespace Grass.Editor
             curPresets.drawBounds =
                 EditorGUILayout.Toggle(curPresets.drawBounds);
             EditorGUILayout.EndHorizontal();
-            curPresets.minFadeDistance = EditorGUILayout.FloatField("Min Fade Distance",
-                curPresets.minFadeDistance);
-            curPresets.maxDrawDistance = EditorGUILayout.FloatField("Max Draw Distance",
-                curPresets.maxDrawDistance);
+
+            // Min Fade Distance 슬라이더
+            GUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Min Fade Distance", GUILayout.Width(120)); // 레이블 표시
+            curPresets.minFadeDistance =
+                EditorGUILayout.Slider(curPresets.minFadeDistance, 0, curPresets.maxFadeDistance); // 슬라이더
+            GUILayout.Label($"0 / {curPresets.maxFadeDistance}", GUILayout.Width(80)); // 최소값과 최대값 텍스트로 표시
+            GUILayout.EndHorizontal();
+
+            // Max Fade Distance 슬라이더
+            GUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Max Fade Distance", GUILayout.Width(120)); // 레이블 표시
+            curPresets.maxFadeDistance =
+                EditorGUILayout.Slider(curPresets.maxFadeDistance, curPresets.minFadeDistance, 300); // 슬라이더
+            GUILayout.Label($"{curPresets.minFadeDistance} / 300", GUILayout.Width(80)); // 최소값과 최대값 텍스트로 표시
+            GUILayout.EndHorizontal();
+
             curPresets.cullingTreeDepth = EditorGUILayout.IntField("Culling Tree Depth",
                 curPresets.cullingTreeDepth);
 
@@ -569,7 +588,7 @@ namespace Grass.Editor
 
             // setup object
             grassData = new List<GrassData>();
-            _grassComputeScript.SetGrassPaintedDataList = grassData;
+            _grassComputeScript.GrassDataList = grassData;
         }
 
         private void OnSceneGUI(SceneView sceneView)
@@ -585,7 +604,7 @@ namespace Grass.Editor
         // draw the painter handles
         private void DrawHandles()
         {
-            var hits = Physics.RaycastNonAlloc(_ray, _results, 200f, toolSettings.paintMask.value);
+            var hits = Physics.RaycastNonAlloc(_mousePointRay, _results, 200f, toolSettings.paintMask.value);
             for (var i = 0; i < hits; i++)
             {
                 _hitPos = _results[i].point;
@@ -595,7 +614,7 @@ namespace Grass.Editor
             //base
             var discColor = Color.green;
             Color discColor2 = new(0, 0.5f, 0, 0.4f);
-            switch (toolbarInt)
+            switch (_toolbarInt)
             {
                 case 1:
                     discColor = Color.red;
@@ -671,7 +690,7 @@ namespace Grass.Editor
             Undo.RegisterCompleteObjectUndo(this, "Cleared Grass");
             _grassAmount = 0;
             grassData.Clear();
-            _grassComputeScript.SetGrassPaintedDataList = grassData;
+            _grassComputeScript.GrassDataList = grassData;
             _grassComputeScript.Reset();
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
@@ -683,7 +702,7 @@ namespace Grass.Editor
             var selectionLayer = selection.layer;
             var paintMask = toolSettings.paintMask.value;
             var paintBlockMask = toolSettings.paintBlockMask.value;
-            
+
             if (((1 << selectionLayer) & paintMask) == 0) return;
 
             if (selection.TryGetComponent(out MeshFilter sourceMesh))
@@ -1087,7 +1106,7 @@ namespace Grass.Editor
                 _mousePos.z = 0;
 
                 // ray for gizmo(disc)
-                _ray = scene.camera.ScreenPointToRay(_mousePos);
+                _mousePointRay = scene.camera.ScreenPointToRay(_mousePos);
 
                 if (e.type == EventType.ScrollWheel && e.control && e.alt)
                 {
@@ -1101,7 +1120,7 @@ namespace Grass.Editor
                 // undo system
                 if (e.type == EventType.MouseDown && e.button == 0 && e.control && e.alt)
                 {
-                    switch (toolbarInt)
+                    switch (_toolbarInt)
                     {
                         case 0:
                             Undo.RegisterCompleteObjectUndo(this, "Added Grass");
@@ -1120,7 +1139,7 @@ namespace Grass.Editor
 
                 if (e.type == EventType.MouseDrag && e.button == 0 && e.control && e.alt)
                 {
-                    switch (toolbarInt)
+                    switch (_toolbarInt)
                     {
                         case 0:
                             AddGrass(e);
@@ -1150,7 +1169,7 @@ namespace Grass.Editor
 
         private void RemoveAtPoint(RaycastHit[] terrainHit, Event e)
         {
-            var hits = Physics.RaycastNonAlloc(_ray, terrainHit, 100f, toolSettings.paintMask.value);
+            var hits = Physics.RaycastNonAlloc(_mousePointRay, terrainHit, 100f, toolSettings.paintMask.value);
             for (var i = 0; i < hits; i++)
             {
                 _hitPos = terrainHit[i].point;
@@ -1194,13 +1213,15 @@ namespace Grass.Editor
             // Position to shoot rays from (you can modify this as needed)
             Vector3 startPos = _hitPos + Vector3.up * 3f; // Starting a bit above the hit position
 
+            var distanceMoved = Vector3.Distance(_lastPosition, startPos);
+            if (distanceMoved < brushSize * 0.5f) return;
             for (int i = 0; i < density; i++)
             {
                 // Random point within the brush size to shoot rays
                 var randomPoint = Random.insideUnitCircle * brushSize;
                 var randomPos = new Vector3(startPos.x + randomPoint.x, startPos.y, startPos.z + randomPoint.y);
 
-                if (Physics.Raycast(_ray, out var hit2, 200f))
+                if (Physics.Raycast(_mousePointRay, out var hit2, 200f))
                 {
                     var hitLayer = hit2.transform.gameObject.layer;
                     if (((1 << hitLayer) & paintMaskValue) != 0)
@@ -1232,6 +1253,57 @@ namespace Grass.Editor
             e.Use();
         }
 
+        private void AddGrassTest(Event e)
+        {
+            var paintMaskValue = toolSettings.paintMask.value;
+            var brushSize = toolSettings.brushSize;
+            var density = toolSettings.density;
+            var normalLimit = toolSettings.normalLimit;
+
+            // Position to shoot rays from (you can modify this as needed)
+            var startPos = _hitPos + Vector3.up * 3f; // Starting a bit above the hit position
+
+            Physics.Raycast(_mousePointRay, out var curHit, 200f);
+            var distanceMoved = Vector3.Distance(_lastPosition, curHit.point);
+
+            if (distanceMoved < brushSize * 0.5f) return;
+
+            for (var i = 0; i < density; i++)
+            {
+                // Random point within the brush size to shoot rays
+                var randomPoint = Random.insideUnitCircle * brushSize;
+                var randomPos = new Vector3(startPos.x + randomPoint.x, startPos.y, startPos.z + randomPoint.y);
+
+                if (Physics.Raycast(_mousePointRay, out var hit2, 200f))
+                {
+                    var hitLayer = hit2.transform.gameObject.layer;
+                    if (((1 << hitLayer) & paintMaskValue) != 0)
+                    {
+                        if (((1 << hitLayer) & paintMaskValue) > 0 && _hitNormal.y <= 1 + normalLimit &&
+                            _hitNormal.y >= 1 - normalLimit)
+                        {
+                            // Cast a ray downward
+                            if (Physics.Raycast(randomPos + Vector3.up * 3f, Vector3.down, out var hit, float.MaxValue))
+                            {
+                                var hitLayer2 = hit.collider.gameObject.layer;
+
+                                // Check if the hit is in paintMask
+                                if (((1 << hitLayer2) & paintMaskValue) != 0)
+                                {
+                                    _hitPos = hit.point;
+                                    _hitNormal = hit.normal;
+                                    var newData = CreateGrassData(_hitPos, _hitNormal);
+                                    grassData.Add(newData);
+                                    _lastPosition = _hitPos;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            e.Use();
+        }
         // private void AddGrass(Event e)
         // {
         //     var paintBlockMaskValue = toolSettings.paintBlockMask.value;
@@ -1290,7 +1362,7 @@ namespace Grass.Editor
 
         private void EditGrassPainting(RaycastHit[] terrainHit, Event e)
         {
-            var hits = Physics.RaycastNonAlloc(_ray, terrainHit, 200f, toolSettings.paintMask.value);
+            var hits = Physics.RaycastNonAlloc(_mousePointRay, terrainHit, 200f, toolSettings.paintMask.value);
             for (var i = 0; i < hits; i++)
             {
                 _hitPos = terrainHit[i].point;
@@ -1320,7 +1392,7 @@ namespace Grass.Editor
                         if (_flowTimer > toolSettings.flow)
                         {
                             // edit colors
-                            if (toolbarIntEdit is 0 or 2)
+                            if (_toolbarIntEdit is 0 or 2)
                             {
                                 var newData = grassData[j];
                                 newData.color = Vector3.Lerp(newCol, origColor, falloff);
@@ -1328,7 +1400,7 @@ namespace Grass.Editor
                             }
 
                             // edit grass length
-                            if (toolbarIntEdit is 1 or 2)
+                            if (_toolbarIntEdit is 1 or 2)
                             {
                                 var newData = grassData[j];
                                 newData.length = Vector2.Lerp(origLength + newLength, origLength, falloff);
@@ -1348,7 +1420,7 @@ namespace Grass.Editor
 
         private void ReprojectGrassPainting(RaycastHit[] terrainHit, Event e)
         {
-            var hits = Physics.RaycastNonAlloc(_ray, terrainHit, 200f, toolSettings.paintMask.value);
+            var hits = Physics.RaycastNonAlloc(_mousePointRay, terrainHit, 200f, toolSettings.paintMask.value);
             for (var i = 0; i < hits; i++)
 
             {
@@ -1381,7 +1453,7 @@ namespace Grass.Editor
 
         private bool RemovePoints(GrassData point)
         {
-            if (Physics.Raycast(_ray, out var terrainHit, 100f, toolSettings.paintMask.value))
+            if (Physics.Raycast(_mousePointRay, out var terrainHit, 100f, toolSettings.paintMask.value))
             {
                 _hitPos = terrainHit.point;
                 _hitNormal = terrainHit.normal;

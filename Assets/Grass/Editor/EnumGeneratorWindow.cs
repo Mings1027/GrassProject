@@ -13,7 +13,6 @@ public class EnumGeneratorWindow : EditorWindow
 
     private readonly List<string[]> _folderLevels = new(); // 각 폴더 깊이를 저장
     private readonly List<int> _selectedIndices = new(); // 각 깊이의 선택된 인덱스 저장
-    private Texture2D _folderIcon;
 
     private string _errorMessage = "";
 
@@ -26,7 +25,7 @@ public class EnumGeneratorWindow : EditorWindow
     private void OnEnable()
     {
         LoadFoldersAtLevel(Application.dataPath, 0); // 최상위 폴더를 먼저 로드
-        _folderIcon = EditorGUIUtility.FindTexture("Folder");
+        EditorGUIUtility.FindTexture("Folder");
     }
 
     private void LoadFoldersAtLevel(string basePath, int level)

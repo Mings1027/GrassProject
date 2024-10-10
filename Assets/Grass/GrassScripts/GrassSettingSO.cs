@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [System.Serializable]
 [CreateAssetMenu(fileName = "Grass Settings", menuName = "Utility/GrassSettings")]
@@ -67,7 +68,7 @@ public class GrassSettingSO : ScriptableObject
 
     [Header("LOD/ Culling")] public bool drawBounds;
     public float minFadeDistance = 40;
-    public float maxDrawDistance = 125;
+    public float maxFadeDistance = 125;
     public int cullingTreeDepth = 1;
 
     [Header("Particles")] public GameObject cuttingParticles;
