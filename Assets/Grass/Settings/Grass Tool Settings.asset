@@ -32,7 +32,7 @@ MonoBehaviour:
   rangeR: 0.216
   rangeG: 0.22
   rangeB: 0.228
-  adjustedColor: {r: 0, g: 0.7075472, b: 0.030521683, a: 1}
+  adjustedColor: {r: 0.01960784, g: 0.83137256, b: 0.022510163, a: 1}
   paintMask:
     serializedVersion: 2
     m_Bits: 8
@@ -42,7 +42,7 @@ MonoBehaviour:
   brushSize: 9.099999
   brushFalloffSize: 1
   flow: 10
-  density: 7
+  density: 21
   normalLimit: 1
   rayDensity: 1
   grassAmountToGenerate: 100000

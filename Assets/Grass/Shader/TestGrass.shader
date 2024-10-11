@@ -2,17 +2,21 @@ Shader "Custom/TestGrass"
 {
 	Properties
 	{
+		[Header(Additional Light)]
+		_AdditionalLightIntensity("Light Intensity", Range(0, 1)) = 0.5
+		_AdditionalLightShadowColor("Shadow Color", Color) = (0, 0, 0, 1)
+		_AdditionalLightShadowStrength("Shadow Strength", Range(0, 1)) = 0.8
+
+		[Header(Tone Mapping)]
+		_OverallIntensity("Overall Intensity", Range(0, 1)) = 1
+		_Exposure("Exposure", Range(0.1, 2)) = 0.85
+		_Saturation("Saturation", Range(0, 2)) = 0.95
+
+		[Header(Blend)]
 		[Toggle(BLEND)] _BlendFloor("Blend with floor", Float) = 0
 		_BlendMult("Blend Multiply", Range(0, 5)) = 1
-		_BlendOff("Blend Offset", Range(0, 1)) = 1
-		[Header(Main Light)]
-		_ShadowStrength("Shadow Strength", Range(0, 1)) = 0.5
-		[HDR] _ShadowColor("Shadow Color", Color) = (0.5, 0.5, 0.5, 1)
-		[HideInInspector] _BaseMap("Base Color", 2D) = "white" {}
-		[Header(Additional Light)]
-		_AdditionalLightIntensity("Additional Light Intensity", Range(0, 1)) = 0.3
-		_AdditionalLightShadowStrength("Additional Light Shadow Strength", Range(0, 1)) = 0.5
-		[HDR] _AdditionalLightColor("Additional Light Color", Color) = (0.5, 0.5, 0.5, 1)
+		_BlendOff("Blend Offset", Range(0, 1)) = 0.2
+		[HideInInspector] _AmbientAdjustmentColor("Ambient Adjustment Color", Color) = (0.5, 0.5, 0.5, 1)
 	}
 
 	SubShader
@@ -73,5 +77,5 @@ Shader "Custom/TestGrass"
 		}
 	}
 	Fallback "Hidden/Universal Render Pipeline/FallbackError"
-
+	CustomEditor "Editor.GrassShaderGUI"
 }

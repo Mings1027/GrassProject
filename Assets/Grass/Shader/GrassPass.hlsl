@@ -2,6 +2,15 @@
 #include "Grass.hlsl"
 #include "CustomLighting.hlsl"
 
+float4 SampleTerrainTexture(float3 worldPos)
+{
+    float2 terrainUV = worldPos.xz - _OrthographicCamPosTerrain.xz;
+    terrainUV /= _OrthographicCamSizeTerrain * 2;
+    terrainUV += 0.5;
+
+    return SAMPLE_TEXTURE2D_LOD(_TerrainDiffuse, sampler_TerrainDiffuse, terrainUV, 0);
+}
+
 float CalculateVerticalFade(float2 uv)
 {
     float blendMul = uv.y * _BlendMult;
@@ -16,13 +25,8 @@ float4 CalculateBaseColor(float3 diffuseColor, float verticalFade)
 
 float4 BlendWithTerrain(Varyings input, float verticalFade)
 {
-    float2 uv = input.worldPos.xz - _OrthographicCamPosTerrain.xz;
-    uv /= _OrthographicCamSizeTerrain * 2;
-    uv += 0.5;
-
-    float4 terrainForBlending = SAMPLE_TEXTURE2D(_TerrainDiffuse, sampler_TerrainDiffuse, uv);
-    return lerp(terrainForBlending,
-                terrainForBlending + _TopTint * float4(input.diffuseColor, 1) *
+    return lerp(input.terrainBlendingColor,
+                input.terrainBlendingColor + _TopTint * float4(input.diffuseColor, 1) *
                 _AmbientAdjustmentColor, verticalFade);
 }
 
@@ -32,22 +36,34 @@ void CalculateCutOff(float extraBufferX, float worldPosY)
     clip(cutOffTop - 0.01);
 }
 
-float4 ApplyMainLightShadow(Varyings input, float4 finalColor)
+float3 CalculateLighting(float3 albedo, float3 normalWS, float3 worldPos)
 {
-    float shadow = 0;
-    #if _MAIN_LIGHT_SHADOWS_CASCADE || _MAIN_LIGHT_SHADOWS
-                    half4 shadowCoord = TransformWorldToShadowCoord(input.worldPos);
-                    Light mainLight = GetMainLight(shadowCoord);
-    #else
-    Light mainLight = GetMainLight();
-    #endif
-    shadow = mainLight.shadowAttenuation;
+    float4 shadowCoord = TransformWorldToShadowCoord(worldPos);
+    Light mainLight = GetMainLight(shadowCoord);
 
-    if (shadow <= 0)
-    {
-        finalColor.rgb *= lerp(finalColor.rgb, _ShadowColor.rgb, _ShadowStrength);
-    }
-    return finalColor;
+    float3 lightDir = mainLight.direction;
+    float3 lightColor = mainLight.color;
+    float lightAttenuation = mainLight.distanceAttenuation * mainLight.shadowAttenuation;
+
+    float NdotL = saturate(dot(normalWS, lightDir));
+    float3 radiance = lightColor * lightAttenuation * NdotL;
+
+    float3 ambient = SampleSH(normalWS) * albedo;
+    float3 diffuse = albedo * radiance;
+
+    return ambient + diffuse;
+}
+
+float3 AdjustSaturation(float3 color, float saturation)
+{
+    float grey = dot(color, float3(0.2126, 0.7152, 0.0722));
+    return lerp(grey.xxx, color, saturation);
+}
+
+float3 CustomNeutralToneMapping(float3 color, float exposure)
+{
+    color *= exposure;
+    return NeutralTonemap(color);
 }
 
 Varyings vert(Attributes input)
@@ -63,6 +79,9 @@ Varyings vert(Attributes input)
                          output.extraBuffer);
     output.positionCS = TransformObjectToHClip(output.worldPos);
 
+    #if defined(BLEND)
+    output.terrainBlendingColor = SampleTerrainTexture(output.worldPos);
+    #endif
     return output;
 }
 
@@ -78,11 +97,17 @@ float4 frag(Varyings input) : SV_Target
 
     CalculateCutOff(input.extraBuffer.x, input.worldPos.y);
 
-    float4 mainShadowColor = ApplyMainLightShadow(input, baseColor);
-    float3 additionalLightColor = ApplyAdditionalLight(input.worldPos, input.normalWS, _AdditionalLightIntensity,
-                                                           _AdditionalLightShadowStrength, _AdditionalLightColor.rgb);
+    float3 litColor = CalculateLighting(baseColor.rgb, input.normalWS, input.worldPos);
 
-    float3 finalColor = mainShadowColor.rgb + additionalLightColor;
+    float3 additionalLightColor = ApplyAdditionalLight(input.worldPos, input.normalWS, _AdditionalLightIntensity,
+                                                       _AdditionalLightShadowStrength, _AdditionalLightShadowColor.rgb);
+
+    float3 finalColor = litColor + additionalLightColor;
+
+
+    finalColor *= _OverallIntensity;
+    finalColor = CustomNeutralToneMapping(finalColor, _Exposure);
+    finalColor = AdjustSaturation(finalColor, _Saturation);
 
     return float4(finalColor, baseColor.a);
 }

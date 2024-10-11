@@ -1,7 +1,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
 float3 ApplyAdditionalLight(float3 worldPos, float3 worldNormal, float additionalLightIntensity,
-                                float additionalLightShadowStrength, float3 shadowColor)
+                            float additionalLightShadowStrength, float3 shadowColor)
 {
     float3 additionalLightColor = 0;
     uint pixelLightCount = GetAdditionalLightsCount();
