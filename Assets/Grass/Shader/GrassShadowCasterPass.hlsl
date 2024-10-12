@@ -13,7 +13,7 @@ Varyings ShadowPassVertex(Attributes input)
     output.uv = float2(0, 0);
     output.diffuseColor = float3(1, 1, 1);
     output.extraBuffer = float4(0, 0, 0, 0);
-
+    output.terrainBlendingColor = float4(0, 0, 0, 0);
 
     GetComputeData_float(input.vertexID, output.worldPos, output.normalWS, output.uv, output.diffuseColor,
                          output.extraBuffer);

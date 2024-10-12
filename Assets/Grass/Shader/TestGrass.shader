@@ -16,7 +16,7 @@ Shader "Custom/TestGrass"
 		[Toggle(BLEND)] _BlendFloor("Blend with floor", Float) = 0
 		_BlendMult("Blend Multiply", Range(0, 5)) = 1
 		_BlendOff("Blend Offset", Range(0, 1)) = 0.2
-		[HideInInspector] _AmbientAdjustmentColor("Ambient Adjustment Color", Color) = (0.5, 0.5, 0.5, 1)
+		_AmbientAdjustmentColor("Ambient Adjustment Color", Color) = (0.5, 0.5, 0.5, 1)
 	}
 
 	SubShader
@@ -77,5 +77,4 @@ Shader "Custom/TestGrass"
 		}
 	}
 	Fallback "Hidden/Universal Render Pipeline/FallbackError"
-	CustomEditor "Editor.GrassShaderGUI"
 }

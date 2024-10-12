@@ -54,7 +54,7 @@ Material:
     - _Alpha: 0.495
     - _AlphaClip: 0.329
     - _Blend: 1
-    - _BlendMult: 1.01
+    - _BlendMult: 1.06
     - _BlendOff: 0.214
     - _QueueControl: 1
     - _QueueOffset: 0

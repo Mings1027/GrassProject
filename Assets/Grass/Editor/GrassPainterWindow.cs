@@ -8,6 +8,7 @@ using UnityEditor.SceneManagement;
 using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
 namespace Grass.Editor
@@ -15,12 +16,14 @@ namespace Grass.Editor
     public class GrassPainterWindow : EditorWindow
     {
         // main tabs
-        private readonly string[] _mainTabBarStrings = { "Paint/Edit", "Modify", "Generate", "General Settings" };
+        private readonly string[] _mainTabBarStrings =
+            { "Paint/Edit", "Modify", "Generate", "General Settings", "Material Settings" };
 
         private int _mainTabCurrent;
         private Vector2 _scrollPos;
 
         private bool _paintModeActive;
+        private bool _enableGrass;
 
         private readonly string[] _toolbarStrings = { "Add", "Remove", "Edit", "Reproject" };
 
@@ -58,6 +61,10 @@ namespace Grass.Editor
         private Vector3 _cachedPos;
 
         private bool _showLayers;
+
+        private MaterialEditor _materialEditor;
+        private Material _currentMaterial;
+        private MaterialProperty[] _materialProperties;
 
         [MenuItem("Tools/Grass Tool")]
         private static void Init()
@@ -150,16 +157,34 @@ namespace Grass.Editor
 
             EditorGUILayout.Separator();
 
-            EditorGUILayout.BeginHorizontal();
             _grassComputeScript.currentPresets.materialToUse = (Material)EditorGUILayout.ObjectField("Grass Material",
                 _grassComputeScript.currentPresets.materialToUse, typeof(Material), false);
 
-            EditorGUILayout.EndHorizontal();
             EditorGUILayout.Separator();
-            EditorGUILayout.LabelField("Total Grass Amount: " + _grassAmount, EditorStyles.label);
+
             EditorGUILayout.BeginHorizontal();
-            _mainTabCurrent = GUILayout.Toolbar(_mainTabCurrent, _mainTabBarStrings, GUILayout.Height(30));
+            EditorGUILayout.LabelField("Enable Grass:", EditorStyles.boldLabel);
+            _enableGrass = EditorGUILayout.Toggle(_enableGrass);
+            if (_enableGrass && !_grassComputeScript.enabled)
+            {
+                _grassComputeScript.enabled = true;
+            }
+            else if (!_enableGrass && _grassComputeScript.enabled)
+            {
+                _grassComputeScript.enabled = false;
+            }
+
             EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.Separator();
+
+            EditorGUILayout.LabelField("Total Grass Amount: " + _grassAmount, EditorStyles.label);
+
+            EditorGUILayout.BeginHorizontal();
+            _mainTabCurrent = GUILayout.Toolbar(_mainTabCurrent, _mainTabBarStrings, GUILayout.MinWidth(300),
+                GUILayout.Height(30));
+            EditorGUILayout.EndHorizontal();
+
             EditorGUILayout.Separator();
             EditorGUILayout.Separator();
 
@@ -188,6 +213,9 @@ namespace Grass.Editor
                     break;
                 case 3: //settings
                     ShowMainSettingsPanel();
+                    break;
+                case 4:
+                    ShowMaterialSettings();
                     break;
             }
 
@@ -379,7 +407,7 @@ namespace Grass.Editor
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Brush Settings", EditorStyles.boldLabel);
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Brush Size", GUILayout.Width(100));
+            EditorGUILayout.LabelField("Brush Size");
             toolSettings.brushSize = EditorGUILayout.Slider(toolSettings.brushSize,
                 toolSettings.MinBrushSize, toolSettings.MaxBrushSize);
             EditorGUILayout.EndHorizontal();
@@ -578,6 +606,69 @@ namespace Grass.Editor
                     curPresets.castShadow);
         }
 
+        private void ResetMaterialEditor()
+        {
+            _currentMaterial = null;
+            if (_materialEditor != null)
+            {
+                DestroyImmediate(_materialEditor);
+                _materialEditor = null;
+            }
+
+            _materialProperties = null;
+        }
+
+        private void ShowMaterialSettings()
+        {
+            if (_grassComputeScript == null || _grassComputeScript.currentPresets == null)
+            {
+                EditorGUILayout.HelpBox("Grass Compute Script or Current Presets is not set.", MessageType.Warning);
+                return;
+            }
+
+            if (_grassComputeScript.currentPresets.materialToUse != _currentMaterial || _materialEditor == null)
+            {
+                ResetMaterialEditor();
+                _currentMaterial = _grassComputeScript.currentPresets.materialToUse;
+                if (_currentMaterial != null)
+                {
+                    _materialEditor = (MaterialEditor)UnityEditor.Editor.CreateEditor(_currentMaterial);
+                    _materialProperties = MaterialEditor.GetMaterialProperties(new Object[] { _currentMaterial });
+                }
+            }
+
+            if (_materialEditor != null && _currentMaterial != null && _materialProperties != null)
+            {
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField("Material Properties", EditorStyles.boldLabel);
+
+                EditorGUI.BeginChangeCheck();
+
+                _materialEditor.DrawHeader();
+
+                for (int i = 0; i < _materialProperties.Length; i++)
+                {
+                    MaterialProperty prop = _materialProperties[i];
+                    if ((prop.flags & MaterialProperty.PropFlags.HideInInspector) == 0 &&
+                        !prop.name.StartsWith("unity_") &&
+                        !prop.name.StartsWith("_Quarter"))
+                    {
+                        _materialEditor.ShaderProperty(prop, prop.displayName);
+                    }
+                }
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    _materialEditor.PropertiesChanged();
+                }
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("No material selected or material is invalid.", MessageType.Info);
+            }
+        }
+
+
         private void CreateNewGrassObject()
         {
             grassObject = new GameObject
@@ -660,10 +751,16 @@ namespace Grass.Editor
 
         private void OnEnable()
         {
+            ResetMaterialEditor();
             SceneView.duringSceneGui += OnSceneGUI;
             SceneView.duringSceneGui += OnScene;
             Undo.undoRedoPerformed += HandleUndo;
             _terrainHit = new RaycastHit[10];
+        }
+
+        private void OnFocus()
+        {
+            ResetMaterialEditor();
         }
 
         private void RemoveDelegates()
@@ -683,6 +780,10 @@ namespace Grass.Editor
         private void OnDestroy()
         {
             RemoveDelegates();
+            if (_materialEditor != null)
+            {
+                DestroyImmediate(_materialEditor);
+            }
         }
 
         private void ClearMesh()
@@ -866,17 +967,32 @@ namespace Grass.Editor
 
         private void RemoveGrassOnSelectObject(GameObject selection)
         {
+            Bounds worldBounds;
             if (selection.TryGetComponent(out MeshFilter sourceMesh))
             {
                 var localToWorld = selection.transform.localToWorldMatrix;
                 var bounds = sourceMesh.sharedMesh.bounds;
 
-                var worldBounds = new Bounds(
+                worldBounds = new Bounds(
                     localToWorld.MultiplyPoint3x4(bounds.center),
                     Vector3.Scale(bounds.size, selection.transform.lossyScale));
-
-                grassData.RemoveAll(g => worldBounds.Contains(g.position));
             }
+            else if (selection.TryGetComponent(out Terrain terrain))
+            {
+                var terrainData = terrain.terrainData;
+                var terrainPos = terrain.transform.position;
+
+                worldBounds = new Bounds(terrainPos +
+                                         new Vector3(terrainData.size.x * 0.5f, terrainData.size.y * 0.5f,
+                                             terrainData.size.z * 0.5f), terrainData.size);
+            }
+            else
+            {
+                Debug.LogWarning("Selected object does not have a MeshFilter or Terrain component");
+                return;
+            }
+
+            grassData.RemoveAll(g => worldBounds.Contains(g.position));
         }
 
         private Vector3 GetRandomColor()
