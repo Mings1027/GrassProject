@@ -42,7 +42,7 @@ MonoBehaviour:
   brushSize: 11.000005
   brushFalloffSize: 1
   flow: 10
-  density: 21
+  density: 6
   normalLimit: 1
   rayDensity: 1
   grassAmountToGenerate: 100000

@@ -4,6 +4,7 @@ using System.Linq;
 using Grass.GrassScripts;
 using PoolControl;
 using UnityEngine;
+using UnityEngine.Rendering;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -11,7 +12,12 @@ using UnityEditor;
 [ExecuteInEditMode]
 public class GrassComputeScript : MonoBehaviour
 {
+#if UNITY_EDITOR
     [HideInInspector] public bool autoUpdate; // very slow, but will update always
+    private float _lastUpdateTime;
+    private const float UpdateInterval = 0.5f; // 0.5초마다 업데이트
+    private bool _isDirty;
+#endif
     private Camera _mainCamera; // main camera
     public GrassSettingSO currentPresets; // grass settings to send to the compute shader
     private List<GrassInteractor> _interactors;
@@ -22,7 +28,7 @@ public class GrassComputeScript : MonoBehaviour
 
     private ComputeBuffer _sourceVertBuffer; // A compute buffer to hold vertex data of the source mesh
     private ComputeBuffer _drawBuffer; // A compute buffer to hold vertex data of the generated mesh
-    private ComputeBuffer _argsBuffer; // A compute buffer to hold indirect draw arguments
+    private GraphicsBuffer _argsBuffer; // A compute buffer to hold indirect draw arguments
     private ComputeShader _instComputeShader; // Instantiate the shaders so data belong to their unique compute buffers
     private ComputeBuffer _visibleIDBuffer; // buffer that contains the ids of all visible instances
 
@@ -151,8 +157,12 @@ public class GrassComputeScript : MonoBehaviour
 #if UNITY_EDITOR
         if (!Application.isPlaying && autoUpdate && !_fastMode)
         {
-            OnDisable();
-            OnEnable();
+            if (UnityEngine.Time.realtimeSinceStartup - _lastUpdateTime > UpdateInterval)
+            {
+                _lastUpdateTime = UnityEngine.Time.realtimeSinceStartup;
+                OnDisable();
+                OnEnable();
+            }
         }
 
         // If not initialized, do nothing (creating zero-length buffer will crash)
@@ -183,8 +193,16 @@ public class GrassComputeScript : MonoBehaviour
             // Dispatch the grass shader. It will run on the GPU
             _instComputeShader.Dispatch(_idGrassKernel, _dispatchSize, 1, 1);
             // DrawProceduralIndirect queues a draw call up for our generated mesh
-            Graphics.DrawProceduralIndirect(instantiatedMaterial, _bounds, MeshTopology.Triangles,
-                _argsBuffer, castShadows: currentPresets.castShadow);
+            // Graphics.DrawProceduralIndirect(instantiatedMaterial, _bounds, MeshTopology.Triangles,
+            //     _argsBuffer, castShadows: currentPresets.castShadow);
+            var renderParams = new RenderParams(instantiatedMaterial)
+            {
+                worldBounds = _bounds,
+                shadowCastingMode = currentPresets.castShadow,
+                receiveShadows = true,
+            };
+
+            Graphics.RenderPrimitivesIndirect(renderParams, MeshTopology.Triangles, _argsBuffer);
         }
     }
 
@@ -192,7 +210,7 @@ public class GrassComputeScript : MonoBehaviour
     {
         GrassEventManager.OnInteractorAdded -= AddInteractor;
         GrassEventManager.OnInteractorRemoved -= RemoveInteractor;
-        
+
         _interactors.Clear();
         // Dispose of buffers and copied shaders here
         if (_initialized)
@@ -294,7 +312,9 @@ public class GrassComputeScript : MonoBehaviour
 
         _drawBuffer = new ComputeBuffer(_maxBufferSize, DrawStride, ComputeBufferType.Append);
 
-        _argsBuffer = new ComputeBuffer(1, _argsBufferReset.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
+        // _argsBuffer = new ComputeBuffer(1, _argsBufferReset.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
+        _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1,
+            _argsBufferReset.Length * sizeof(uint));
 
         //uint only, per visible grass
         _visibleIDBuffer = new ComputeBuffer(grassData.Count, sizeof(int), ComputeBufferType.Structured);

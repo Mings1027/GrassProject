@@ -163,7 +163,7 @@ namespace Grass.Editor
             EditorGUILayout.Separator();
 
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Enable Grass:", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Enable Grass:", EditorStyles.boldLabel, GUILayout.Width(100));
             _enableGrass = EditorGUILayout.Toggle(_enableGrass);
             if (_enableGrass && !_grassComputeScript.enabled)
             {
@@ -189,13 +189,16 @@ namespace Grass.Editor
             EditorGUILayout.Separator();
 
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Paint Mode:", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Paint Mode:", EditorStyles.boldLabel, GUILayout.Width(100));
             _paintModeActive = EditorGUILayout.Toggle(_paintModeActive);
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Auto Update", EditorStyles.boldLabel);
-            _grassComputeScript.autoUpdate = EditorGUILayout.Toggle(_grassComputeScript.autoUpdate);
+            EditorGUILayout.LabelField("Auto Update:", EditorStyles.boldLabel, GUILayout.Width(100));
+            _grassComputeScript.autoUpdate = EditorGUILayout.Toggle(_grassComputeScript.autoUpdate, GUILayout.Width(20));
+            GUIContent helpIcon = new GUIContent(EditorGUIUtility.IconContent("_Help"));
+            helpIcon.tooltip = "Slow but Always Updated";
+            GUILayout.Label(helpIcon);
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Separator();
