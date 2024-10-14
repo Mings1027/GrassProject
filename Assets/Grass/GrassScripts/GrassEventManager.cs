@@ -3,32 +3,66 @@ using System.Collections.Generic;
 
 namespace Grass.GrassScripts
 {
+    public enum GrassEvent
+    {
+        InteractorAdded,
+        InteractorRemoved,
+    }
+
     public static class GrassEventManager
     {
-        public static event Action<GrassInteractor> OnInteractorAdded;
-        public static event Action<GrassInteractor> OnInteractorRemoved;
+        private static readonly Dictionary<GrassEvent, Action> EventDictionary = new();
 
-        private static HashSet<GrassInteractor> activeInteractors = new HashSet<GrassInteractor>();
-
-        public static void AddInteractor(GrassInteractor interactor)
+        public static void AddListener(GrassEvent eventType, Action action)
         {
-            if (activeInteractors.Add(interactor))
+            if (EventDictionary.TryAdd(eventType, action)) return;
+            EventDictionary[eventType] += action;
+        }
+
+
+        public static void RemoveListener(GrassEvent eventType, Action listener)
+        {
+            if (EventDictionary.TryGetValue(eventType, out var existingAction))
             {
-                OnInteractorAdded?.Invoke(interactor);
+                EventDictionary[eventType] = existingAction - listener;
             }
         }
 
-        public static void RemoveInteractor(GrassInteractor interactor)
+        public static void TriggerEvent(GrassEvent eventType)
         {
-            if (activeInteractors.Remove(interactor))
+            if (EventDictionary.TryGetValue(eventType, out var action))
             {
-                OnInteractorRemoved?.Invoke(interactor);
+                action?.Invoke();
             }
-        }
-
-        public static IReadOnlyCollection<GrassInteractor> GetActiveInteractors()
-        {
-            return activeInteractors;
         }
     }
+    
+    public static class GrassEventManager<T>
+    {
+        private static readonly Dictionary<GrassEvent, Action<T>> EventDictionary = new();
+
+        public static void AddListener(GrassEvent eventType, Action<T> action)
+        {
+            if (EventDictionary.TryAdd(eventType, action)) return;
+            EventDictionary[eventType] += action;
+        }
+
+
+        public static void RemoveListener(GrassEvent eventType, Action<T> listener)
+        {
+            if (EventDictionary.TryGetValue(eventType, out var existingAction))
+            {
+                EventDictionary[eventType] = existingAction - listener;
+            }
+        }
+
+        public static void TriggerEvent(GrassEvent eventType, T value)
+        {
+            if (EventDictionary.TryGetValue(eventType, out var action))
+            {
+                action?.Invoke(value);
+            }
+        }
+    }
+    
 }

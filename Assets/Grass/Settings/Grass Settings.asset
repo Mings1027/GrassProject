@@ -14,13 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shaderToUse: {fileID: 7200000, guid: 11036af5f2d1499c8845585fb5fadb4c, type: 3}
   materialToUse: {fileID: 2100000, guid: 7725493650b5a4b4d9c0d612493ca34d, type: 2}
-  randomHeightMin: 0.5
-  randomHeightMax: 0.8
+  randomHeightMin: 0.4
+  randomHeightMax: 0.6
   bladeRadius: 1
   bladeForward: 0.719
   bladeCurve: 2
   bottomWidth: 0.249
-  minWidth: 0.2
+  minWidth: 0.3
   maxWidth: 0.6
   minHeight: 0.5
   maxHeight: 3

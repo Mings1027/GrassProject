@@ -33,11 +33,50 @@ float3 ApplyAdditionalLight(float3 worldPos, float3 worldNormal, float additiona
                     float3 shadowedColor = lerp(shadowColor, lightColor, light.shadowAttenuation);
                     lightColor = lerp(shadowedColor, lightColor, invertedShadowStrength);
                 }
+                additionalLightColor += LightingLambert(lightColor, light.direction, worldNormal);
             }
-
-            additionalLightColor += LightingLambert(lightColor, light.direction, worldNormal);
         }
     LIGHT_LOOP_END
 
     return additionalLightColor;
+}
+
+//  위 함수사용하면 additional light 경계부분에 계단현상 생기는것을 확인함
+//  현재 아래함수 사용중인데 additional light 그림자 영역의 색이 정확하게 shadowColor만 맺히는게 아닌듯한
+//  grass색이 초록계열, additional light컬러가 빨강, shadowColor가 파랑이면 그림자영역색이 초록으로 보임 
+float3 ApplyAdditionalLightTest(float3 worldPos, float3 worldNormal, float additionalLightIntensity,
+                                float additionalLightShadowStrength, float3 shadowColor)
+{
+    uint pixelLightCount = GetAdditionalLightsCount();
+    InputData inputData;
+    float4 screenPos = ComputeScreenPos(TransformWorldToHClip(worldPos));
+    inputData.normalizedScreenSpaceUV = screenPos.xy / screenPos.w;
+    inputData.positionWS = worldPos;
+
+    float3 diffuseColor = 0;
+
+    LIGHT_LOOP_BEGIN(pixelLightCount)
+        Light light;
+        #if _MAIN_LIGHT_SHADOWS_CASCADE || _MAIN_LIGHT_SHADOWS
+    half4 shadowMask = CalculateShadowMask(inputData);
+    light = GetAdditionalLight(lightIndex, worldPos, shadowMask);
+        #else
+        light = GetAdditionalLight(lightIndex, worldPos);
+        #endif
+        #ifdef _LIGHT_LAYERS
+    if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
+        #endif
+        {
+            if (light.shadowAttenuation >= 0)
+            {
+                float3 lightColor = light.color * light.distanceAttenuation * additionalLightIntensity;
+                if (light.shadowAttenuation == 0)
+                {
+                    lightColor *= additionalLightShadowStrength * shadowColor;
+                }
+                diffuseColor += LightingLambert(lightColor, light.direction, worldNormal);
+            }
+        }
+    LIGHT_LOOP_END
+    return diffuseColor;
 }

@@ -1,27 +1,39 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Profiling;
 using Random = UnityEngine.Random;
 
-public class Test : MonoBehaviour
+public abstract class Test : MonoBehaviour
 {
-    [SerializeField] private LayerMask testLayer;
-
-    [SerializeField] private int a;
-
-    [ContextMenu("Print hash code")]
-    private void PrintHashCode()
+    public virtual IEnumerator TestCo()
     {
-        print(a.GetTypeCode());
-        Heal(ref a);
+        Debug.Log("Parent");
+        yield return null;
     }
 
-    private void Heal(ref int hp)
+    public virtual async UniTask TestAsync()
     {
-        print(hp.GetTypeCode());
-        hp += 10;
+        Debug.Log("Parent");
+        await UniTask.Yield();
+    }
+}
+
+public class TestChildren : Test
+{
+    public override IEnumerator TestCo()
+    {
+        Debug.Log("Children");
+        return null;
+    }
+
+    public override async UniTask TestAsync()
+    {
+        Debug.Log("Children");
+        await UniTask.Yield();
     }
 }

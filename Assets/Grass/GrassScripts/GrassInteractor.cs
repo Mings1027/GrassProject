@@ -1,4 +1,3 @@
-using System;
 using Grass.GrassScripts;
 using UnityEngine;
 
@@ -8,12 +7,12 @@ public class GrassInteractor : MonoBehaviour
 
     private void OnEnable()
     {
-        GrassEventManager.AddInteractor(this);
+        GrassEventManager<GrassInteractor>.TriggerEvent(GrassEvent.InteractorAdded, this);
     }
 
     private void OnDisable()
     {
-        GrassEventManager.RemoveInteractor(this);
+        GrassEventManager<GrassInteractor>.TriggerEvent(GrassEvent.InteractorRemoved, this);
     }
 
 #if UNITY_EDITOR

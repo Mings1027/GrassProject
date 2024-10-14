@@ -1,128 +1,99 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// CullingTreeNode 클래스는 공간 분할 트리의 노드를 나타내며, 주로 공간 내에 존재하는 객체들을 관리하기 위한 용도로 사용됩니다.
 public class CullingTreeNode
 {
-    private Bounds _bounds; // 이 노드가 포함하는 공간의 경계
-    private readonly List<CullingTreeNode> _children = new(); // 하위 노드 리스트
-    private readonly List<int> _grassIDHeld = new(); // 이 노드가 포함하는 객체 ID 리스트
+    private Bounds _bounds;
+    private readonly CullingTreeNode[] _children;
+    private readonly List<int> _grassIDHeld = new();
 
-    // 생성자: 주어진 경계와 깊이를 사용하여 노드를 초기화합니다.
     public CullingTreeNode(Bounds bounds, int depth)
     {
-        _children.Clear();
         _bounds = bounds;
 
-        // 깊이가 0보다 클 경우 자식 노드를 생성합니다.
         if (depth > 0)
         {
-            var size = _bounds.size;
-            size /= 4.0f;
+            var size = _bounds.size / 4.0f;
             var childSize = _bounds.size / 2.0f;
             var center = _bounds.center;
 
-            // 깊이가 짝수인 경우 Y축으로 세분화를 하지 않습니다.
-            // (만약 Y축 방향으로 많은 세분화가 필요하면 이 조건문을 삭제하세요)
-            if (depth % 2 == 0)
+            var isEvenDepth = depth % 2 == 0;
+            var childCount = isEvenDepth ? 4 : 8;
+
+            _children = new CullingTreeNode[childCount];
+
+            if (isEvenDepth)
             {
                 childSize.y = _bounds.size.y;
-                var topLeftSingle =
-                    new Bounds(new Vector3(center.x - size.x, center.y, center.z - size.z), childSize);
-                var bottomRightSingle =
-                    new Bounds(new Vector3(center.x + size.x, center.y, center.z + size.z), childSize);
-                var topRightSingle =
-                    new Bounds(new Vector3(center.x - size.x, center.y, center.z + size.z), childSize);
-                var bottomLeftSingle =
-                    new Bounds(new Vector3(center.x + size.x, center.y, center.z - size.z), childSize);
-
-                // 하위 노드를 추가합니다.
-                _children.Add(new CullingTreeNode(topLeftSingle, depth - 1));
-                _children.Add(new CullingTreeNode(bottomRightSingle, depth - 1));
-                _children.Add(new CullingTreeNode(topRightSingle, depth - 1));
-                _children.Add(new CullingTreeNode(bottomLeftSingle, depth - 1));
             }
-            else
+
+            for (var i = 0; i < childCount; i++)
             {
-                // 깊이가 홀수인 경우 8개의 하위 노드를 생성합니다.
-
-                // 1층 레이어
-                var topLeft = new Bounds(new Vector3(center.x - size.x, center.y - size.y, center.z - size.z),
-                    childSize);
-                var bottomRight = new Bounds(new Vector3(center.x + size.x, center.y - size.y, center.z + size.z),
-                    childSize);
-                var topRight = new Bounds(new Vector3(center.x - size.x, center.y - size.y, center.z + size.z),
-                    childSize);
-                var bottomLeft = new Bounds(new Vector3(center.x + size.x, center.y - size.y, center.z - size.z),
-                    childSize);
-
-                // 2층 레이어
-                var topLeft2 = new Bounds(new Vector3(center.x - size.x, center.y + size.y, center.z - size.z),
-                    childSize);
-                var bottomRight2 = new Bounds(new Vector3(center.x + size.x, center.y + size.y, center.z + size.z),
-                    childSize);
-                var topRight2 = new Bounds(new Vector3(center.x - size.x, center.y + size.y, center.z + size.z),
-                    childSize);
-                var bottomLeft2 = new Bounds(new Vector3(center.x + size.x, center.y + size.y, center.z - size.z),
-                    childSize);
-
-                // 하위 노드를 추가합니다.
-                _children.Add(new CullingTreeNode(topLeft, depth - 1));
-                _children.Add(new CullingTreeNode(bottomRight, depth - 1));
-                _children.Add(new CullingTreeNode(topRight, depth - 1));
-                _children.Add(new CullingTreeNode(bottomLeft, depth - 1));
-
-                _children.Add(new CullingTreeNode(topLeft2, depth - 1));
-                _children.Add(new CullingTreeNode(bottomRight2, depth - 1));
-                _children.Add(new CullingTreeNode(topRight2, depth - 1));
-                _children.Add(new CullingTreeNode(bottomLeft2, depth - 1));
+                var childCenter = CalculateChildCenter(center, size, i, isEvenDepth);
+                _children[i] = new CullingTreeNode(new Bounds(childCenter, childSize), depth - 1);
             }
+        }
+        else
+        {
+            _children = Array.Empty<CullingTreeNode>();
         }
     }
 
-    // 주어진 프러스텀(frustum)에 의해 가시성 여부를 판단하여 잎 노드를 리스트에 추가합니다.
+    private Vector3 CalculateChildCenter(Vector3 parentCenter, Vector3 size, int index, bool isEvenDepth)
+    {
+        var x = parentCenter.x + ((index & 1) == 0 ? -size.x : size.x);
+        var z = (index & 2) == 0 ? -size.z : size.z;
+        float y;
+
+        if (isEvenDepth)
+        {
+            y = parentCenter.y;
+        }
+        else
+        {
+            y = parentCenter.y + (index < 4 ? -size.y : size.y);
+        }
+
+        z += parentCenter.z;
+
+        return new Vector3(x, y, z);
+    }
+
     public void RetrieveLeaves(Plane[] frustum, List<Bounds> list, List<int> visibleIDList)
     {
-        // 프러스텀과 경계가 교차하는지 검사합니다.
         if (GeometryUtility.TestPlanesAABB(frustum, _bounds))
         {
-            // 하위 노드가 없는 경우 현재 노드를 리스트에 추가합니다.
-            if (_children.Count == 0)
+            if (_children.Length == 0)
             {
                 if (_grassIDHeld.Count > 0)
                 {
                     list.Add(_bounds);
-                    for (int i = 0; i < _grassIDHeld.Count; i++)
-                    {
-                        visibleIDList.Add(_grassIDHeld[i]);
-                    }
+                    visibleIDList.AddRange(_grassIDHeld);
                 }
             }
-            // 하위 노드가 있으면 재귀적으로 하위 노드의 RetrieveLeaves를 호출합니다.
             else
             {
-                for (var i = 0; i < _children.Count; i++)
+                for (var i = 0; i < _children.Length; i++)
                 {
-                    var child = _children[i];
-                    child.RetrieveLeaves(frustum, list, visibleIDList);
+                    if (_children[i] != null)
+                    {
+                        _children[i].RetrieveLeaves(frustum, list, visibleIDList);
+                    }
                 }
             }
         }
     }
 
-    // 주어진 포인트가 포함된 잎 노드를 찾아서 객체 ID를 추가합니다.
     public bool FindLeaf(Vector3 point, int index)
     {
-        // 경계가 주어진 포인트를 포함하는지 검사합니다.
         if (_bounds.Contains(point))
         {
-            // 하위 노드가 있으면 재귀적으로 하위 노드의 FindLeaf를 호출합니다.
-            if (_children.Count != 0)
+            if (_children.Length != 0)
             {
-                for (var i = 0; i < _children.Count; i++)
+                for (var i = 0; i < _children.Length; i++)
                 {
-                    var child = _children[i];
-                    if (child.FindLeaf(point, index))
+                    if (_children[i] != null && _children[i].FindLeaf(point, index))
                     {
                         return true;
                     }
@@ -138,76 +109,73 @@ public class CullingTreeNode
         return false;
     }
 
-    // 모든 잎 노드를 리스트에 추가합니다.
     public void RetrieveAllLeaves(List<CullingTreeNode> target)
     {
-        // 하위 노드가 없으면 현재 노드를 리스트에 추가합니다.
-        if (_children.Count == 0)
+        if (_children.Length == 0)
         {
             target.Add(this);
         }
         else
         {
-            for (var i = 0; i < _children.Count; i++)
+            for (var i = 0; i < _children.Length; i++)
             {
-                var child = _children[i];
-                child.RetrieveAllLeaves(target);
+                if (_children[i] != null)
+                {
+                    _children[i].RetrieveAllLeaves(target);
+                }
             }
         }
     }
 
-    // 비어 있는 노드를 제거합니다.
     public bool ClearEmpty()
     {
-        var delete = false;
-        if (_children.Count > 0)
+        if (_children.Length > 0)
         {
-            // 노드를 줄이기 위해 하위 노드를 확인합니다.
-            var i = _children.Count - 1;
-            while (i > 0)
+            var allChildrenEmpty = true;
+            for (var i = 0; i < _children.Length; i++)
             {
-                if (_children[i].ClearEmpty())
+                if (_children[i] != null)
                 {
-                    _children.RemoveAt(i);
+                    if (_children[i].ClearEmpty())
+                    {
+                        _children[i] = null;
+                    }
+                    else
+                    {
+                        allChildrenEmpty = false;
+                    }
                 }
+            }
 
-                i--;
+            if (allChildrenEmpty)
+            {
+                return _grassIDHeld.Count == 0;
             }
         }
 
-        if (_grassIDHeld.Count == 0 && _children.Count == 0)
-        {
-            delete = true;
-        }
-
-        return delete;
+        return _grassIDHeld.Count == 0 && _children.Length == 0;
     }
 
-    // 특정 반경 내의 객체 ID 리스트를 반환합니다.
     public void ReturnLeafList(Vector3 point, List<int> grassList, float radius)
     {
         var expandedBounds = _bounds;
         expandedBounds.Expand(radius * 2);
         if (!expandedBounds.Contains(point))
         {
-            return; // 포인트가 경계 외부에 있습니다.
+            return;
         }
 
-        if (_children.Count == 0)
+        if (_children.Length == 0)
         {
-            for (int i = 0; i < _grassIDHeld.Count; i++)
-            {
-                grassList.Add(_grassIDHeld[i]);
-            }
+            grassList.AddRange(_grassIDHeld);
         }
         else
         {
-            for (var i = 0; i < _children.Count; i++)
+            for (var i = 0; i < _children.Length; i++)
             {
-                var child = _children[i];
-                if (child._bounds.SqrDistance(point) <= radius * radius)
+                if (_children[i] != null && _children[i]._bounds.SqrDistance(point) <= radius * radius)
                 {
-                    child.ReturnLeafList(point, grassList, radius);
+                    _children[i].ReturnLeafList(point, grassList, radius);
                 }
             }
         }

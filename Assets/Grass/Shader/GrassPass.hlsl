@@ -69,11 +69,6 @@ float3 CustomNeutralToneMapping(float3 color, float exposure)
 Varyings vert(Attributes input)
 {
     Varyings output;
-    output.worldPos = float3(0, 0, 0);
-    output.normalWS = float3(0, 0, 0);
-    output.uv = input.uv;
-    output.diffuseColor = float3(1, 1, 1);
-    output.extraBuffer = float4(0, 0, 0, 0);
 
     GetComputeData_float(input.vertexID, output.worldPos, output.normalWS, output.uv, output.diffuseColor,
                          output.extraBuffer);
@@ -99,8 +94,9 @@ float4 frag(Varyings input) : SV_Target
 
     float3 litColor = CalculateLighting(baseColor.rgb, input.normalWS, input.worldPos);
 
-    float3 additionalLightColor = ApplyAdditionalLight(input.worldPos, input.normalWS, _AdditionalLightIntensity,
-                                                       _AdditionalLightShadowStrength, _AdditionalLightShadowColor.rgb);
+    float3 additionalLightColor = ApplyAdditionalLightTest(input.worldPos, input.normalWS, _AdditionalLightIntensity,
+                                                           _AdditionalLightShadowStrength,
+                                                           _AdditionalLightShadowColor.rgb);
 
     float3 finalColor = litColor + additionalLightColor;
 

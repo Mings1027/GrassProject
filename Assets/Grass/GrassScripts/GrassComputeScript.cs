@@ -137,8 +137,9 @@ public class GrassComputeScript : MonoBehaviour
 
     private void OnEnable()
     {
-        GrassEventManager.OnInteractorAdded += AddInteractor;
-        GrassEventManager.OnInteractorRemoved += RemoveInteractor;
+        GrassEventManager<GrassInteractor>.AddListener(GrassEvent.InteractorAdded, AddInteractor);
+        GrassEventManager<GrassInteractor>.AddListener(GrassEvent.InteractorRemoved, RemoveInteractor);
+        
         _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
         // If initialized, call on disable to clean things up
         if (_initialized)
@@ -192,9 +193,7 @@ public class GrassComputeScript : MonoBehaviour
         {
             // Dispatch the grass shader. It will run on the GPU
             _instComputeShader.Dispatch(_idGrassKernel, _dispatchSize, 1, 1);
-            // DrawProceduralIndirect queues a draw call up for our generated mesh
-            // Graphics.DrawProceduralIndirect(instantiatedMaterial, _bounds, MeshTopology.Triangles,
-            //     _argsBuffer, castShadows: currentPresets.castShadow);
+            
             var renderParams = new RenderParams(instantiatedMaterial)
             {
                 worldBounds = _bounds,
@@ -208,8 +207,8 @@ public class GrassComputeScript : MonoBehaviour
 
     private void OnDisable()
     {
-        GrassEventManager.OnInteractorAdded -= AddInteractor;
-        GrassEventManager.OnInteractorRemoved -= RemoveInteractor;
+        GrassEventManager<GrassInteractor>.RemoveListener(GrassEvent.InteractorAdded, AddInteractor);
+        GrassEventManager<GrassInteractor>.RemoveListener(GrassEvent.InteractorRemoved, RemoveInteractor);
 
         _interactors.Clear();
         // Dispose of buffers and copied shaders here
@@ -439,17 +438,8 @@ public class GrassComputeScript : MonoBehaviour
         }
         else
         {
-            // if theres a lot of grass, just cull earlier so we can still see what we're painting, otherwise it will be invisible
-            // if (grassData.Count > 200000)
-            // {
-            //     _instComputeShader.SetFloat(MinFadeDist, 40f);
-            //     _instComputeShader.SetFloat(MaxFadeDist, 50f);
-            // }
-            // else
-            {
-                _instComputeShader.SetFloat(MinFadeDist, currentPresets.minFadeDistance);
-                _instComputeShader.SetFloat(MaxFadeDist, currentPresets.maxFadeDistance);
-            }
+            _instComputeShader.SetFloat(MinFadeDist, currentPresets.minFadeDistance);
+            _instComputeShader.SetFloat(MaxFadeDist, currentPresets.maxFadeDistance);
         }
 
         _cutBuffer.SetData(_cutIDs);
