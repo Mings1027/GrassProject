@@ -70,9 +70,11 @@ float3 ApplyAdditionalLightTest(float3 worldPos, float3 worldNormal, float addit
             if (light.shadowAttenuation >= 0)
             {
                 float3 lightColor = light.color * light.distanceAttenuation * additionalLightIntensity;
-                if (light.shadowAttenuation == 0)
+                if (light.shadowAttenuation < 1) // If there is shadow
                 {
-                    lightColor *= additionalLightShadowStrength * shadowColor;
+                    float shadowStrength = lerp(0, 1 - light.shadowAttenuation, additionalLightShadowStrength);
+                    
+                    lightColor = lerp(lightColor, lightColor * shadowColor, shadowStrength);
                 }
                 diffuseColor += LightingLambert(lightColor, light.direction, worldNormal);
             }

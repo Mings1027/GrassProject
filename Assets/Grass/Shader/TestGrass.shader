@@ -4,8 +4,8 @@ Shader "Custom/TestGrass"
 	{
 		[Header(Additional Light)]
 		_AdditionalLightIntensity("Light Intensity", Range(0, 1)) = 0.5
-		_AdditionalLightShadowColor("Shadow Color", Color) = (0, 0, 0, 1)
 		_AdditionalLightShadowStrength("Shadow Strength", Range(0, 1)) = 0.8
+		_AdditionalLightShadowColor("Shadow Color", Color) = (0, 0, 0, 1)
 
 		[Header(Tone Mapping)]
 		_OverallIntensity("Overall Intensity", Range(0, 1)) = 1

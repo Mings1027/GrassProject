@@ -42,8 +42,8 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AdditionalLightIntensity: 1
-    - _AdditionalLightShadowStrength: 0.865
+    - _AdditionalLightIntensity: 0.63
+    - _AdditionalLightShadowStrength: 0.917
     - _AlphaTestToggle: 0
     - _BlendFloor: 0
     - _BlendMult: 0.95
@@ -58,7 +58,7 @@ Material:
     - _MainShadowInfluence: 1
     - _Metallic: 1
     - _NightColorMultiplier: 1
-    - _OverallIntensity: 0.846
+    - _OverallIntensity: 1
     - _Saturation: 0.95
     - _ShadowLightBlend: 0.874
     - _ShadowLightIntensity: 1
@@ -69,8 +69,8 @@ Material:
     - _Surface: 0
     m_Colors:
     - _AdditionalLightColor: {r: 0, g: 0, b: 0, a: 0}
-    - _AdditionalLightShadowColor: {r: 0, g: 0, b: 0, a: 1}
-    - _AmbientAdjustmentColor: {r: 0.7075471, g: 0.7075471, b: 0.7075471, a: 1}
+    - _AdditionalLightShadowColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 1}
+    - _AmbientAdjustmentColor: {r: 0.7169812, g: 0.7169812, b: 0.7169812, a: 1}
     - _BottomTint: {r: 0.754717, g: 0.18867925, b: 0.18867925, a: 1}
     - _MainLightColorOverride: {r: 0.49056602, g: 0.49056602, b: 0.49056602, a: 1}
     - _MainLightShadowColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
