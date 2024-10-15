@@ -20,7 +20,7 @@ MonoBehaviour:
   bladeForward: 0.719
   bladeCurve: 2
   bottomWidth: 0.249
-  minWidth: 0.3
+  minWidth: 0.2
   maxWidth: 0.6
   minHeight: 0.5
   maxHeight: 3

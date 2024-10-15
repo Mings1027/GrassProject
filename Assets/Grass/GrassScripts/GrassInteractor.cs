@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class GrassInteractor : MonoBehaviour
 {
-    public float radius = 1f;
+    [Range(0, 10)] public float radius = 1f;
 
     private void OnEnable()
     {
