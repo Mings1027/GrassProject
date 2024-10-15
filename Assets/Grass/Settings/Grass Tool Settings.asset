@@ -32,7 +32,7 @@ MonoBehaviour:
   rangeR: 0.216
   rangeG: 0
   rangeB: 0.228
-  adjustedColor: {r: 0.83137256, g: 0.49531496, b: 0.01960784, a: 1}
+  adjustedColor: {r: 0.83137256, g: 0.4170214, b: 0.01960784, a: 1}
   paintMask:
     serializedVersion: 2
     m_Bits: 8

@@ -42,8 +42,8 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AdditionalLightIntensity: 0.63
-    - _AdditionalLightShadowStrength: 0.917
+    - _AdditionalLightIntensity: 0.267
+    - _AdditionalLightShadowStrength: 0.852
     - _AlphaTestToggle: 0
     - _BlendFloor: 0
     - _BlendMult: 0.95
