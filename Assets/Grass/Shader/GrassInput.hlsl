@@ -23,25 +23,25 @@ struct Varyings
     float4 terrainBlendingColor : TEXCOORD5;
 };
 
-CBUFFER_START(UnityPerMaterial)
-    float4 _TopTint;
-    float4 _BottomTint;
+CBUFFER_START (UnityPerMaterial)
+float4 _TopTint;
+float4 _BottomTint;
 
-    // Additional Light
-    float _AdditionalLightIntensity;
-    float _AdditionalLightShadowStrength;
-    float4 _AdditionalLightShadowColor;
+// Additional Light
+float _AdditionalLightIntensity;
+float _AdditionalLightShadowStrength;
+float4 _AdditionalLightShadowColor;
 
-    // Tone Mapping
-    float _Saturation;
-    float _OverallIntensity;
-    float _Exposure;
+// Tone Mapping
+float _Saturation;
+float _OverallIntensity;
+float _Exposure;
 
-    // Blend
-    float _BlendMult, _BlendOff;
-    float4 _AmbientAdjustmentColor;
-    uniform TEXTURE2D(_TerrainDiffuse);
-    uniform SAMPLER(sampler_TerrainDiffuse);
+// Blend
+float _BlendMult, _BlendOff;
+float4 _AmbientAdjustmentColor;
+uniform TEXTURE2D (_TerrainDiffuse);
+uniform SAMPLER (sampler_TerrainDiffuse);
 CBUFFER_END
 
 #endif

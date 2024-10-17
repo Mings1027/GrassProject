@@ -2,7 +2,7 @@ using UnityEngine;
 
 [System.Serializable]
 [CreateAssetMenu(fileName = "Grass Tool Settings", menuName = "Utility/GrassToolSettings")]
-public class GrassToolSettingSO : ScriptableObject
+public class GrassToolSettingSo : ScriptableObject
 {
     public enum VertexColorSetting
     {
@@ -12,54 +12,238 @@ public class GrassToolSettingSO : ScriptableObject
         Green
     }
 
-    [Header("Terrain Layer Settings")] public float[] layerBlocking;
+    [Header("Terrain Layer Settings")] [SerializeField]
+    private float[] layerBlocking = new float[8];
 
-    public bool[] layerFading;
+    public float[] LayerBlocking
+    {
+        get => layerBlocking;
+        set => layerBlocking = value;
+    }
 
-    [Header("Vertex Color Settings")] public VertexColorSetting vertexColorSettings;
+    [SerializeField] private bool[] layerFading = new bool[8];
 
-    public VertexColorSetting vertexFade;
+    public bool[] LayerFading
+    {
+        get => layerFading;
+        set => layerFading = value;
+    }
 
-    // length/width
-    public float sizeWidth;
+    [Header("Vertex Color Settings")] [SerializeField]
+    private VertexColorSetting vertexColorSettings;
+
+    public VertexColorSetting VertexColorSettings
+    {
+        get => vertexColorSettings;
+        set => vertexColorSettings = value;
+    }
+
+    [SerializeField] private VertexColorSetting vertexFade;
+
+    public VertexColorSetting VertexFade
+    {
+        get => vertexFade;
+        set => vertexFade = value;
+    }
+
+    [SerializeField] private float grassWidth = 0.1f;
+
+    public float GrassWidth
+    {
+        get => grassWidth;
+        set => grassWidth = Mathf.Clamp(value, MinSizeWidth, MaxSizeWidth);
+    }
+
+    [SerializeField] private float grassHeight = 1f;
+
+    public float GrassHeight
+    {
+        get => grassHeight;
+        set => grassHeight = Mathf.Clamp(value, MinSizeHeight, MaxSizeHeight);
+    }
+
+    [SerializeField] private float adjustWidth = 0f;
+
+    public float AdjustWidth
+    {
+        get => adjustWidth;
+        set => adjustWidth = Mathf.Clamp(value, MinAdjust, MaxAdjust);
+    }
+
+    [SerializeField] private float adjustHeight = 0f;
+
+    public float AdjustHeight
+    {
+        get => adjustHeight;
+        set => adjustHeight = Mathf.Clamp(value, MinAdjust, MaxAdjust);
+    }
+
+    [SerializeField] private float adjustWidthMax = 2f;
+
+    public float AdjustWidthMax
+    {
+        get => adjustWidthMax;
+        set => adjustWidthMax = Mathf.Max(0.01f, value);
+    }
+
+    [SerializeField] private float adjustHeightMax = 2f;
+
+    public float AdjustHeightMax
+    {
+        get => adjustHeightMax;
+        set => adjustHeightMax = Mathf.Max(0.01f, value);
+    }
+
+    [SerializeField] private float reprojectOffset = 1f;
+
+    public float ReprojectOffset
+    {
+        get => reprojectOffset;
+        set => reprojectOffset = value;
+    }
+
+    [SerializeField] private float rangeR;
+
+    [SerializeField] private float rangeG;
+
+    [SerializeField] private float rangeB;
+
+    public float RangeR
+    {
+        get => rangeR;
+        set => rangeR = Mathf.Clamp01(value);
+    }
+
+    public float RangeG
+    {
+        get => rangeG;
+        set => rangeG = Mathf.Clamp01(value);
+    }
+
+    public float RangeB
+    {
+        get => rangeB;
+        set => rangeB = Mathf.Clamp01(value);
+    }
+
+    [SerializeField] private Color adjustedColor = Color.white;
+
+    public Color AdjustedColor
+    {
+        get => adjustedColor;
+        set => adjustedColor = value;
+    }
+
+    [SerializeField] private LayerMask paintMask = 1;
+
+    public LayerMask PaintMask
+    {
+        get => paintMask;
+        set => paintMask = value;
+    }
+
+    [SerializeField] private LayerMask paintBlockMask = 0;
+
+    public LayerMask PaintBlockMask
+    {
+        get => paintBlockMask;
+        set => paintBlockMask = value;
+    }
+
+    [SerializeField] private float brushSize = 4f;
+
+    public float BrushSize
+    {
+        get => brushSize;
+        set => brushSize = Mathf.Clamp(value, MinBrushSize, MaxBrushSize);
+    }
+
+    [SerializeField] private float brushFalloffSize = 0.8f;
+
+    public float BrushFalloffSize
+    {
+        get => brushFalloffSize;
+        set => brushFalloffSize = Mathf.Clamp(value, MinBrushFalloffSize, MaxBrushFalloffSize);
+    }
+
+    [SerializeField] private float falloffOuterSpeed;
+
+    public float FalloffOuterSpeed
+    {
+        get => falloffOuterSpeed;
+        set => falloffOuterSpeed = Mathf.Clamp01(value);
+    }
+
+    [SerializeField] private int density = 1;
+
+    public int Density
+    {
+        get => density;
+        set => density = Mathf.Clamp(value, MinDensity, MaxDensity);
+    }
+
+    [SerializeField] private float normalLimit = 1f;
+
+    public float NormalLimit
+    {
+        get => normalLimit;
+        set => normalLimit = Mathf.Clamp(value, MinNormalLimit, MaxNormalLimit);
+    }
+
+    [SerializeField] private int grassAmountToGenerate = 100000;
+
+    public int GrassAmountToGenerate
+    {
+        get => grassAmountToGenerate;
+        set => grassAmountToGenerate = Mathf.Clamp(value, MinGrassAmountToGenerate, MaxGrassAmountToGenerate);
+    }
+
+    [SerializeField] private float generationDensity = 1f;
+
+    public float GenerationDensity
+    {
+        get => generationDensity;
+        set => generationDensity = Mathf.Clamp(value, MinGenerationDensity, MaxGenerationDensity);
+    }
+
+    // Constants
     public float MinSizeWidth => 0.01f;
     public float MaxSizeWidth => 2f;
-
-    public float sizeHeight;
     public float MinSizeHeight => 0.01f;
     public float MaxSizeHeight => 2f;
-
-    // length/width adjustments
-    public float AdjustWidth { get; set; }
-    public float AdjustHeight { get; set; }
-    public float MinAdjust => -1;
-    public float MaxAdjust => 1;
-
-    public float adjustWidthMax = 2f;
-    public float adjustHeightMax = 2f;
-
-    // reproject settings
-    public float reprojectOffset = 1f;
-
-    // color settings
-    public float rangeR, rangeG, rangeB;
-    public Color adjustedColor = Color.white;
-
-    // brush settings
-    public LayerMask paintMask = 1; // 풀을 그릴 위치를 설정하기 위한 레이어
-    public LayerMask paintBlockMask = 0; // 풀을 그리지 않을 영역을 설정하기 위한 레이어
-
-    public float brushSize = 4f;
+    public float MinAdjust => -1f;
+    public float MaxAdjust => 1f;
     public float MinBrushSize => 0.1f;
     public float MaxBrushSize => 50f;
+    public float MinBrushFalloffSize => 0f;
+    public float MaxBrushFalloffSize => 1f;
+    public int MaxDensity => 100;
+    public int MinDensity => 1;
+    public float MaxNormalLimit => 1f;
+    public float MinNormalLimit => 0f;
+    public int MaxGrassAmountToGenerate => 100000;
+    public int MinGrassAmountToGenerate => 0;
+    public float MaxGenerationDensity => 1f;
+    public float MinGenerationDensity => 0.01f;
 
-    public float brushFalloffSize = 0.8f;
-    public float flow;
-    public int density = 1;
-    public float normalLimit = 1;
-    public int rayDensity = 1;
-    public int grassAmountToGenerate = 100000;
-    public float generationDensity = 1;
+    private void OnValidate()
+    {
+        // 값이 변경될 때 범위를 확인하고 조정합니다.
+        GrassWidth = grassWidth;
+        GrassHeight = grassHeight;
+        AdjustWidth = adjustWidth;
+        AdjustHeight = adjustHeight;
+        BrushSize = brushSize;
+        BrushFalloffSize = brushFalloffSize;
+        FalloffOuterSpeed = falloffOuterSpeed;
+        Density = density;
+        NormalLimit = normalLimit;
+        GrassAmountToGenerate = grassAmountToGenerate;
+        GenerationDensity = generationDensity;
+        RangeR = rangeR;
+        RangeG = rangeG;
+        RangeB = rangeB;
+    }
 
     public void CreateNewLayers()
     {

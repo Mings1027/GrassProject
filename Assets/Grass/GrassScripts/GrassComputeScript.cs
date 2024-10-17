@@ -5,6 +5,7 @@ using Grass.GrassScripts;
 using PoolControl;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -14,9 +15,6 @@ public class GrassComputeScript : MonoBehaviour
 {
 #if UNITY_EDITOR
     [HideInInspector] public bool autoUpdate; // very slow, but will update always
-    private float _lastUpdateTime;
-    private const float UpdateInterval = 0.5f; // 0.5초마다 업데이트
-    private bool _isDirty;
 #endif
     private Camera _mainCamera; // main camera
     public GrassSettingSO currentPresets; // grass settings to send to the compute shader
@@ -97,6 +95,16 @@ public class GrassComputeScript : MonoBehaviour
         // When the window is destroyed, remove the delegate
         // so that it will no longer do any drawing.
         SceneView.duringSceneGui -= OnScene;
+        SceneView.duringSceneGui -= OnSceneGUI;
+    }
+
+    private void OnSceneGUI(SceneView sceneView)
+    {
+        if (!Application.isPlaying)
+        {
+            EditorApplication.QueuePlayerLoopUpdate();
+            SceneView.RepaintAll();
+        }
     }
 
     private void OnScene(SceneView scene)
@@ -139,7 +147,7 @@ public class GrassComputeScript : MonoBehaviour
     {
         GrassEventManager<GrassInteractor>.AddListener(GrassEvent.InteractorAdded, AddInteractor);
         GrassEventManager<GrassInteractor>.AddListener(GrassEvent.InteractorRemoved, RemoveInteractor);
-        
+
         _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
         // If initialized, call on disable to clean things up
         if (_initialized)
@@ -158,12 +166,8 @@ public class GrassComputeScript : MonoBehaviour
 #if UNITY_EDITOR
         if (!Application.isPlaying && autoUpdate && !_fastMode)
         {
-            if (UnityEngine.Time.realtimeSinceStartup - _lastUpdateTime > UpdateInterval)
-            {
-                _lastUpdateTime = UnityEngine.Time.realtimeSinceStartup;
-                OnDisable();
-                OnEnable();
-            }
+            OnDisable();
+            OnEnable();
         }
 
         // If not initialized, do nothing (creating zero-length buffer will crash)
@@ -193,7 +197,7 @@ public class GrassComputeScript : MonoBehaviour
         {
             // Dispatch the grass shader. It will run on the GPU
             _instComputeShader.Dispatch(_idGrassKernel, _dispatchSize, 1, 1);
-            
+
             var renderParams = new RenderParams(instantiatedMaterial)
             {
                 worldBounds = _bounds,
@@ -267,6 +271,8 @@ public class GrassComputeScript : MonoBehaviour
 #if UNITY_EDITOR
         SceneView.duringSceneGui -= OnScene;
         SceneView.duringSceneGui += OnScene;
+        SceneView.duringSceneGui -= OnSceneGUI;
+        SceneView.duringSceneGui += OnSceneGUI;
         if (!Application.isPlaying)
         {
             if (_view && _view.camera)
@@ -613,6 +619,6 @@ public struct GrassData
 {
     public Vector3 position;
     public Vector3 normal;
-    public Vector2 length;
+    public Vector2 widthHeight;
     public Vector3 color;
 }

@@ -63,10 +63,10 @@ Shader "Custom/TestGrass"
 				"LightMode" = "ShadowCaster"
 			}
 
-			ZWrite On
-			ZTest LEqual
-			ColorMask 0
-			Cull Off
+//			ZWrite On
+//			ZTest LEqual
+//			ColorMask 0
+//			Cull Off
 
 			HLSLPROGRAM
 			#pragma vertex ShadowPassVertex

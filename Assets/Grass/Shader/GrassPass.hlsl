@@ -36,7 +36,7 @@ void CalculateCutOff(float extraBufferX, float worldPosY)
     clip(cutOffTop - 0.01);
 }
 
-float3 CalculateLighting(float3 albedo, float3 normalWS, float3 worldPos)
+float3 CalculateMainLight(float3 albedo, float3 normalWS, float3 worldPos)
 {
     float4 shadowCoord = TransformWorldToShadowCoord(worldPos);
     Light mainLight = GetMainLight(shadowCoord);
@@ -92,13 +92,13 @@ float4 frag(Varyings input) : SV_Target
 
     CalculateCutOff(input.extraBuffer.x, input.worldPos.y);
 
-    float3 litColor = CalculateLighting(baseColor.rgb, input.normalWS, input.worldPos);
+    float3 mainLight = CalculateMainLight(baseColor.rgb, input.normalWS, input.worldPos);
 
-    float3 additionalLightColor = ApplyAdditionalLightTest(input.worldPos, input.normalWS, _AdditionalLightIntensity,
+    float3 additionalLight = CalculateAdditionalLight(input.worldPos, input.normalWS, _AdditionalLightIntensity,
                                                            _AdditionalLightShadowStrength,
                                                            _AdditionalLightShadowColor.rgb);
 
-    float3 finalColor = litColor + additionalLightColor;
+    float3 finalColor = mainLight + additionalLight;
 
 
     finalColor *= _OverallIntensity;

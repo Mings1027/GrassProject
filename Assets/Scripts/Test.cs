@@ -8,32 +8,15 @@ using UnityEngine.EventSystems;
 using UnityEngine.Profiling;
 using Random = UnityEngine.Random;
 
-public abstract class Test : MonoBehaviour
+public class Test : MonoBehaviour
 {
-    public virtual IEnumerator TestCo()
+    private void Start()
     {
-        Debug.Log("Parent");
-        yield return null;
+        Debug.Log("Start");
     }
 
-    public virtual async UniTask TestAsync()
+    private void Update()
     {
-        Debug.Log("Parent");
-        await UniTask.Yield();
-    }
-}
-
-public class TestChildren : Test
-{
-    public override IEnumerator TestCo()
-    {
-        Debug.Log("Children");
-        return null;
-    }
-
-    public override async UniTask TestAsync()
-    {
-        Debug.Log("Children");
-        await UniTask.Yield();
+        Debug.Log("Update");
     }
 }
