@@ -42,12 +42,12 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AdditionalLightIntensity: 0.585
+    - _AdditionalLightIntensity: 0.521
     - _AdditionalLightShadowStrength: 1
     - _AlphaTestToggle: 0
     - _BlendFloor: 0
     - _BlendMult: 1
-    - _BlendOff: 0.201
+    - _BlendOff: 0.2
     - _DebugVisualization: 0
     - _Edge: 1
     - _Exposure: 1
@@ -60,7 +60,7 @@ Material:
     - _Metallic: 1
     - _NightColorMultiplier: 1
     - _OverallIntensity: 1
-    - _Saturation: 0.95
+    - _Saturation: 1
     - _ShadowLightBlend: 0.874
     - _ShadowLightIntensity: 1
     - _ShadowLightInteraction: 1

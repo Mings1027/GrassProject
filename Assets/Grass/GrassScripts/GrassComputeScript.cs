@@ -52,9 +52,9 @@ public class GrassComputeScript : MonoBehaviour
     };
 
     // culling tree data ----------------------------------------------------------------------
-    private CullingTreeNode _cullingTree;
+    private CullingTree _cullingTree;
     private readonly List<Bounds> _boundsListVis = new();
-    private readonly List<CullingTreeNode> _leaves = new();
+    private readonly List<CullingTree> _leaves = new();
     private readonly Plane[] _cameraFrustumPlanes = new Plane[6];
     private float _cameraOriginalFarPlane;
 
@@ -385,7 +385,7 @@ public class GrassComputeScript : MonoBehaviour
     {
         if (full)
         {
-            _cullingTree = new CullingTreeNode(_bounds, currentPresets.cullingTreeDepth);
+            _cullingTree = new CullingTree(_bounds, currentPresets.cullingTreeDepth);
             _leaves.Clear();
             _cullingTree.RetrieveAllLeaves(_leaves);
             //add the id of each grass point into the right cullingtree
