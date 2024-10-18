@@ -61,8 +61,6 @@ namespace Grass.Editor
 
         private Vector3 _mousePos;
 
-        private RaycastHit[] _terrainHit;
-        private int _flowTimer;
         private Vector3 _lastPosition = Vector3.zero;
 
         [SerializeField] private GameObject grassObject;
@@ -115,6 +113,7 @@ namespace Grass.Editor
             {
                 _grassCompute.GrassDataList = grassData;
                 _grassCompute.Reset();
+                EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
             }
 
             toolSettings = (GrassToolSettingSo)EditorGUILayout.ObjectField("Grass Tool Settings", toolSettings,
@@ -707,17 +706,14 @@ namespace Grass.Editor
                 DrawHandles();
             }
         }
-
-        private readonly RaycastHit[] _results = new RaycastHit[1];
-
+        
         // draw the painter handles
         private void DrawHandles()
         {
-            var hits = Physics.RaycastNonAlloc(_mousePointRay, _results, 200f, toolSettings.PaintMask.value);
-            for (var i = 0; i < hits; i++)
+            if(Physics.Raycast(_mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
             {
-                _hitPos = _results[i].point;
-                _hitNormal = _results[i].normal;
+                _hitPos = hit.point;
+                _hitNormal = hit.normal;
             }
 
             //base
@@ -779,7 +775,6 @@ namespace Grass.Editor
             SceneView.duringSceneGui += OnSceneGUI;
             SceneView.duringSceneGui += OnScene;
             Undo.undoRedoPerformed += HandleUndo;
-            _terrainHit = new RaycastHit[10];
         }
 
         private void OnFocus()
@@ -1270,13 +1265,13 @@ namespace Grass.Editor
                             AddGrass(e);
                             break;
                         case ToolBarOption.Remove:
-                            RemoveAtPoint(_terrainHit, e);
+                            RemoveAtPoint(e);
                             break;
                         case ToolBarOption.Edit:
                             EditGrassPainting(e);
                             break;
                         case ToolBarOption.Reproject:
-                            ReprojectGrassPainting(_terrainHit, e);
+                            ReprojectGrassPainting(e);
                             break;
                     }
 
@@ -1290,15 +1285,13 @@ namespace Grass.Editor
                 }
             }
         }
-
-
-        private void RemoveAtPoint(RaycastHit[] terrainHit, Event e)
+        
+        private void RemoveAtPoint(Event e)
         {
-            var hits = Physics.RaycastNonAlloc(_mousePointRay, terrainHit, 100f, toolSettings.PaintMask.value);
-            for (var i = 0; i < hits; i++)
+            if(Physics.Raycast(_mousePointRay,out var hit,float.MaxValue, toolSettings.PaintMask.value))
             {
-                _hitPos = terrainHit[i].point;
-                _hitNormal = terrainHit[i].normal;
+                _hitPos = hit.point;
+                _hitNormal = hit.normal;
                 RemovePositionsNearRayCastHit(_hitPos, toolSettings.BrushSize);
             }
 
@@ -1387,7 +1380,7 @@ namespace Grass.Editor
 
         private void EditGrassPainting(Event e)
         {
-            if (!Physics.Raycast(_mousePointRay, out var hit, 200f, toolSettings.PaintMask.value))
+            if (!Physics.Raycast(_mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
                 return;
 
             var hitPos = hit.point;
@@ -1463,20 +1456,18 @@ namespace Grass.Editor
         }
 
 
-        private void ReprojectGrassPainting(RaycastHit[] terrainHit, Event e)
+        private void ReprojectGrassPainting(Event e)
         {
-            var hits = Physics.RaycastNonAlloc(_mousePointRay, terrainHit, 200f, toolSettings.PaintMask.value);
-            for (var i = 0; i < hits; i++)
-
+            if(Physics.Raycast(_mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
             {
-                _hitPos = terrainHit[i].point;
-                _hitNormal = terrainHit[i].normal;
+                _hitPos = hit.point;
+                _hitNormal = hit.normal;
 
                 for (var j = 0; j < grassData.Count; j++)
                 {
                     var pos = grassData[j].position;
                     //  pos += grassObject.transform.position;
-                    var dist = Vector3.Distance(terrainHit[i].point, pos);
+                    var dist = Vector3.Distance(hit.point, pos);
 
                     // if its within the radius of the brush, raycast to a new position
                     if (dist <= toolSettings.BrushSize)
