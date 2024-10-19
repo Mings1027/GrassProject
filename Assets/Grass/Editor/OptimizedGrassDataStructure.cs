@@ -26,8 +26,9 @@ namespace Grass.Editor
         public void RemoveGrass(Vector3 position, float radius)
         {
             var nearbyIds = _spatialHashGrid.QueryRadius(position, radius);
-            foreach (var id in nearbyIds)
+            for (var i = 0; i < nearbyIds.Count; i++)
             {
+                var id = nearbyIds[i];
                 if (_grassDataDict.TryGetValue(id, out var grassData))
                 {
                     if (Vector3.Distance(grassData.position, position) <= radius)
@@ -49,8 +50,9 @@ namespace Grass.Editor
             result.Clear(); // 기존 내용을 비웁니다
             var nearbyIds = _spatialHashGrid.QueryRadius(position, radius);
 
-            foreach (var id in nearbyIds)
+            for (var i = 0; i < nearbyIds.Count; i++)
             {
+                var id = nearbyIds[i];
                 if (_grassDataDict.TryGetValue(id, out var grassData))
                 {
                     if (Vector3.Distance(grassData.position, position) <= radius)

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
@@ -140,6 +141,26 @@ public class GrassToolSettingSo : ScriptableObject
     {
         get => paintMask;
         set => paintMask = value;
+    }
+
+    public List<string> GetPaintMaskLayerNames()
+    {
+        List<string> layerNames = new List<string>();
+
+        for (int i = 0; i < 32; i++)
+        {
+            // Check if the layer is active in the LayerMask
+            if ((PaintMask.value & (1 << i)) != 0)
+            {
+                string layerName = LayerMask.LayerToName(i);
+                if (!string.IsNullOrEmpty(layerName))
+                {
+                    layerNames.Add(layerName);
+                }
+            }
+        }
+
+        return layerNames;
     }
 
     [SerializeField] private LayerMask paintBlockMask = 0;
