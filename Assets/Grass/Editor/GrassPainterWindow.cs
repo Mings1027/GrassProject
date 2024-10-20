@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -98,6 +101,9 @@ namespace Grass.Editor
         private readonly List<int> _grassIndicesToEdit = new();
 
         private bool _isInit;
+        private bool _isProcessing;
+        private CancellationTokenSource _cts;
+        private readonly List<ObjectProgress> _objectProgresses = new();
 
         [MenuItem("Tools/Grass Tool")]
         private static void Init()
@@ -128,6 +134,20 @@ namespace Grass.Editor
 
         private void OnGUI()
         {
+            if (_isProcessing)
+            {
+                float yOffset = position.height - (_objectProgresses.Count * 25f) - 10;
+                for (int i = 0; i < _objectProgresses.Count; i++)
+                {
+                    var progress = _objectProgresses[i];
+                    EditorGUI.ProgressBar(new Rect(10, yOffset + (i * 25f), position.width - 20, 20),
+                        progress.progress, $"{progress.objectName}: {progress.progressMessage}");
+                }
+
+                Repaint(); // GUI를 계속 업데이트하기 위해 Repaint 호출
+                return;
+            }
+
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
             if (GUILayout.Button("Manual Update", GUILayout.Height(50)))
             {
@@ -265,30 +285,7 @@ namespace Grass.Editor
                 var selectedObjects = Selection.gameObjects;
                 if (selectedObjects is { Length: > 0 })
                 {
-                    if (EditorUtility.DisplayDialog("Clear Grass",
-                            "Remove grass from selected mesh(es)?",
-                            "Yes", "No"))
-                    {
-                        Undo.RegisterCompleteObjectUndo(this, "Cleared Grass from Mesh(es)");
-
-                        var totalRemovedGrass = 0;
-                        for (var i = 0; i < selectedObjects.Length; i++)
-                        {
-                            totalRemovedGrass += RemoveGrassOnSelectedObject(selectedObjects[i]);
-                        }
-
-                        if (totalRemovedGrass > 0)
-                        {
-                            UpdateGrassData();
-                            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
-                            Debug.Log(
-                                $"Removed {totalRemovedGrass} grass instances from {selectedObjects.Length} object(s).");
-                        }
-                        else
-                        {
-                            Debug.Log("No grass found on the selected object(s).");
-                        }
-                    }
+                    ClearCurrentGrass(selectedObjects).Forget();
                 }
                 else
                 {
@@ -537,7 +534,7 @@ namespace Grass.Editor
                             "Are you sure you want to modify the width and height of all grass elements?",
                             "Yes", "No"))
                     {
-                        ModifyLengthAndWidth();
+                        ModifyWidthAndHeight();
                     }
                 }
 
@@ -622,19 +619,7 @@ namespace Grass.Editor
                     if (selectedObjects is { Length: > 0 })
                     {
                         Undo.RegisterCompleteObjectUndo(this, "Add new Positions from Mesh(es)");
-
-                        var totalNewGrass = 0;
-                        for (var i = 0; i < selectedObjects.Length; i++)
-                        {
-                            var previousCount = GrassAmount;
-                            GeneratePositions(selectedObjects[i]);
-                            totalNewGrass += GrassAmount - previousCount;
-                        }
-
-                        UpdateGrassData();
-                        EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
-                        Debug.Log(
-                            $"Added {totalNewGrass} grass instances to {selectedObjects.Length} object(s). Total grass count: {GrassAmount}");
+                        AddGrassOnMesh(selectedObjects).Forget();
                     }
                     else
                     {
@@ -653,34 +638,7 @@ namespace Grass.Editor
                     if (selectedObjects is { Length: > 0 })
                     {
                         Undo.RegisterCompleteObjectUndo(this, "Regenerated Positions on Mesh(es)");
-
-                        var totalRemovedGrass = 0;
-                        var totalNewGrass = 0;
-                        for (var i = 0; i < selectedObjects.Length; i++)
-                        {
-                            totalRemovedGrass += RemoveGrassOnSelectedObject(selectedObjects[i]);
-                        }
-
-                        if (totalRemovedGrass > 0)
-                        {
-                            UpdateGrassData();
-                        }
-
-                        for (var i = 0; i < selectedObjects.Length; i++)
-                        {
-                            var previousCount = GrassAmount;
-                            GeneratePositions(selectedObjects[i]);
-                            totalNewGrass += GrassAmount - previousCount;
-                        }
-
-                        UpdateGrassData();
-                        EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
-                        Debug.Log(
-                            $"Regenerated grass on {selectedObjects.Length} object(s): Removed {totalRemovedGrass}, Added {totalNewGrass}");
-                    }
-                    else
-                    {
-                        Debug.LogWarning("No objects selected. Please select one or more objects in the scene.");
+                        RegenerateGrass(selectedObjects).Forget();
                     }
                 }
             }
@@ -886,7 +844,6 @@ namespace Grass.Editor
             }
         }
 
-        // draw the painter handles
         private void DrawHandles()
         {
             if (Physics.Raycast(_mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
@@ -1003,7 +960,7 @@ namespace Grass.Editor
 
         private readonly Collider[] _generateColliders = new Collider[1];
 
-        private void GeneratePositions(GameObject selection)
+        private void GeneratePositions(GameObject selection, RemoveObject removeObject)
         {
             var selectionLayer = selection.layer;
             var paintMask = toolSettings.PaintMask.value;
@@ -1163,20 +1120,104 @@ namespace Grass.Editor
 
             UpdateGrassData();
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
-
-            // Debug.Log($"Generated {newGrassData.Count} new grass instances. Total grass count: {_grassAmount}");
         }
 
-        private int RemoveGrassOnSelectedObject(GameObject selectedObject)
+        private async UniTask AddGrassOnMesh(GameObject[] selectedObjects)
         {
-            var worldBounds = GetObjectBounds(selectedObject);
-            if (worldBounds.size == Vector3.zero)
+            _isProcessing = true;
+            _cts = new CancellationTokenSource();
+
+            InitializeObjectProgresses(selectedObjects);
+            var removeObjects = selectedObjects.Select(CreateRemoveObject).Where(obj => obj != null).ToArray();
+
+            await GrassGeneration(selectedObjects, removeObjects);
+
+            UpdateGrassData();
+            _isProcessing = false;
+        }
+
+        private async UniTask ClearCurrentGrass(GameObject[] selectedObjects)
+        {
+            _isProcessing = true;
+            _cts = new CancellationTokenSource();
+
+            InitializeObjectProgresses(selectedObjects);
+            var removeObjects = selectedObjects.Select(CreateRemoveObject).Where(obj => obj != null).ToArray();
+
+            await RemoveGrassFromObjects(selectedObjects, removeObjects);
+
+            UpdateGrassData();
+            _isProcessing = false;
+        }
+
+        private async UniTask RegenerateGrass(GameObject[] selectedObjects)
+        {
+            _isProcessing = true;
+            _cts = new CancellationTokenSource();
+
+            InitializeObjectProgresses(selectedObjects);
+            var removeObjects = selectedObjects.Select(CreateRemoveObject).Where(obj => obj != null).ToArray();
+
+            await RemoveGrassFromObjects(selectedObjects, removeObjects);
+            await GrassGeneration(selectedObjects, removeObjects);
+
+            UpdateGrassData();
+            _isProcessing = false;
+        }
+
+        private void InitializeObjectProgresses(GameObject[] selectedObjects)
+        {
+            _objectProgresses.Clear();
+            for (var i = 0; i < selectedObjects.Length; i++)
             {
-                Debug.LogWarning($"Unable to determine bounds for {selectedObject.name}. Skipping grass removal.");
-                return 0;
+                var obj = selectedObjects[i];
+                _objectProgresses.Add(new ObjectProgress
+                {
+                    objectName = obj.name,
+                    progress = 0,
+                    progressMessage = "Initializing..."
+                });
+            }
+        }
+
+        private async UniTask RemoveGrassFromObjects(GameObject[] selectedObjects, RemoveObject[] removeObjects)
+        {
+            var tasks = new UniTask[removeObjects.Length];
+            for (var i = 0; i < removeObjects.Length; i++)
+            {
+                int index = i;
+                tasks[i] = UniTask.RunOnThreadPool(() =>
+                    RemoveGrassForObjectAsync(removeObjects[index], index));
             }
 
-            var initialCount = GrassAmount;
+            await UniTask.WhenAll(tasks);
+        }
+
+        private RemoveObject CreateRemoveObject(GameObject obj)
+        {
+            if (obj.TryGetComponent(out MeshFilter _))
+            {
+                return new RemoveMeshFilter(obj);
+            }
+
+            if (obj.TryGetComponent(out Terrain _))
+            {
+                return new RemoveTerrain(obj);
+            }
+
+            Debug.LogWarning($"Unsupported object type for {obj.name}");
+            return null;
+        }
+
+        private async UniTask RemoveGrassForObjectAsync(RemoveObject removeObject, int objIndex)
+        {
+            var worldBounds = removeObject.GetBounds();
+            if (worldBounds.size == Vector3.zero)
+            {
+                Debug.LogWarning($"Unable to determine bounds for object");
+                return;
+            }
+
             var removeGrassList = new List<int>();
 
             var allGrassData = _grassDataStructure.GetAllGrassData();
@@ -1190,47 +1231,31 @@ namespace Grass.Editor
 
             for (var i = 0; i < removeGrassList.Count; i++)
             {
-                _grassDataStructure.RemoveGrass(allGrassData[removeGrassList[i]].position, 0.01f);
+                var index = removeGrassList[i];
+                _grassDataStructure.RemoveGrass(allGrassData[index].position, 0.01f);
+                if (i % 100 == 0 || i == removeGrassList.Count - 1) // 100개마다 또는 마지막에 진행 상황 업데이트
+                {
+                    _objectProgresses[objIndex].progressMessage = $"Removing grass - {i + 1}/{removeGrassList.Count}";
+                    _objectProgresses[objIndex].progress =
+                        (float)(i + 1) / removeGrassList.Count * 0.9f; // 잔디 제거는 전체 작업의 90%를 차지
+                    await UniTask.Yield(cancellationToken: _cts.Token);
+                }
             }
-
-            UpdateGrassData(false);
-
-            var removedCount = initialCount - GrassAmount;
-
-            if (removedCount > 0)
-            {
-                Debug.Log($"Removed {removedCount} grass instances from {selectedObject.name}");
-            }
-            else
-            {
-                Debug.Log($"No grass found on {selectedObject.name}");
-            }
-
-            return removedCount;
         }
 
-        private Bounds GetObjectBounds(GameObject obj)
+        private async UniTask GrassGeneration(GameObject[] selectedObjects, RemoveObject[] removeObjects)
         {
-            if (obj.TryGetComponent(out MeshFilter meshFilter))
+            for (int i = 0; i < selectedObjects.Length; i++)
             {
-                var localBounds = meshFilter.sharedMesh.bounds;
-                return new Bounds(
-                    obj.transform.TransformPoint(localBounds.center),
-                    Vector3.Scale(localBounds.size, obj.transform.lossyScale)
-                );
-            }
-            else if (obj.TryGetComponent(out Terrain terrain))
-            {
-                var terrainData = terrain.terrainData;
-                var terrainPos = terrain.transform.position;
-                return new Bounds(
-                    terrainPos + new Vector3(terrainData.size.x * 0.5f, terrainData.size.y * 0.5f,
-                        terrainData.size.z * 0.5f),
-                    terrainData.size
-                );
+                _objectProgresses[i].progressMessage = "Generating positions...";
+                _objectProgresses[i].progress = 0.9f; // 90% progress after removing grass
+                GeneratePositions(selectedObjects[i], removeObjects[i]);
+                _objectProgresses[i].progress = 1f; // 100% progress after generating positions
+                _objectProgresses[i].progressMessage = "Completed";
+                await UniTask.Yield(cancellationToken: _cts.Token);
             }
 
-            return new Bounds();
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
 
         private Vector3 GetRandomColor()
@@ -1278,121 +1303,6 @@ namespace Grass.Editor
             }
         }
 
-        // Using BurstCompile to compile a Job with burst
-        // Set CompileSynchronously to true to make sure that the method will not be compiled asynchronously
-        // but on the first schedule
-        [BurstCompile(CompileSynchronously = true)]
-        private struct GrassJob : IJob
-        {
-            [ReadOnly] public NativeArray<float> sizes;
-            [ReadOnly] public NativeArray<float> total;
-            [ReadOnly] public NativeArray<float> cumulativeSizes;
-            [ReadOnly] public NativeArray<Color> meshColors;
-            [ReadOnly] public NativeArray<Vector4> meshVertices;
-            [ReadOnly] public NativeArray<Vector3> meshNormals;
-            [ReadOnly] public NativeArray<int> meshTriangles;
-            [WriteOnly] public NativeArray<Vector3> point;
-            [WriteOnly] public NativeArray<float> widthHeight;
-            [WriteOnly] public NativeArray<Vector3> normals;
-
-            public GrassToolSettingSo.VertexColorSetting vertexColorSettings;
-            public GrassToolSettingSo.VertexColorSetting vertexFade;
-
-            public void Execute()
-            {
-                var randomSample = Random.value * total[0];
-                var triIndex = -1;
-
-                for (var i = 0; i < sizes.Length; i++)
-                {
-                    if (randomSample <= cumulativeSizes[i])
-                    {
-                        triIndex = i;
-                        break;
-                    }
-                }
-
-                if (triIndex == -1) Debug.LogError("triIndex should never be -1");
-
-                switch (vertexColorSettings)
-                {
-                    case GrassToolSettingSo.VertexColorSetting.Red:
-                        if (meshColors[meshTriangles[triIndex * 3]].r > 0.5f)
-                        {
-                            point[0] = Vector3.zero;
-                            return;
-                        }
-
-                        break;
-                    case GrassToolSettingSo.VertexColorSetting.Green:
-                        if (meshColors[meshTriangles[triIndex * 3]].g > 0.5f)
-                        {
-                            point[0] = Vector3.zero;
-                            return;
-                        }
-
-                        break;
-                    case GrassToolSettingSo.VertexColorSetting.Blue:
-                        if (meshColors[meshTriangles[triIndex * 3]].b > 0.5f)
-                        {
-                            point[0] = Vector3.zero;
-                            return;
-                        }
-
-                        break;
-                }
-
-                switch (vertexFade)
-                {
-                    case GrassToolSettingSo.VertexColorSetting.Red:
-                        var red = meshColors[meshTriangles[triIndex * 3]].r;
-                        var red2 = meshColors[meshTriangles[triIndex * 3 + 1]].r;
-                        var red3 = meshColors[meshTriangles[triIndex * 3 + 2]].r;
-
-                        widthHeight[0] = 1.0f - (red + red2 + red3) * 0.3f;
-                        break;
-                    case GrassToolSettingSo.VertexColorSetting.Green:
-                        var green = meshColors[meshTriangles[triIndex * 3]].g;
-                        var green2 = meshColors[meshTriangles[triIndex * 3 + 1]].g;
-                        var green3 = meshColors[meshTriangles[triIndex * 3 + 2]].g;
-
-                        widthHeight[0] = 1.0f - (green + green2 + green3) * 0.3f;
-                        break;
-                    case GrassToolSettingSo.VertexColorSetting.Blue:
-                        var blue = meshColors[meshTriangles[triIndex * 3]].b;
-                        var blue2 = meshColors[meshTriangles[triIndex * 3 + 1]].b;
-                        var blue3 = meshColors[meshTriangles[triIndex * 3 + 2]].b;
-
-                        widthHeight[0] = 1.0f - (blue + blue2 + blue3) * 0.3f;
-                        break;
-                    case GrassToolSettingSo.VertexColorSetting.None:
-                        widthHeight[0] = 1.0f;
-                        break;
-                }
-
-                Vector3 a = meshVertices[meshTriangles[triIndex * 3]];
-                Vector3 b = meshVertices[meshTriangles[triIndex * 3 + 1]];
-                Vector3 c = meshVertices[meshTriangles[triIndex * 3 + 2]];
-
-                // Generate random barycentric coordinates
-                var r = Random.value;
-                var s = Random.value;
-
-                if (r + s >= 1)
-                {
-                    r = 1 - r;
-                    s = 1 - s;
-                }
-
-                normals[0] = meshNormals[meshTriangles[triIndex * 3 + 1]];
-
-                // Turn point back to a Vector3
-                var pointOnMesh = a + r * (b - a) + s * (c - a);
-
-                point[0] = pointOnMesh;
-            }
-        }
-
         private NativeArray<float> GetTriSizes(int[] tris, Vector3[] verts)
         {
             var triCount = tris.Length / 3;
@@ -1425,7 +1335,7 @@ namespace Grass.Editor
             RebuildMesh();
         }
 
-        private void ModifyLengthAndWidth()
+        private void ModifyWidthAndHeight()
         {
             Undo.RegisterCompleteObjectUndo(this, "Modified Length/Width");
             var allGrassData = _grassDataStructure.GetAllGrassData();

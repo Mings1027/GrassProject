@@ -22,7 +22,7 @@ namespace Grass.Editor
             _spatialHashGrid.Insert(id, grassData.position);
             return id;
         }
-        
+
         public void RemoveGrass(Vector3 position, float radius)
         {
             var nearbyIds = _spatialHashGrid.QueryRadius(position, radius);
@@ -91,6 +91,7 @@ namespace Grass.Editor
                 AddGrass(grassData);
             }
         }
+
         public List<GrassData> GetGrassInBounds(Bounds bounds)
         {
             var result = new List<GrassData>();
@@ -101,9 +102,9 @@ namespace Grass.Editor
                     result.Add(grass);
                 }
             }
+
             return result;
         }
-
     }
 
     public class SpatialHashGrid
@@ -234,5 +235,12 @@ namespace Grass.Editor
                 }
             }
         }
+    }
+
+    public class ObjectProgress
+    {
+        public string objectName;
+        public float progress;
+        public string progressMessage;
     }
 }
