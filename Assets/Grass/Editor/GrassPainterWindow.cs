@@ -103,7 +103,7 @@ namespace Grass.Editor
         private bool _isInit;
         private bool _isProcessing;
         private CancellationTokenSource _cts;
-        private readonly List<ObjectProgress> _objectProgresses = new();
+        private ObjectProgress _objectProgress = new();
 
         [MenuItem("Tools/Grass Tool")]
         private static void Init()
@@ -136,15 +136,10 @@ namespace Grass.Editor
         {
             if (_isProcessing)
             {
-                float yOffset = position.height - (_objectProgresses.Count * 25f) - 10;
-                for (int i = 0; i < _objectProgresses.Count; i++)
-                {
-                    var progress = _objectProgresses[i];
-                    EditorGUI.ProgressBar(new Rect(10, yOffset + (i * 25f), position.width - 20, 20),
-                        progress.progress, $"{progress.objectName}: {progress.progressMessage}");
-                }
-
+                EditorGUI.ProgressBar(new Rect(10, position.height - 30, position.width - 20, 20),
+                    _objectProgress.progress, _objectProgress.progressMessage);
                 Repaint(); // GUI를 계속 업데이트하기 위해 Repaint 호출
+
                 return;
             }
 
@@ -282,14 +277,20 @@ namespace Grass.Editor
 
             if (GUILayout.Button("Clear current mesh"))
             {
-                var selectedObjects = Selection.gameObjects;
-                if (selectedObjects is { Length: > 0 })
+                if (EditorUtility.DisplayDialog("Clear Grass",
+                        "Clear the grass on the selected object(s)?",
+                        "Yes", "No"))
                 {
-                    ClearCurrentGrass(selectedObjects).Forget();
-                }
-                else
-                {
-                    Debug.LogWarning("No objects selected. Please select one or more objects in the scene.");
+                    var selectedObjects = Selection.gameObjects;
+                    if (selectedObjects is { Length: > 0 })
+                    {
+                        Undo.RegisterCompleteObjectUndo(this, "Cleared Grass on Selected Objects");
+                        ClearCurrentGrass(selectedObjects).Forget();
+                    }
+                    else
+                    {
+                        Debug.LogWarning("No objects selected. Please select one or more objects in the scene.");
+                    }
                 }
             }
 
@@ -299,6 +300,7 @@ namespace Grass.Editor
                         "Remove all grass from the scene?",
                         "Yes", "No"))
                 {
+                    Undo.RegisterCompleteObjectUndo(this, "Cleared All Grass");
                     ClearMesh();
                 }
             }
@@ -640,6 +642,10 @@ namespace Grass.Editor
                         Undo.RegisterCompleteObjectUndo(this, "Regenerated Positions on Mesh(es)");
                         RegenerateGrass(selectedObjects).Forget();
                     }
+                    else
+                    {
+                        Debug.LogWarning("No objects selected. Please select one or more objects in the scene.");
+                    }
                 }
             }
         }
@@ -907,7 +913,7 @@ namespace Grass.Editor
 
         private void DrawRemovalGizmos()
         {
-            Handles.color = new Color(1, 0, 0); // 반투명 빨간색
+            Handles.color = new Color(1, 0, 0, 0.7f); // 반투명 빨간색
             for (var i = 0; i < grassToRemove.Count; i++)
             {
                 var index = grassToRemove[i];
@@ -960,7 +966,7 @@ namespace Grass.Editor
 
         private readonly Collider[] _generateColliders = new Collider[1];
 
-        private void GeneratePositions(GameObject selection, RemoveObject removeObject)
+        private void GeneratePositions(GameObject selection)
         {
             var selectionLayer = selection.layer;
             var paintMask = toolSettings.PaintMask.value;
@@ -1127,10 +1133,10 @@ namespace Grass.Editor
             _isProcessing = true;
             _cts = new CancellationTokenSource();
 
-            InitializeObjectProgresses(selectedObjects);
+            InitializeObjectProgresses();
             var removeObjects = selectedObjects.Select(CreateRemoveObject).Where(obj => obj != null).ToArray();
 
-            await GrassGeneration(selectedObjects, removeObjects);
+            await GrassGeneration(selectedObjects);
 
             UpdateGrassData();
             _isProcessing = false;
@@ -1141,10 +1147,10 @@ namespace Grass.Editor
             _isProcessing = true;
             _cts = new CancellationTokenSource();
 
-            InitializeObjectProgresses(selectedObjects);
+            InitializeObjectProgresses();
             var removeObjects = selectedObjects.Select(CreateRemoveObject).Where(obj => obj != null).ToArray();
 
-            await RemoveGrassFromObjects(selectedObjects, removeObjects);
+            await RemoveGrassForMultipleObjectsAsync(removeObjects);
 
             UpdateGrassData();
             _isProcessing = false;
@@ -1155,42 +1161,22 @@ namespace Grass.Editor
             _isProcessing = true;
             _cts = new CancellationTokenSource();
 
-            InitializeObjectProgresses(selectedObjects);
+            InitializeObjectProgresses();
             var removeObjects = selectedObjects.Select(CreateRemoveObject).Where(obj => obj != null).ToArray();
 
-            await RemoveGrassFromObjects(selectedObjects, removeObjects);
-            await GrassGeneration(selectedObjects, removeObjects);
+            await RemoveGrassForMultipleObjectsAsync(removeObjects);
+            await GrassGeneration(selectedObjects);
 
             UpdateGrassData();
             _isProcessing = false;
         }
 
-        private void InitializeObjectProgresses(GameObject[] selectedObjects)
+        private void InitializeObjectProgresses()
         {
-            _objectProgresses.Clear();
-            for (var i = 0; i < selectedObjects.Length; i++)
+            _objectProgress = new ObjectProgress
             {
-                var obj = selectedObjects[i];
-                _objectProgresses.Add(new ObjectProgress
-                {
-                    objectName = obj.name,
-                    progress = 0,
-                    progressMessage = "Initializing..."
-                });
-            }
-        }
-
-        private async UniTask RemoveGrassFromObjects(GameObject[] selectedObjects, RemoveObject[] removeObjects)
-        {
-            var tasks = new UniTask[removeObjects.Length];
-            for (var i = 0; i < removeObjects.Length; i++)
-            {
-                int index = i;
-                tasks[i] = UniTask.RunOnThreadPool(() =>
-                    RemoveGrassForObjectAsync(removeObjects[index], index));
-            }
-
-            await UniTask.WhenAll(tasks);
+                progress = 0, progressMessage = "Initializing..."
+            };
         }
 
         private RemoveObject CreateRemoveObject(GameObject obj)
@@ -1209,49 +1195,101 @@ namespace Grass.Editor
             return null;
         }
 
-        private async UniTask RemoveGrassForObjectAsync(RemoveObject removeObject, int objIndex)
+        private async UniTask RemoveGrassForMultipleObjectsAsync(RemoveObject[] removeObjects)
+        {
+            var tasks = new UniTask<HashSet<Vector3>>[removeObjects.Length];
+            for (var i = 0; i < removeObjects.Length; i++)
+            {
+                int index = i;
+                tasks[i] = UniTask.RunOnThreadPool(() =>
+                    GetPositionsToRemoveAsync(removeObjects[index], index));
+            }
+
+            var results = await UniTask.WhenAll(tasks);
+
+            var allPositionsToRemove = new HashSet<Vector3>();
+            for (var i = 0; i < results.Length; i++)
+            {
+                var result = results[i];
+                allPositionsToRemove.UnionWith(result);
+            }
+
+            await RemoveGrassAtPositionsAsync(allPositionsToRemove);
+        }
+
+        private async UniTask<HashSet<Vector3>> GetPositionsToRemoveAsync(RemoveObject removeObject, int objIndex)
         {
             var worldBounds = removeObject.GetBounds();
             if (worldBounds.size == Vector3.zero)
             {
                 Debug.LogWarning($"Unable to determine bounds for object");
-                return;
+                return new HashSet<Vector3>();
             }
 
-            var removeGrassList = new List<int>();
+            var positionsToRemove = new HashSet<Vector3>();
+            var totalCount = _grassData.Count;
 
-            var allGrassData = _grassDataStructure.GetAllGrassData();
-            for (var i = 0; i < allGrassData.Count; i++)
+            for (var i = 0; i < _grassData.Count; i++)
             {
-                if (worldBounds.Contains(allGrassData[i].position))
+                if (worldBounds.Contains(_grassData[i].position))
                 {
-                    removeGrassList.Add(i);
+                    positionsToRemove.Add(_grassData[i].position);
+                }
+
+                // if (i % 1000 == 0 || i == _grassData.Count - 1)
+                // {
+                //     _objectProgress.progressMessage = $"Checking grass - {i + 1}/{totalCount}";
+                //     _objectProgress.progress = (float)(i + 1) / totalCount * 0.5f;
+                //     await UniTask.Yield(cancellationToken: _cts.Token);
+                // }
+            }
+
+            Debug.Log($"Found {positionsToRemove.Count} grass instances to remove for object {objIndex}");
+            return positionsToRemove;
+        }
+
+        private async UniTask RemoveGrassAtPositionsAsync(HashSet<Vector3> positionsToRemove)
+        {
+            var grassToKeep = new List<GrassData>();
+            var removedCount = 0;
+
+            for (var i = 0; i < _grassData.Count; i++)
+            {
+                if (!positionsToRemove.Contains(_grassData[i].position))
+                {
+                    grassToKeep.Add(_grassData[i]);
+                }
+                else
+                {
+                    removedCount++;
                 }
             }
 
-            for (var i = 0; i < removeGrassList.Count; i++)
+            for (int i = 0; i < removedCount; i++)
             {
-                var index = removeGrassList[i];
-                _grassDataStructure.RemoveGrass(allGrassData[index].position, 0.01f);
-                if (i % 100 == 0 || i == removeGrassList.Count - 1) // 100개마다 또는 마지막에 진행 상황 업데이트
+                if (i % 1000 == 0)
                 {
-                    _objectProgresses[objIndex].progressMessage = $"Removing grass - {i + 1}/{removeGrassList.Count}";
-                    _objectProgresses[objIndex].progress =
-                        (float)(i + 1) / removeGrassList.Count * 0.9f; // 잔디 제거는 전체 작업의 90%를 차지
+                    _objectProgress.progressMessage = $"Removing grass - {i}/{removedCount}";
+                    _objectProgress.progress = (float)(i + 1) / removedCount;
+
                     await UniTask.Yield(cancellationToken: _cts.Token);
                 }
             }
+
+            _grassData = grassToKeep;
+            GrassAmount = _grassData.Count;
+
+            // _grassDataStructure 업데이트
+            _grassDataStructure.UpdateMultipleGrass(_grassData);
+
+            Debug.Log($"Removed {removedCount} grass instances in total");
         }
 
-        private async UniTask GrassGeneration(GameObject[] selectedObjects, RemoveObject[] removeObjects)
+        private async UniTask GrassGeneration(GameObject[] selectedObjects)
         {
             for (int i = 0; i < selectedObjects.Length; i++)
             {
-                _objectProgresses[i].progressMessage = "Generating positions...";
-                _objectProgresses[i].progress = 0.9f; // 90% progress after removing grass
-                GeneratePositions(selectedObjects[i], removeObjects[i]);
-                _objectProgresses[i].progress = 1f; // 100% progress after generating positions
-                _objectProgresses[i].progressMessage = "Completed";
+                GeneratePositions(selectedObjects[i]);
                 await UniTask.Yield(cancellationToken: _cts.Token);
             }
 

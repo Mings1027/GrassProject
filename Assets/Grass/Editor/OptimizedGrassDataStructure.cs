@@ -26,12 +26,13 @@ namespace Grass.Editor
         public void RemoveGrass(Vector3 position, float radius)
         {
             var nearbyIds = _spatialHashGrid.QueryRadius(position, radius);
-            for (var i = 0; i < nearbyIds.Count; i++)
+            var radiusSquared = radius * radius;
+
+            foreach (var id in nearbyIds)
             {
-                var id = nearbyIds[i];
                 if (_grassDataDict.TryGetValue(id, out var grassData))
                 {
-                    if (Vector3.Distance(grassData.position, position) <= radius)
+                    if (Vector3.SqrMagnitude(grassData.position - position) <= radiusSquared)
                     {
                         _grassDataDict.Remove(id);
                         _spatialHashGrid.Remove(id, grassData.position);
@@ -90,20 +91,6 @@ namespace Grass.Editor
                 var grassData = updatedGrassData[index];
                 AddGrass(grassData);
             }
-        }
-
-        public List<GrassData> GetGrassInBounds(Bounds bounds)
-        {
-            var result = new List<GrassData>();
-            foreach (var grass in GetAllGrassData())
-            {
-                if (bounds.Contains(grass.position))
-                {
-                    result.Add(grass);
-                }
-            }
-
-            return result;
         }
     }
 
@@ -239,7 +226,7 @@ namespace Grass.Editor
 
     public class ObjectProgress
     {
-        public string objectName;
+        // public string objectName;
         public float progress;
         public string progressMessage;
     }

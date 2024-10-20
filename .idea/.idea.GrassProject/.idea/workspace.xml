@@ -8,8 +8,15 @@
       <change beforePath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/OptimizedGrassDataStructure.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/OptimizedGrassDataStructure.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/RemoveObject.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/RemoveObject.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/New Terrain.asset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/New Terrain.asset.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/NewUnlitShader.shader" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/NewUnlitShader.shader.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/URP_Unlit_#NAME#.mat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/URP_Unlit_#NAME#.mat.meta" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -243,7 +250,7 @@
       <workItem from="1729345022081" duration="1833000" />
       <workItem from="1729346873378" duration="6458000" />
       <workItem from="1729388709163" duration="4907000" />
-      <workItem from="1729394900377" duration="3047000" />
+      <workItem from="1729394900377" duration="19045000" />
     </task>
     <servers />
   </component>

@@ -5,6 +5,9 @@ namespace Grass.Editor
     public abstract class RemoveObject
     {
         public abstract Bounds GetBounds();
+        
+        protected string objectName;
+        public virtual string GetName() => objectName;
     }
 
     public class RemoveMeshFilter : RemoveObject
@@ -14,6 +17,7 @@ namespace Grass.Editor
 
         public RemoveMeshFilter(GameObject obj)
         {
+            objectName = obj.name;
             if (obj.TryGetComponent(out MeshFilter meshFilter))
             {
                 var meshBounds = meshFilter.sharedMesh.bounds;
@@ -39,6 +43,7 @@ namespace Grass.Editor
 
         public RemoveTerrain(GameObject obj)
         {
+            objectName = obj.name;
             if (obj.TryGetComponent(out Terrain terrain))
             {
                 _position = terrain.transform.position;
