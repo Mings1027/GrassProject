@@ -226,7 +226,6 @@ namespace Grass.Editor
 
     public class ObjectProgress
     {
-        // public string objectName;
         public float progress;
         public string progressMessage;
     }

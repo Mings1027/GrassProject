@@ -8,15 +8,10 @@
       <change beforePath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/OptimizedGrassDataStructure.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/OptimizedGrassDataStructure.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/RemoveObject.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/RemoveObject.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/New Terrain.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/New Terrain.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/NewUnlitShader.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/NewUnlitShader.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/URP_Unlit_#NAME#.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/URP_Unlit_#NAME#.mat.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/PhysicsOverlapJob.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/PhysicsOverlapJob.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/RemoveObject.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/RemoveGrass.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/RemoveObject.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/RemoveGrass.cs.meta" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -71,7 +66,9 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/6ec928732f674d1fa6d6decc98cecdae77400/8f/2c240c56/Queue`1.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/18/dc156d10/Bounds.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/37/5198092f/Vector3.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/45/88ded070/Transform.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/5f/f7ca4150/Mathf.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/7a/1a0cc8a4/GameObject.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/be/14d296d7/MeshFilter.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/c3/1d6b62a9/Mesh.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/9813d164b8404166af09825a040c4c789ace00/1a/abc1b6a7/Handles.cs" root0="FORCE_HIGHLIGHTING" />
@@ -250,7 +247,7 @@
       <workItem from="1729345022081" duration="1833000" />
       <workItem from="1729346873378" duration="6458000" />
       <workItem from="1729388709163" duration="4907000" />
-      <workItem from="1729394900377" duration="19045000" />
+      <workItem from="1729394900377" duration="27993000" />
     </task>
     <servers />
   </component>

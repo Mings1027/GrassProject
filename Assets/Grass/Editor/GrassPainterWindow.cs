@@ -964,16 +964,10 @@ namespace Grass.Editor
             Debug.Log("Cleared all grass from the scene");
         }
 
-        private readonly Collider[] _generateColliders = new Collider[1];
-
-        private void GeneratePositions(GameObject selection)
+        private async UniTask GeneratePositions(GameObject selection)
         {
-            var selectionLayer = selection.layer;
-            var paintMask = toolSettings.PaintMask.value;
-            var paintBlockMask = toolSettings.PaintBlockMask.value;
-
             // Check if the selected object's layer is in the paint mask
-            if (((1 << selectionLayer) & paintMask) == 0)
+            if (((1 << selection.layer) & toolSettings.PaintMask.value) == 0)
             {
                 var expectedLayers = string.Join(", ", toolSettings.GetPaintMaskLayerNames());
                 Debug.LogWarning(
@@ -1031,7 +1025,7 @@ namespace Grass.Editor
                 var meshVolume = meshSize.x * meshSize.y * meshSize.z;
                 var numPoints = Mathf.Min(Mathf.FloorToInt(meshVolume * toolSettings.GenerationDensity),
                     toolSettings.GrassAmountToGenerate);
-
+                var spatialGrid = new SpatialGrid(sourceMesh.sharedMesh.bounds, 0.4f);
                 // Generate grass instances
                 for (var j = 0; j < numPoints; j++)
                 {
@@ -1041,10 +1035,7 @@ namespace Grass.Editor
                     newData.position = localToWorld.MultiplyPoint3x4(newPoint);
 
                     // Check if the position is blocked
-                    var size = Physics.OverlapBoxNonAlloc(newData.position, Vector3.one * 0.2f, _generateColliders,
-                        Quaternion.identity, paintBlockMask);
-                    if (size > 0) continue;
-
+                    if (!spatialGrid.CanPlaceGrass(newData.position, 0.2f)) continue;
                     var worldNormal = selection.transform.TransformDirection(normals[0]);
 
                     // Check normal limit
@@ -1059,16 +1050,18 @@ namespace Grass.Editor
                     }
                 }
 
+                await UniTask.Yield(cancellationToken: _cts.Token);
+//  Yield 로 한프레임을 기다리면 아래 Dispose를 안해줘도 됨 왜냐면 Allocator.Temp 이기 때문에 Temp는 1프레임 이하 수명
                 // Dispose native arrays
-                _sizes.Dispose();
-                _cumulativeSizes.Dispose();
-                _total.Dispose();
-                meshColors.Dispose();
-                meshTriangles.Dispose();
-                meshVertices.Dispose();
-                meshNormals.Dispose();
-                point.Dispose();
-                widthHeight.Dispose();
+                // _sizes.Dispose();
+                // _cumulativeSizes.Dispose();
+                // _total.Dispose();
+                // meshColors.Dispose();
+                // meshTriangles.Dispose();
+                // meshVertices.Dispose();
+                // meshNormals.Dispose();
+                // point.Dispose();
+                // widthHeight.Dispose();
             }
             else if (selection.TryGetComponent(out Terrain terrain))
             {
@@ -1078,6 +1071,7 @@ namespace Grass.Editor
                     toolSettings.GrassAmountToGenerate);
 
                 var localToWorld = terrain.transform.localToWorldMatrix;
+                var spatialGrid = new SpatialGrid(terrain.terrainData.bounds, 0.4f);
 
                 for (var j = 0; j < numPoints; j++)
                 {
@@ -1090,9 +1084,8 @@ namespace Grass.Editor
                     newData.position = newPoint;
 
                     // Check if the position is blocked
-                    var size = Physics.OverlapBoxNonAlloc(newData.position, Vector3.one * 0.2f, _generateColliders,
-                        Quaternion.identity, paintBlockMask);
-                    if (size > 0) continue;
+                    if (!spatialGrid.CanPlaceGrass(newData.position, 0.2f)) continue;
+
 
                     float getFadeMap = 0;
                     // Check map layers
@@ -1115,6 +1108,8 @@ namespace Grass.Editor
                         newData.normal = newNormal;
                         newGrassData.Add(newData);
                     }
+
+                    await UniTask.Yield(cancellationToken: _cts.Token);
                 }
             }
 
@@ -1134,9 +1129,9 @@ namespace Grass.Editor
             _cts = new CancellationTokenSource();
 
             InitializeObjectProgresses();
-            var removeObjects = selectedObjects.Select(CreateRemoveObject).Where(obj => obj != null).ToArray();
-
-            await GrassGeneration(selectedObjects);
+            var generateObjects = selectedObjects.Select(CreateGenerateObject).Where(obj => obj != null).ToArray();
+            // await GrassGenerationMultipleObjectAsync(generateObjects);
+            GrassGeneration(selectedObjects);
 
             UpdateGrassData();
             _isProcessing = false;
@@ -1165,7 +1160,7 @@ namespace Grass.Editor
             var removeObjects = selectedObjects.Select(CreateRemoveObject).Where(obj => obj != null).ToArray();
 
             await RemoveGrassForMultipleObjectsAsync(removeObjects);
-            await GrassGeneration(selectedObjects);
+            GrassGeneration(selectedObjects);
 
             UpdateGrassData();
             _isProcessing = false;
@@ -1179,7 +1174,23 @@ namespace Grass.Editor
             };
         }
 
-        private RemoveObject CreateRemoveObject(GameObject obj)
+        private GenerateGrass CreateGenerateObject(GameObject obj)
+        {
+            if (obj.TryGetComponent(out MeshFilter _))
+            {
+                return new GenerateMeshFilter(obj);
+            }
+
+            if (obj.TryGetComponent(out Terrain _))
+            {
+                return new GenerateTerrain(obj);
+            }
+
+            Debug.LogWarning($"Unsupported object type for {obj.name}");
+            return null;
+        }
+
+        private RemoveGrass CreateRemoveObject(GameObject obj)
         {
             if (obj.TryGetComponent(out MeshFilter _))
             {
@@ -1195,14 +1206,14 @@ namespace Grass.Editor
             return null;
         }
 
-        private async UniTask RemoveGrassForMultipleObjectsAsync(RemoveObject[] removeObjects)
+        private async UniTask RemoveGrassForMultipleObjectsAsync(RemoveGrass[] removeGrasses)
         {
-            var tasks = new UniTask<HashSet<Vector3>>[removeObjects.Length];
-            for (var i = 0; i < removeObjects.Length; i++)
+            var tasks = new UniTask<HashSet<Vector3>>[removeGrasses.Length];
+            for (var i = 0; i < removeGrasses.Length; i++)
             {
                 int index = i;
                 tasks[i] = UniTask.RunOnThreadPool(() =>
-                    GetPositionsToRemoveAsync(removeObjects[index], index));
+                    GetPositionsToRemoveAsync(removeGrasses[index], index));
             }
 
             var results = await UniTask.WhenAll(tasks);
@@ -1217,9 +1228,9 @@ namespace Grass.Editor
             await RemoveGrassAtPositionsAsync(allPositionsToRemove);
         }
 
-        private async UniTask<HashSet<Vector3>> GetPositionsToRemoveAsync(RemoveObject removeObject, int objIndex)
+        private async UniTask<HashSet<Vector3>> GetPositionsToRemoveAsync(RemoveGrass removeGrass, int objIndex)
         {
-            var worldBounds = removeObject.GetBounds();
+            var worldBounds = removeGrass.GetBounds();
             if (worldBounds.size == Vector3.zero)
             {
                 Debug.LogWarning($"Unable to determine bounds for object");
@@ -1227,7 +1238,6 @@ namespace Grass.Editor
             }
 
             var positionsToRemove = new HashSet<Vector3>();
-            var totalCount = _grassData.Count;
 
             for (var i = 0; i < _grassData.Count; i++)
             {
@@ -1235,13 +1245,6 @@ namespace Grass.Editor
                 {
                     positionsToRemove.Add(_grassData[i].position);
                 }
-
-                // if (i % 1000 == 0 || i == _grassData.Count - 1)
-                // {
-                //     _objectProgress.progressMessage = $"Checking grass - {i + 1}/{totalCount}";
-                //     _objectProgress.progress = (float)(i + 1) / totalCount * 0.5f;
-                //     await UniTask.Yield(cancellationToken: _cts.Token);
-                // }
             }
 
             Debug.Log($"Found {positionsToRemove.Count} grass instances to remove for object {objIndex}");
@@ -1285,12 +1288,11 @@ namespace Grass.Editor
             Debug.Log($"Removed {removedCount} grass instances in total");
         }
 
-        private async UniTask GrassGeneration(GameObject[] selectedObjects)
+        private void GrassGeneration(GameObject[] selectedObjects)
         {
             for (int i = 0; i < selectedObjects.Length; i++)
             {
-                GeneratePositions(selectedObjects[i]);
-                await UniTask.Yield(cancellationToken: _cts.Token);
+                GeneratePositions(selectedObjects[i]).Forget();
             }
 
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
