@@ -91,6 +91,19 @@ namespace Grass.Editor
                 AddGrass(grassData);
             }
         }
+        public List<GrassData> GetGrassInBounds(Bounds bounds)
+        {
+            var result = new List<GrassData>();
+            foreach (var grass in GetAllGrassData())
+            {
+                if (bounds.Contains(grass.position))
+                {
+                    result.Add(grass);
+                }
+            }
+            return result;
+        }
+
     }
 
     public class SpatialHashGrid

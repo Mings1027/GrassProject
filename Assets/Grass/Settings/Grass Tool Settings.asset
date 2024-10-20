@@ -25,7 +25,7 @@ MonoBehaviour:
   vertexColorSettings: 0
   vertexFade: 0
   grassWidth: 0.234
-  grassHeight: 1.546
+  grassHeight: 0.528
   adjustWidth: 0.1
   adjustHeight: 0.1
   adjustWidthMax: 0.3
@@ -34,7 +34,7 @@ MonoBehaviour:
   rangeR: 0.3
   rangeG: 0.3
   rangeB: 0.3
-  adjustedColor: {r: 0.14149547, g: 1, b: 0, a: 1}
+  adjustedColor: {r: 1, g: 0.38056087, b: 0, a: 1}
   paintMask:
     serializedVersion: 2
     m_Bits: 24

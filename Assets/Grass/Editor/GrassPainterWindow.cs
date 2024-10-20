@@ -97,6 +97,8 @@ namespace Grass.Editor
         private readonly List<int> _grassIndicesToRemove = new();
         private readonly List<int> _grassIndicesToEdit = new();
 
+        private bool _isInit;
+
         [MenuItem("Tools/Grass Tool")]
         private static void Init()
         {
@@ -129,6 +131,7 @@ namespace Grass.Editor
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
             if (GUILayout.Button("Manual Update", GUILayout.Height(50)))
             {
+                InitGrassData();
                 _grassCompute.GrassDataList = _grassData;
                 _grassCompute.Reset();
                 EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
@@ -315,17 +318,8 @@ namespace Grass.Editor
             SceneView.duringSceneGui += OnSceneGUI;
             SceneView.duringSceneGui += OnScene;
             Undo.undoRedoPerformed += HandleUndo;
-
-            // 초기 바운드 설정 (나중에 동적으로 업데이트 필요)
-            _grassBounds = new Bounds(Vector3.zero, Vector3.one * 1000);
-            _grassDataStructure = new OptimizedGrassDataStructure(_grassBounds, _grassCompute.currentPresets.cullingTreeDepth); // 셀 크기는 적절히 조정
-            _batchRemoval = new BatchGrassRemoval();
-
-            // 기존 잔디 데이터를 새 구조로 이동
-            for (var i = 0; i < _grassData.Count; i++)
-            {
-                _grassDataStructure.AddGrass(_grassData[i]);
-            }
+            if (_isInit) return;
+            InitGrassData();
         }
 
         private void OnFocus()
@@ -344,6 +338,23 @@ namespace Grass.Editor
             if (_materialEditor != null)
             {
                 DestroyImmediate(_materialEditor);
+            }
+        }
+
+        private void InitGrassData()
+        {
+            _isInit = true;
+            // 초기 바운드 설정 (나중에 동적으로 업데이트 필요)
+            _grassBounds = new Bounds(Vector3.zero, Vector3.one * 1000);
+            _grassDataStructure =
+                new OptimizedGrassDataStructure(_grassBounds,
+                    _grassCompute.currentPresets.cullingTreeDepth); // 셀 크기는 적절히 조정
+            _batchRemoval = new BatchGrassRemoval();
+
+            // 기존 잔디 데이터를 새 구조로 이동
+            for (var i = 0; i < _grassData.Count; i++)
+            {
+                _grassDataStructure.AddGrass(_grassData[i]);
             }
         }
 
