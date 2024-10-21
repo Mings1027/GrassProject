@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Serialization;
 
 [System.Serializable]
 [CreateAssetMenu(fileName = "Grass Settings", menuName = "Utility/GrassSettings")]

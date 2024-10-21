@@ -5,13 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="84e81331-7910-473f-9ad1-7a03a025416d" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassDataStructure.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GenerateGrass.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GenerateGrass.cs.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/SpatialGrid.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/SpatialGrid.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/OptimizedGrassDataStructure.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/OptimizedGrassDataStructure.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassDataStructure.cs.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassToolSettingSO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassToolSettingSO.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -80,6 +83,7 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a41a7a4f846e462eaca772c8ed87f6662ac00/d9/d3236f1a/PhysicsScene.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/28/1cccef6f/EditorApplication.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/3d/28037520/EditorGUIUtility.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/78/f020e3ed/Handles.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/f8/a565d3d7/Undo.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/fe/2e62a042/EditorUtility.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/c96ca9f80c03444cac6295b9415f9cb430e00/cb/98903ed9/Event.cs" root0="FORCE_HIGHLIGHTING" />
@@ -90,6 +94,7 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/ed/eb774271/List`1.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/e76ba1f9dd9946efbeaff28ca747bde931600/19/a8236931/Event.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/e76ba1f9dd9946efbeaff28ca747bde931600/29/766e3f77/GUIContent.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/e76ba1f9dd9946efbeaff28ca747bde931600/92/2c9b09bf/GUILayout.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3ea01e77be99618395f448b16bd7cc2bd4248bd9e5d8474964b2d97f39c5d74/System.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/8a522b806eac9bb894e6e4c5fe87f353457535e769447e79c6b396beecb5d0/System.Threading.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/d44b17e136d09081da1e8fd0e8c83fde60e11818b9f2442d7ed8cb733fae895e/System.Collections.Generic.cs" root0="SKIP_HIGHLIGHTING" />
@@ -251,6 +256,8 @@
       <workItem from="1729394900377" duration="27993000" />
       <workItem from="1729427591631" duration="107000" />
       <workItem from="1729427729080" duration="5160000" />
+      <workItem from="1729467419942" duration="32874000" />
+      <workItem from="1729513340029" duration="8819000" />
     </task>
     <servers />
   </component>

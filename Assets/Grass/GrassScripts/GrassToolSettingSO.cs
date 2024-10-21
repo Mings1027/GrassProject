@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Grass.GrassScripts;
 using UnityEngine;
 
 [System.Serializable]
@@ -226,6 +227,9 @@ public class GrassToolSettingSo : ScriptableObject
         get => generationDensity;
         set => generationDensity = Mathf.Clamp(value, MinGenerationDensity, MaxGenerationDensity);
     }
+
+    public KeyBinding paintKey;
+    public MouseButton paintButton;
 
     // Constants
     public float MinSizeWidth => 0.01f;
