@@ -7,12 +7,12 @@ public class GrassInteractor : MonoBehaviour
 
     private void OnEnable()
     {
-        GrassEventManager<GrassInteractor>.TriggerEvent(GrassEvent.InteractorAdded, this);
+        GrassEventManager.TriggerEvent(GrassEvent.InteractorAdded, this);
     }
 
     private void OnDisable()
     {
-        GrassEventManager<GrassInteractor>.TriggerEvent(GrassEvent.InteractorRemoved, this);
+        GrassEventManager.TriggerEvent(GrassEvent.InteractorRemoved, this);
     }
 
 #if UNITY_EDITOR

@@ -3,6 +3,28 @@ using UnityEngine;
 
 namespace Grass.Editor
 {
+    public enum BrushOption
+    {
+        Add,
+        Remove,
+        Edit,
+        Reproject
+    }
+
+    public enum EditOption
+    {
+        EditColors,
+        EditWidthHeight,
+        Both
+    }
+
+    public enum ModifyOption
+    {
+        WidthHeight,
+        Color,
+        Both
+    }
+
     public abstract class GrassPainterHelper
     {
         public static RemoveGrass CreateRemoveObject(GameObject obj)

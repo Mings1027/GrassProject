@@ -7,6 +7,7 @@ public class CullingTree
     private Bounds _bounds;
     private readonly CullingTree[] _children;
     private readonly List<int> _grassIDHeld = new();
+    private readonly object _lockObject = new();
 
     public CullingTree(Bounds bounds, int depth)
     {
@@ -101,8 +102,11 @@ public class CullingTree
             }
             else
             {
-                _grassIDHeld.Add(index);
-                return true;
+                lock (_lockObject)
+                {
+                    _grassIDHeld.Add(index);
+                    return true;
+                }
             }
         }
 
@@ -180,7 +184,7 @@ public class CullingTree
             }
         }
     }
-    
+
     public bool Remove(Vector3 point, int index)
     {
         if (!_bounds.Contains(point))
@@ -203,5 +207,4 @@ public class CullingTree
 
         return false;
     }
-
 }

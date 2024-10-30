@@ -26,7 +26,7 @@ MonoBehaviour:
   maxHeight: 3
   windSpeed: 5
   windStrength: 0.15
-  bladesPerVertex: 10
+  bladesPerVertex: 5
   segmentsPerBlade: 2
   interactorStrength: 1
   topTint: {r: 1, g: 1, b: 1, a: 1}

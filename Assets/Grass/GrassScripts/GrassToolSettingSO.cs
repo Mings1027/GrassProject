@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Grass.GrassScripts;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [System.Serializable]
 [CreateAssetMenu(fileName = "Grass Tool Settings", menuName = "Utility/GrassToolSettings")]
@@ -128,12 +129,12 @@ public class GrassToolSettingSo : ScriptableObject
         set => rangeB = Mathf.Clamp01(value);
     }
 
-    [SerializeField] private Color adjustedColor = Color.white;
+    [SerializeField] private Color brushColor = Color.white;
 
-    public Color AdjustedColor
+    public Color BrushColor
     {
-        get => adjustedColor;
-        set => adjustedColor = value;
+        get => brushColor;
+        set => brushColor = value;
     }
 
     [SerializeField] private LayerMask paintMask = 1;

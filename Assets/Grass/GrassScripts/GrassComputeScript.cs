@@ -145,8 +145,11 @@ public class GrassComputeScript : MonoBehaviour
 
     private void OnEnable()
     {
-        GrassEventManager<GrassInteractor>.AddListener(GrassEvent.InteractorAdded, AddInteractor);
-        GrassEventManager<GrassInteractor>.AddListener(GrassEvent.InteractorRemoved, RemoveInteractor);
+        GrassEventManager.AddEvent<GrassInteractor>(GrassEvent.InteractorAdded, AddInteractor);
+        GrassEventManager.AddEvent<GrassInteractor>(GrassEvent.InteractorRemoved, RemoveInteractor);
+
+        GrassFuncManager.AddEvent(GrassEvent.TotalGrassCount, () => grassData.Count);
+        GrassFuncManager.AddEvent(GrassEvent.VisibleGrassCount, ()=> _grassVisibleIDList.Count);
 
         _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
         // If initialized, call on disable to clean things up
@@ -211,9 +214,12 @@ public class GrassComputeScript : MonoBehaviour
 
     private void OnDisable()
     {
-        GrassEventManager<GrassInteractor>.RemoveListener(GrassEvent.InteractorAdded, AddInteractor);
-        GrassEventManager<GrassInteractor>.RemoveListener(GrassEvent.InteractorRemoved, RemoveInteractor);
+        GrassEventManager.RemoveEvent<GrassInteractor>(GrassEvent.InteractorAdded, AddInteractor);
+        GrassEventManager.RemoveEvent<GrassInteractor>(GrassEvent.InteractorRemoved, RemoveInteractor);
 
+        GrassFuncManager.RemoveEvent(GrassEvent.TotalGrassCount, () => grassData.Count);
+        GrassFuncManager.RemoveEvent(GrassEvent.VisibleGrassCount, ()=> _grassVisibleIDList.Count);
+        
         _interactors.Clear();
         // Dispose of buffers and copied shaders here
         if (_initialized)

@@ -152,7 +152,7 @@ float3 WindCalculation(float3 positionWS)
 // ----------------------------------------
 
 // The main kernel
-[numthreads(128, 1, 1)]
+[numthreads(256, 1, 1)]
 void Main(uint id : SV_DispatchThreadID)
 {
     // Return if every point has been processed

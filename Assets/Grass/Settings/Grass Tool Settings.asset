@@ -31,20 +31,20 @@ MonoBehaviour:
   adjustWidthMax: 0.3
   adjustHeightMax: 2
   reprojectOffset: 100
-  rangeR: 0.745
-  rangeG: 0.3
-  rangeB: 0.3
-  adjustedColor: {r: 1, g: 0, b: 0.019788265, a: 1}
+  rangeR: 0.532
+  rangeG: 0.539
+  rangeB: 0.535
+  brushColor: {r: 0.98039216, g: 0.7357735, b: 0.0705882, a: 1}
   paintMask:
     serializedVersion: 2
     m_Bits: 8
   paintBlockMask:
     serializedVersion: 2
     m_Bits: 64
-  brushSize: 9.249989
-  brushFalloffSize: 0.248
-  falloffOuterSpeed: 1
-  density: 20
+  brushSize: 7.8999915
+  brushFalloffSize: 0.19
+  falloffOuterSpeed: 0.377
+  density: 7
   normalLimit: 1
   grassAmountToGenerate: 100000
   generationDensity: 1

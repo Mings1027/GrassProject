@@ -1,3 +1,4 @@
+using Grass.GrassScripts;
 using UnityEngine;
 
 public class FPSChecker : MonoBehaviour
@@ -15,6 +16,9 @@ public class FPSChecker : MonoBehaviour
     private float _deltaTime;
     private float _msec;
     private float _fps;
+
+    private int totalGrassCount;
+    private int visibleGrassCount;
 
     public enum TargetFrameRate
     {
@@ -44,6 +48,8 @@ public class FPSChecker : MonoBehaviour
             _msec = _deltaTime * 1000.0f;
             _fps = 1.0f / _deltaTime;
             _frameCounter = 0;
+            totalGrassCount = GrassFuncManager.TriggerEvent<int>(GrassEvent.TotalGrassCount);
+            visibleGrassCount = GrassFuncManager.TriggerEvent<int>(GrassEvent.VisibleGrassCount);
         }
     }
 
@@ -57,7 +63,10 @@ public class FPSChecker : MonoBehaviour
         style.alignment = TextAnchor.UpperLeft;
         style.fontSize = h * 2 / fFontSize;
         style.normal.textColor = new Color(red, green, blue, 1.0f);
-        var text = $"{_msec:0.0} ms ({_fps:0.} fps)";
+        var text = $"{_msec:0.0} ms ({_fps:0.} fps)\n" +
+                   $"Total Grass: {totalGrassCount}\n" +
+                   $"Visible Grass: {visibleGrassCount}";
+
         GUI.Label(rect, text, style);
     }
 
