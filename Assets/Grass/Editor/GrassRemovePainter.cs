@@ -20,15 +20,15 @@ namespace Grass.Editor
         public bool IsDragging => _isDragging;
         public IReadOnlyList<Vector3> RemovalPositions => _removalPositions;
 
-        public GrassRemovePainter(List<GrassData> grassData)
+        public GrassRemovePainter(List<GrassData> grassData, GrassTileSystem sharedTileSystem)
         {
-            Init(grassData);
+            Init(grassData, sharedTileSystem);
         }
 
-        public void Init(List<GrassData> grassData)
+        public void Init(List<GrassData> grassData, GrassTileSystem sharedTileSystem)
         {
             _grassData = grassData;
-            _grassTileSystem ??= new GrassTileSystem(_grassData, 1);
+            _grassTileSystem = sharedTileSystem;
         }
 
         public void MarkGrassForRemoval(Vector3 hitPoint, float radius)

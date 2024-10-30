@@ -81,6 +81,8 @@ namespace Grass.Editor
         private GrassRemovePainter _grassRemovePainter;
         private GrassReprojectPainter _grassReprojectPainter;
 
+        private GrassTileSystem _grassTileSystem;
+
         [MenuItem("Tools/Grass Tool")]
         private static void Open()
         {
@@ -147,11 +149,13 @@ namespace Grass.Editor
         private void OnDisable()
         {
             Debug.Log("OnDisable");
+            _grassEditPainter?.ClearCumulativeChanges();
             RemoveDelegates();
         }
 
         private void OnDestroy()
         {
+            _grassEditPainter?.ClearCumulativeChanges();
             RemoveDelegates();
             if (_materialEditor != null)
             {
@@ -203,9 +207,10 @@ namespace Grass.Editor
                 }
             }
 
-            _grassEditPainter ??= new GrassEditPainter(_grassCompute, _grassData);
-            _grassRemovePainter ??= new GrassRemovePainter(_grassData);
-            _grassReprojectPainter ??= new GrassReprojectPainter(_grassCompute, _grassData);
+            _grassTileSystem ??= new GrassTileSystem(_grassData, 1);
+            _grassEditPainter ??= new GrassEditPainter(_grassCompute, _grassData, _grassTileSystem);
+            _grassRemovePainter ??= new GrassRemovePainter(_grassData, _grassTileSystem);
+            _grassReprojectPainter ??= new GrassReprojectPainter(_grassCompute, _grassData, _grassTileSystem);
 
             if (GUILayout.Button("Manual Update", GUILayout.Height(50)))
             {
@@ -419,11 +424,9 @@ namespace Grass.Editor
                 _grassData.Clear();
             }
 
-            UpdateGrassTileSystem().Forget();
-        }
+            _grassTileSystem = new GrassTileSystem(_grassData, 1);
 
-        private async UniTask UpdateGrassTileSystem()
-        {
+
             GrassAmount = _grassData.Count;
         }
 
@@ -1575,14 +1578,6 @@ namespace Grass.Editor
         private void StartPainting()
         {
             _isPainting = true;
-            _grassEditPainter ??= new GrassEditPainter(_grassCompute, _grassData);
-            _grassRemovePainter ??= new GrassRemovePainter(_grassData);
-            _grassReprojectPainter ??= new GrassReprojectPainter(_grassCompute, _grassData);
-
-            _grassEditPainter?.Init(_grassCompute, _grassData);
-            _grassRemovePainter?.Init(_grassData);
-            _grassReprojectPainter?.Init(_grassCompute, _grassData);
-            _grassEditPainter?.ClearCumulativeChanges();
 
             switch (_selectedToolOption)
             {
@@ -1591,11 +1586,14 @@ namespace Grass.Editor
                     break;
                 case BrushOption.Remove:
                     Undo.RegisterCompleteObjectUndo(this, "Removed Grass");
+                    _grassRemovePainter ??= new GrassRemovePainter(_grassData, _grassTileSystem);
                     break;
                 case BrushOption.Edit:
                     Undo.RegisterCompleteObjectUndo(this, "Edited Grass");
+                    _grassEditPainter ??= new GrassEditPainter(_grassCompute, _grassData, _grassTileSystem);
                     break;
                 case BrushOption.Reproject:
+                    _grassReprojectPainter ??= new GrassReprojectPainter(_grassCompute, _grassData, _grassTileSystem);
                     Undo.RegisterCompleteObjectUndo(this, "Reprojected Grass");
                     break;
             }
@@ -1705,6 +1703,7 @@ namespace Grass.Editor
                     _objectProgress.progress = progress;
                     _objectProgress.progressMessage = message;
                 });
+
             UpdateGrassData(false);
             _grassRemovePainter.Clear();
             _isProcessing = false;
@@ -1723,6 +1722,10 @@ namespace Grass.Editor
             GrassAmount = _grassData.Count;
 
             _grassCompute.GrassDataList = _grassData;
+            _grassTileSystem = new GrassTileSystem(_grassData, 1);
+            _grassEditPainter?.Init(_grassCompute, _grassData, _grassTileSystem);
+            _grassRemovePainter?.Init(_grassData, _grassTileSystem);
+
             if (fullReset)
             {
                 _grassCompute.Reset();

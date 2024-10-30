@@ -26,16 +26,16 @@ namespace Grass.Editor
             public bool editSize;
         }
 
-        public GrassEditPainter(GrassComputeScript grassCompute, List<GrassData> grassData)
+        public GrassEditPainter(GrassComputeScript grassCompute, List<GrassData> grassData, GrassTileSystem sharedTileSystem)
         {
-            Init(grassCompute, grassData);
+            Init(grassCompute, grassData, sharedTileSystem);
         }
 
-        public void Init(GrassComputeScript grassCompute, List<GrassData> grassData)
+        public void Init(GrassComputeScript grassCompute, List<GrassData> grassData, GrassTileSystem sharedTileSystem)
         {
             _grassCompute = grassCompute;
             _grassData = grassData;
-            _grassTileSystem = new GrassTileSystem(_grassData, 1);
+            _grassTileSystem = sharedTileSystem;
         }
 
         public void EditGrass(Ray mouseRay, GrassToolSettingSo toolSettings, EditOption editOption)

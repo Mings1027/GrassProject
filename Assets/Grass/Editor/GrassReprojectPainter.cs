@@ -12,16 +12,16 @@ public class GrassReprojectPainter
     private List<GrassData> _grassData;
     private GrassTileSystem _grassTileSystem;
 
-    public GrassReprojectPainter(GrassComputeScript grassCompute, List<GrassData> grassData)
+    public GrassReprojectPainter(GrassComputeScript grassCompute, List<GrassData> grassData, GrassTileSystem grassTileSystem)
     {
-        Init(grassCompute, grassData);
+        Init(grassCompute, grassData, grassTileSystem);
     }
 
-    public void Init(GrassComputeScript grassCompute, List<GrassData> grassData)
+    public void Init(GrassComputeScript grassCompute, List<GrassData> grassData, GrassTileSystem grassTileSystem)
     {
         _grassCompute = grassCompute;
         _grassData = grassData;
-        _grassTileSystem = new GrassTileSystem(grassData, 1);
+        _grassTileSystem = grassTileSystem;
 
         _changedIndices.Clear();
         _changedData.Clear();

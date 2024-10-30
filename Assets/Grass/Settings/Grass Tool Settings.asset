@@ -34,14 +34,14 @@ MonoBehaviour:
   rangeR: 0.532
   rangeG: 0.539
   rangeB: 0.535
-  brushColor: {r: 0.98039216, g: 0.7357735, b: 0.0705882, a: 1}
+  brushColor: {r: 0.98039216, g: 0.13621047, b: 0.0705882, a: 1}
   paintMask:
     serializedVersion: 2
     m_Bits: 8
   paintBlockMask:
     serializedVersion: 2
     m_Bits: 64
-  brushSize: 7.8999915
+  brushSize: 11.099992
   brushFalloffSize: 0.19
   falloffOuterSpeed: 0.377
   density: 7
