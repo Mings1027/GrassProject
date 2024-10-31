@@ -45,14 +45,9 @@ namespace Grass.Editor
                         {
                             if (hit.normal.y <= 1 + normalLimit && hit.normal.y >= 1 - normalLimit)
                             {
-                                // SpatialGrid를 사용하여 근처에 다른 풀이 있는지 확인
-                                // if (_spatialGrid.CanPlaceGrass(hit.point, brushSize * 0.2f)) // 간격 조절을 위한 값
-                                {
-                                    var newData = CreateGrassData(hit.point, hit.normal, toolSettings);
-                                    _grassCompute.GrassDataList.Add(newData);
-                                    // _spatialGrid.AddObject(hit.point); // 새로운 풀의 위치를 그리드에 추가
-                                    addedCount++;
-                                }
+                                var newData = CreateGrassData(hit.point, hit.normal, toolSettings);
+                                _grassCompute.GrassDataList.Add(newData);
+                                addedCount++;
                             }
                         }
                     }

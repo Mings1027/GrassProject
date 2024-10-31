@@ -34,17 +34,17 @@ MonoBehaviour:
   rangeR: 0.532
   rangeG: 0.121
   rangeB: 0.111
-  brushColor: {r: 0.0705882, g: 0.98039216, b: 0.20262559, a: 1}
+  brushColor: {r: 0.0705882, g: 0.98039216, b: 0.12784292, a: 1}
   paintMask:
     serializedVersion: 2
     m_Bits: 8
   paintBlockMask:
     serializedVersion: 2
     m_Bits: 64
-  brushSize: 6.9000006
+  brushSize: 7.4499874
   brushFalloffSize: 1
   falloffOuterSpeed: 0.137
-  density: 100
+  density: 52
   normalLimit: 1
   grassAmountToGenerate: 100000
   generationDensity: 1

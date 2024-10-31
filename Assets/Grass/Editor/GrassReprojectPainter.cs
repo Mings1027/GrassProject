@@ -77,12 +77,7 @@ public class GrassReprojectPainter
         if (_changedIndices.Count > 0)
         {
             _grassCompute.ResetFaster();
-
-            // _spatialGrid.Clear();
-            // foreach (var grass in _grassCompute.GrassDataList)
-            // {
-            //     _spatialGrid.AddObject(grass.position);
-            // }
+ 
         }
     }
 
@@ -134,6 +129,5 @@ public class GrassReprojectPainter
     public void Clear()
     {
         _changedIndices.Clear();
-        // _spatialGrid.Rebuild(_grassCompute.GrassDataList);
     }
 }

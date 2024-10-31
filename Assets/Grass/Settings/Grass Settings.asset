@@ -31,7 +31,7 @@ MonoBehaviour:
   interactorStrength: 1
   topTint: {r: 1, g: 1, b: 1, a: 1}
   bottomTint: {r: 0.14048593, g: 0.45965058, b: 0.7264151, a: 1}
-  drawBounds: 0
+  drawBounds: 1
   minFadeDistance: 20
   maxFadeDistance: 100
   cullingTreeDepth: 5

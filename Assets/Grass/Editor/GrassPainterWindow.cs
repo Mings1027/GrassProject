@@ -209,14 +209,14 @@ namespace Grass.Editor
                 _spatialGrid = new SpatialGrid(bounds, toolSettings.BrushSize * 0.5f);
                 for (int i = 0; i < _grassData.Count; i++)
                 {
-                    _spatialGrid.AddObject(_grassData[i].position);
+                    _spatialGrid.AddObject(_grassData[i].position, i);
                 }
             }
 
             // 페인터들 초기화를 SpatialGrid로 변경
             _grassAddPainter ??= new GrassAddPainter(_grassCompute, _spatialGrid);
             _grassEditPainter ??= new GrassEditPainter(_grassCompute, _spatialGrid);
-            _grassRemovePainter ??= new GrassRemovePainter(_grassCompute, _spatialGrid);
+            _grassRemovePainter ??= new GrassRemovePainter(_grassCompute);
             _grassReprojectPainter ??= new GrassReprojectPainter(_grassCompute, _spatialGrid);
 
             if (GUILayout.Button("Manual Update", GUILayout.Height(50)))
@@ -407,7 +407,7 @@ namespace Grass.Editor
             }
         }
 
-        private int GetUpdateInterval(int totalCount)
+        private static int GetUpdateInterval(int totalCount)
         {
             return totalCount switch
             {
@@ -424,7 +424,6 @@ namespace Grass.Editor
             if (_grassCompute.GrassDataList.Count > 0)
             {
                 _grassData = _grassCompute.GrassDataList;
-                GrassAmount = _grassData.Count;
             }
             else
             {
@@ -436,9 +435,8 @@ namespace Grass.Editor
             for (var i = 0; i < _grassData.Count; i++)
             {
                 var data = _grassData[i];
-                _spatialGrid.AddObject(data.position);
+                _spatialGrid.AddObject(data.position, i);
             }
-
 
             GrassAmount = _grassData.Count;
         }
@@ -1584,7 +1582,7 @@ namespace Grass.Editor
                     Undo.RegisterCompleteObjectUndo(this, "Added Grass");
                     break;
                 case BrushOption.Remove:
-                    _grassRemovePainter ??= new GrassRemovePainter(_grassCompute, _spatialGrid);
+                    _grassRemovePainter ??= new GrassRemovePainter(_grassCompute);
                     Undo.RegisterCompleteObjectUndo(this, "Removed Grass");
                     break;
                 case BrushOption.Edit:
@@ -1610,7 +1608,6 @@ namespace Grass.Editor
                     break;
                 case BrushOption.Remove:
                     _grassRemovePainter.RemoveGrass(_hitPos, toolSettings.BrushSize);
-                    GrassAmount = _grassData.Count;
                     break;
                 case BrushOption.Edit:
                     _grassEditPainter.EditGrass(_mousePointRay, toolSettings, _selectedEditOption);
@@ -1644,7 +1641,6 @@ namespace Grass.Editor
             }
         }
 
-
         private void RebuildMesh()
         {
             UpdateGrassData();
@@ -1662,7 +1658,7 @@ namespace Grass.Editor
             for (var i = 0; i < _grassData.Count; i++)
             {
                 var grass = _grassData[i];
-                _spatialGrid.AddObject(grass.position);
+                _spatialGrid.AddObject(grass.position, i);
             }
 
             if (fullReset)

@@ -52,6 +52,7 @@ public class GrassComputeScript : MonoBehaviour
     };
 
     // culling tree data ----------------------------------------------------------------------
+    public CullingTree CullingTree => _cullingTree;
     private CullingTree _cullingTree;
     private readonly List<Bounds> _boundsListVis = new();
     private readonly List<CullingTree> _leaves = new();
@@ -645,7 +646,8 @@ public struct GrassData : IEquatable<GrassData>
 
     public bool Equals(GrassData other)
     {
-        return position.Equals(other.position) && normal.Equals(other.normal) && widthHeight.Equals(other.widthHeight) && color.Equals(other.color);
+        return position.Equals(other.position) && normal.Equals(other.normal) &&
+               widthHeight.Equals(other.widthHeight) && color.Equals(other.color);
     }
 
     public override bool Equals(object obj)

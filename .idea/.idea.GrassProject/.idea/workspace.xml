@@ -6,17 +6,14 @@
   <component name="ChangeListManager">
     <list default="true" id="84e81331-7910-473f-9ad1-7a03a025416d" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassAddPainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassAddPainter.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassEditPainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassEditPainter.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassRemovePainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassRemovePainter.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassReprojectPainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassReprojectPainter.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassTileSystem.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassTileSystem.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/SpatialGrid.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/SpatialGrid.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassToolSettingSO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassToolSettingSO.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Grass Shader.shadergraph" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/Grass Shader.shadergraph" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -126,18 +123,18 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Attach to Unity Editor.Attach to Unity Editor.executor": "Debug",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "ShowUsagesActions.previewPropertyKey": "true",
-    "com.codeium.enabled": "true",
-    "git-widget-placeholder": "main",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "CodeLensConfigurable",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Attach to Unity Editor.Attach to Unity Editor.executor&quot;: &quot;Debug&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;ShowUsagesActions.previewPropertyKey&quot;: &quot;true&quot;,
+    &quot;com.codeium.enabled&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;CodeLensConfigurable&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Attach to Unity Editor.Attach to Unity Editor">
     <configuration name="Standalone Player" type="RunUnityExe" factoryName="Unity Executable">
       <option name="EXE_PATH" value="$PROJECT_DIR$/../../Unity/Unity Build/GrassBuild.app/Contents/MacOS/TestGrassProject" />
@@ -282,6 +279,7 @@
       <workItem from="1730246641264" duration="25576000" />
       <workItem from="1730287594488" duration="10675000" />
       <workItem from="1730331381700" duration="33347000" />
+      <workItem from="1730376040004" duration="9314000" />
     </task>
     <servers />
   </component>

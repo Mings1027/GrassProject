@@ -65,7 +65,6 @@ namespace Grass.Editor
             _cumulativeChanges.Clear();
             _changedIndices.Clear();
             _changedData.Clear();
-            // _spatialGrid.Rebuild(_grassCompute.GrassDataList);
         }
 
         private EditWorkData CreateWorkData(RaycastHit hit, GrassToolSettingSo toolSettings, EditOption editOption)
@@ -101,14 +100,6 @@ namespace Grass.Editor
             if (_changedIndices.Count > 0)
             {
                 _grassCompute.ResetFaster();
-
-                // SpatialGrid 재구성
-
-                // _spatialGrid.Clear();
-                // foreach (var grass in _grassCompute.GrassDataList)
-                // {
-                //     _spatialGrid.AddObject(grass.position);
-                // }
             }
         }
         private void ProcessBatch(List<int> indices, int startIndex, int batchSize,
@@ -138,13 +129,11 @@ namespace Grass.Editor
             if (distSqr > workData.brushSizeSqr)
                 return;
 
-            // Calculate linear falloff based on distance
             var falloff = 1f - (distSqr / workData.brushSizeSqr);
 
             var currentData = _grassCompute.GrassDataList[grassIndex];
             var targetData = currentData;
 
-            // Initialize or update cumulative change
             _cumulativeChanges.TryAdd(grassIndex, 0f);
             _cumulativeChanges[grassIndex] = Mathf.Clamp01(
                 _cumulativeChanges[grassIndex] + Time.deltaTime * falloff * workData.changeSpeed);
