@@ -1,131 +1,76 @@
-using System;
 using System.Collections.Generic;
-using System.Threading;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Grass.Editor
+public class GrassRemovePainter
 {
-    public class GrassRemovePainter
+    private Vector3 _lastRemovePos;
+    private bool _isDragging;
+    private readonly List<int> _indicesToRemove = new();
+
+    private SpatialGrid _spatialGrid;
+    private GrassComputeScript _grassCompute;
+
+    public GrassRemovePainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
     {
-        private readonly HashSet<Vector3> _grassMarkedForRemoval = new();
-        private readonly List<Vector3> _removalPositions = new();
-        private Vector3 _lastRemovePos;
-        private bool _isDragging;
+        Init(grassCompute, spatialGrid);
+    }
 
-        private List<GrassData> _grassData;
-        private GrassTileSystem _grassTileSystem;
+    public void Init(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
+    {
+        _grassCompute = grassCompute;
+        _spatialGrid = spatialGrid;
+    }
 
-        public bool HasMarkedGrass => _grassMarkedForRemoval.Count > 0;
-        public bool IsDragging => _isDragging;
-        public IReadOnlyList<Vector3> RemovalPositions => _removalPositions;
+    public void RemoveGrass(Vector3 hitPoint, float radius)
+    {
+        var radiusSqr = radius * radius;
+        var removedCount = 0;
 
-        public GrassRemovePainter(List<GrassData> grassData, GrassTileSystem sharedTileSystem)
+        var halfBrushSize = radius * 0.5f;
+        if (Vector3.SqrMagnitude(hitPoint - _lastRemovePos) >= halfBrushSize * halfBrushSize)
         {
-            Init(grassData, sharedTileSystem);
+            _lastRemovePos = hitPoint;
         }
 
-        public void Init(List<GrassData> grassData, GrassTileSystem sharedTileSystem)
-        {
-            _grassData = grassData;
-            _grassTileSystem = sharedTileSystem;
-        }
+        _indicesToRemove.Clear();
 
-        public void MarkGrassForRemoval(Vector3 hitPoint, float radius)
+        var grassList = _grassCompute.GrassDataList;
+        // SpatialGrid를 사용하여 주변 영역 검사
+        for (var i = grassList.Count - 1; i >= 0; i--)
         {
-            var indices = _grassTileSystem.GetNearbyIndices(hitPoint, radius);
-
-            for (var i = 0; i < indices.Count; i++)
+            var grassData = grassList[i];
+            var distanceSqr = Vector3.SqrMagnitude(grassData.position - hitPoint);
+            if (distanceSqr <= radiusSqr)
             {
-                var index = indices[i];
-                if (index < _grassData.Count)
-                {
-                    if (Vector3.SqrMagnitude(_grassData[index].position - hitPoint) <= radius * radius)
-                    {
-                        _grassMarkedForRemoval.Add(_grassData[index].position);
-
-                        var halfBrushSize = radius * 0.5f;
-                        if (Vector3.SqrMagnitude(hitPoint - _lastRemovePos) >= halfBrushSize * halfBrushSize)
-                        {
-                            _removalPositions.Add(hitPoint);
-                            _lastRemovePos = hitPoint;
-                        }
-                    }
-                }
+                _indicesToRemove.Add(i);
+                // _spatialGrid.RemoveObject(grassData.position);
+                removedCount++;
             }
-
-            _isDragging = true;
         }
 
-        public async UniTask RemoveMarkedGrass(CancellationToken cancellationToken,
-                                               Action<float, string> progressCallback)
+        if (removedCount > 0)
         {
-            if (_grassMarkedForRemoval.Count <= 0) return;
-
-            const int batchSize = 10000;
-            var totalBatches = (_grassData.Count + batchSize - 1) / batchSize;
-            var tasks = new UniTask<List<GrassData>>[totalBatches];
-            var removedCounts = new int[totalBatches];
-            var totalRemoveGrassCount = _grassMarkedForRemoval.Count;
-
-            // 각 배치별로 병렬 처리
-            for (var index = 0; index < totalBatches; index++)
+            // 큰 인덱스부터 제거
+            _indicesToRemove.Sort((a, b) => b.CompareTo(a));
+ 
+            for (var i = 0; i < _indicesToRemove.Count; i++)
             {
-                var start = index * batchSize;
-                var end = Mathf.Min(start + batchSize, _grassData.Count);
-                var localBatchIndex = index;
-
-                tasks[index] = UniTask.RunOnThreadPool(() =>
-                {
-                    var localGrassToKeep = new List<GrassData>();
-                    var localRemovedCount = 0;
-
-                    for (var i = start; i < end; i++)
-                    {
-                        if (!_grassMarkedForRemoval.Contains(_grassData[i].position))
-                        {
-                            localGrassToKeep.Add(_grassData[i]);
-                        }
-                        else
-                        {
-                            localRemovedCount++;
-                        }
-                    }
-
-                    removedCounts[localBatchIndex] = localRemovedCount;
-                    return localGrassToKeep;
-                }, cancellationToken: cancellationToken);
-
-                progressCallback((float)index / totalRemoveGrassCount,
-                    $"Removing grass - {index}/{totalRemoveGrassCount}");
-                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+                var index = _indicesToRemove[i];
+                _grassCompute.GrassDataList.RemoveAt(index);
             }
-
-            // 모든 배치의 결과를 수집하고 병합
-            var results = await UniTask.WhenAll(tasks);
-            var finalGrassToKeep = new List<GrassData>();
-
-            for (var index = 0; index < results.Length; index++)
-            {
-                finalGrassToKeep.AddRange(results[index]);
-                progressCallback((float)index / results.Length, $"Merging results - {index}/{results.Length}");
-                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
-            }
-
-            // 결과 적용
-            _grassData.Clear();
-            _grassData.AddRange(finalGrassToKeep);
-
-            await _grassTileSystem.UpdateTileSystem(_grassData);
-
-            Debug.Log($"Removed {totalRemoveGrassCount} grass instances in total");
+            
+            _grassCompute.ResetFaster();
         }
 
-        public void Clear()
-        {
-            _grassMarkedForRemoval.Clear();
-            _removalPositions.Clear();
-            _isDragging = false;
-        }
+        _isDragging = true;
+    }
+
+    public void Clear()
+    {
+        _isDragging = false;
+        _lastRemovePos = Vector3.zero;
+        _indicesToRemove.Clear();
+        // _spatialGrid.Rebuild(_grassCompute.GrassDataList);
+
     }
 }

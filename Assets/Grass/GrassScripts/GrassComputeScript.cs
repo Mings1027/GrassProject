@@ -149,7 +149,7 @@ public class GrassComputeScript : MonoBehaviour
         GrassEventManager.AddEvent<GrassInteractor>(GrassEvent.InteractorRemoved, RemoveInteractor);
 
         GrassFuncManager.AddEvent(GrassEvent.TotalGrassCount, () => grassData.Count);
-        GrassFuncManager.AddEvent(GrassEvent.VisibleGrassCount, ()=> _grassVisibleIDList.Count);
+        GrassFuncManager.AddEvent(GrassEvent.VisibleGrassCount, () => _grassVisibleIDList.Count);
 
         _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
         // If initialized, call on disable to clean things up
@@ -218,8 +218,8 @@ public class GrassComputeScript : MonoBehaviour
         GrassEventManager.RemoveEvent<GrassInteractor>(GrassEvent.InteractorRemoved, RemoveInteractor);
 
         GrassFuncManager.RemoveEvent(GrassEvent.TotalGrassCount, () => grassData.Count);
-        GrassFuncManager.RemoveEvent(GrassEvent.VisibleGrassCount, ()=> _grassVisibleIDList.Count);
-        
+        GrassFuncManager.RemoveEvent(GrassEvent.VisibleGrassCount, () => _grassVisibleIDList.Count);
+
         _interactors.Clear();
         // Dispose of buffers and copied shaders here
         if (_initialized)
@@ -342,6 +342,8 @@ public class GrassComputeScript : MonoBehaviour
             _cutIDs[i] = -1;
         }
 
+        _cutBuffer.SetData(_cutIDs);
+
         // Cache the kernel IDs we will be dispatching
         _idGrassKernel = _instComputeShader.FindKernel("Main");
 
@@ -365,7 +367,9 @@ public class GrassComputeScript : MonoBehaviour
         // _dispatchSize = Mathf.CeilToInt((int)(grassData.Count / _threadGroupSize));
         _dispatchSize = (grassData.Count + (int)_threadGroupSize - 1) >> (int)Math.Log((int)_threadGroupSize, 2);
 
-        SetGrassDataBase(full);
+        SetShaderData();
+
+        _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
 
         if (full)
         {
@@ -441,25 +445,6 @@ public class GrassComputeScript : MonoBehaviour
             _visibleIDBuffer.SetData(_grassVisibleIDList);
             _mainCamera.farClipPlane = _cameraOriginalFarPlane;
         }
-    }
-
-    private void SetGrassDataBase(bool full)
-    {
-        SetShaderData();
-
-        if (full)
-        {
-            _instComputeShader.SetFloat(MinFadeDist, currentPresets.minFadeDistance);
-            _instComputeShader.SetFloat(MaxFadeDist, currentPresets.maxFadeDistance);
-            _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
-        }
-        else
-        {
-            _instComputeShader.SetFloat(MinFadeDist, currentPresets.minFadeDistance);
-            _instComputeShader.SetFloat(MaxFadeDist, currentPresets.maxFadeDistance);
-        }
-
-        _cutBuffer.SetData(_cutIDs);
     }
 
     public void ResetFaster()
@@ -587,6 +572,9 @@ public class GrassComputeScript : MonoBehaviour
         _instComputeShader.SetFloat(MaxWidth, currentPresets.maxWidth);
         instantiatedMaterial.SetColor(TopTint, currentPresets.topTint);
         instantiatedMaterial.SetColor(BottomTint, currentPresets.bottomTint);
+
+        _instComputeShader.SetFloat(MinFadeDist, currentPresets.minFadeDistance);
+        _instComputeShader.SetFloat(MaxFadeDist, currentPresets.maxFadeDistance);
     }
 
     private static readonly int SourceVertices = Shader.PropertyToID("_SourceVertices");
@@ -648,10 +636,25 @@ public class GrassComputeScript : MonoBehaviour
 
 [Serializable]
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-public struct GrassData
+public struct GrassData : IEquatable<GrassData>
 {
     public Vector3 position;
     public Vector3 normal;
     public Vector2 widthHeight;
     public Vector3 color;
+
+    public bool Equals(GrassData other)
+    {
+        return position.Equals(other.position) && normal.Equals(other.normal) && widthHeight.Equals(other.widthHeight) && color.Equals(other.color);
+    }
+
+    public override bool Equals(object obj)
+    {
+        return obj is GrassData other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(position, normal, widthHeight, color);
+    }
 }

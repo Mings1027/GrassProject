@@ -47,8 +47,6 @@ namespace Grass.Editor
 
         private Vector3 _mousePos;
 
-        private Vector3 _lastPosition = Vector3.zero;
-
         [SerializeField] private GameObject grassObject;
 
         private GrassComputeScript _grassCompute;
@@ -73,15 +71,15 @@ namespace Grass.Editor
         private CancellationTokenSource _cts;
         private ObjectProgress _objectProgress = new();
 
-
         private bool _isMousePressed;
         private bool _isPainting;
 
+        private GrassAddPainter _grassAddPainter;
         private GrassEditPainter _grassEditPainter;
         private GrassRemovePainter _grassRemovePainter;
         private GrassReprojectPainter _grassReprojectPainter;
 
-        private GrassTileSystem _grassTileSystem;
+        private SpatialGrid _spatialGrid;
 
         [MenuItem("Tools/Grass Tool")]
         private static void Open()
@@ -149,13 +147,11 @@ namespace Grass.Editor
         private void OnDisable()
         {
             Debug.Log("OnDisable");
-            _grassEditPainter?.ClearCumulativeChanges();
             RemoveDelegates();
         }
 
         private void OnDestroy()
         {
-            _grassEditPainter?.ClearCumulativeChanges();
             RemoveDelegates();
             if (_materialEditor != null)
             {
@@ -207,10 +203,21 @@ namespace Grass.Editor
                 }
             }
 
-            _grassTileSystem ??= new GrassTileSystem(_grassData, 1);
-            _grassEditPainter ??= new GrassEditPainter(_grassCompute, _grassData, _grassTileSystem);
-            _grassRemovePainter ??= new GrassRemovePainter(_grassData, _grassTileSystem);
-            _grassReprojectPainter ??= new GrassReprojectPainter(_grassCompute, _grassData, _grassTileSystem);
+            if (_spatialGrid == null)
+            {
+                var bounds = new Bounds(Vector3.zero, new Vector3(1000, 1000, 1000));
+                _spatialGrid = new SpatialGrid(bounds, toolSettings.BrushSize * 0.5f);
+                for (int i = 0; i < _grassData.Count; i++)
+                {
+                    _spatialGrid.AddObject(_grassData[i].position);
+                }
+            }
+
+            // 페인터들 초기화를 SpatialGrid로 변경
+            _grassAddPainter ??= new GrassAddPainter(_grassCompute, _spatialGrid);
+            _grassEditPainter ??= new GrassEditPainter(_grassCompute, _spatialGrid);
+            _grassRemovePainter ??= new GrassRemovePainter(_grassCompute, _spatialGrid);
+            _grassReprojectPainter ??= new GrassReprojectPainter(_grassCompute, _spatialGrid);
 
             if (GUILayout.Button("Manual Update", GUILayout.Height(50)))
             {
@@ -424,7 +431,13 @@ namespace Grass.Editor
                 _grassData.Clear();
             }
 
-            _grassTileSystem = new GrassTileSystem(_grassData, 1);
+            var bounds = new Bounds(Vector3.zero, new Vector3(1000, 1000, 1000)); // 적절한 크기로 조정
+            _spatialGrid = new SpatialGrid(bounds, toolSettings.BrushSize * 0.5f);
+            for (var i = 0; i < _grassData.Count; i++)
+            {
+                var data = _grassData[i];
+                _spatialGrid.AddObject(data.position);
+            }
 
 
             GrassAmount = _grassData.Count;
@@ -504,9 +517,6 @@ namespace Grass.Editor
                 _selectedEditOption = (EditOption)GUILayout.Toolbar((int)_selectedEditOption, _editOptionStrings);
                 EditorGUILayout.Separator();
                 EditorGUILayout.LabelField("Soft Falloff Settings", EditorStyles.boldLabel);
-                toolSettings.BrushFalloffSize =
-                    EditorGUILayout.Slider("Brush Falloff Size", toolSettings.BrushFalloffSize,
-                        toolSettings.MinBrushFalloffSize, toolSettings.MaxBrushFalloffSize);
                 toolSettings.FalloffOuterSpeed =
                     EditorGUILayout.Slider("Falloff Outer Speed", toolSettings.FalloffOuterSpeed, 0f, 1f);
                 EditorGUILayout.Separator();
@@ -970,17 +980,10 @@ namespace Grass.Editor
                 case BrushOption.Remove:
                     discColor = Color.red;
                     discColor2 = new Color(0.5f, 0f, 0f, 0.4f);
-                    DrawRemovalGizmos();
                     break;
                 case BrushOption.Edit:
                     discColor = Color.yellow;
                     discColor2 = new Color(0.5f, 0.5f, 0f, 0.4f);
-
-                    Handles.color = discColor;
-                    Handles.DrawWireDisc(_hitPos, _hitNormal, toolSettings.BrushFalloffSize * toolSettings.BrushSize);
-                    Handles.color = discColor2;
-                    Handles.DrawSolidDisc(_hitPos, _hitNormal, toolSettings.BrushFalloffSize * toolSettings.BrushSize);
-
                     break;
                 case BrushOption.Reproject:
                     discColor = Color.cyan;
@@ -1002,20 +1005,6 @@ namespace Grass.Editor
             }
         }
 
-        private void DrawRemovalGizmos()
-        {
-            if (!_grassRemovePainter.IsDragging || !_grassRemovePainter.HasMarkedGrass)
-                return;
-
-            // 반투명한 빨간색 설정 (알파값 0.3)
-            Handles.color = new Color(0.5f, 0f, 0f, 0.3f);
-
-            // 각 제거 위치에 반투명한 원형 디스크를 그립니다
-            foreach (var position in _grassRemovePainter.RemovalPositions)
-            {
-                Handles.DrawSolidDisc(position, _hitNormal, toolSettings.BrushSize);
-            }
-        }
 
         private void OnScene(SceneView scene)
         {
@@ -1138,6 +1127,9 @@ namespace Grass.Editor
             {
                 _grassData.Add(newGrassData[i]);
             }
+
+            _grassCompute.GrassDataList = _grassData;
+            _grassCompute.ResetFaster();
         }
 
         private int CalculatePointsForObject(GameObject obj)
@@ -1237,7 +1229,10 @@ namespace Grass.Editor
             var worldPoint = localToWorld.MultiplyPoint3x4(point);
             var worldNormal = sourceMesh.transform.TransformDirection(normal);
 
-            if (!spatialGrid.CanPlaceGrass(worldPoint, 0.2f)) return (false, default);
+            if (Physics.CheckSphere(worldPoint, 0.1f, toolSettings.PaintBlockMask))
+            {
+                return (false, default);
+            }
 
             if (worldNormal.y <= 1 + toolSettings.NormalLimit &&
                 worldNormal.y >= 1 - toolSettings.NormalLimit)
@@ -1302,7 +1297,10 @@ namespace Grass.Editor
             var worldPoint = terrain.transform.TransformPoint(randomPoint);
             worldPoint.y = terrain.SampleHeight(worldPoint);
 
-            if (!spatialGrid.CanPlaceGrass(worldPoint, 0.2f)) return (false, default);
+            if (Physics.CheckSphere(worldPoint, 0.1f, toolSettings.PaintBlockMask))
+            {
+                return (false, default);
+            }
 
             var normal =
                 terrain.terrainData.GetInterpolatedNormal(randomPoint.x / terrainSize.x, randomPoint.z / terrainSize.z);
@@ -1582,18 +1580,19 @@ namespace Grass.Editor
             switch (_selectedToolOption)
             {
                 case BrushOption.Add:
+                    _grassAddPainter ??= new GrassAddPainter(_grassCompute, _spatialGrid);
                     Undo.RegisterCompleteObjectUndo(this, "Added Grass");
                     break;
                 case BrushOption.Remove:
+                    _grassRemovePainter ??= new GrassRemovePainter(_grassCompute, _spatialGrid);
                     Undo.RegisterCompleteObjectUndo(this, "Removed Grass");
-                    _grassRemovePainter ??= new GrassRemovePainter(_grassData, _grassTileSystem);
                     break;
                 case BrushOption.Edit:
+                    _grassEditPainter ??= new GrassEditPainter(_grassCompute, _spatialGrid);
                     Undo.RegisterCompleteObjectUndo(this, "Edited Grass");
-                    _grassEditPainter ??= new GrassEditPainter(_grassCompute, _grassData, _grassTileSystem);
                     break;
                 case BrushOption.Reproject:
-                    _grassReprojectPainter ??= new GrassReprojectPainter(_grassCompute, _grassData, _grassTileSystem);
+                    _grassReprojectPainter ??= new GrassReprojectPainter(_grassCompute, _spatialGrid);
                     Undo.RegisterCompleteObjectUndo(this, "Reprojected Grass");
                     break;
             }
@@ -1606,22 +1605,19 @@ namespace Grass.Editor
             switch (_selectedToolOption)
             {
                 case BrushOption.Add:
-                    AddGrass();
-                    UpdateGrassData(false);
+                    _grassAddPainter.AddGrass(_hitPos, toolSettings, out var addedCount);
+                    GrassAmount += addedCount;
                     break;
                 case BrushOption.Remove:
-                    _grassRemovePainter.MarkGrassForRemoval(_hitPos, toolSettings.BrushSize);
+                    _grassRemovePainter.RemoveGrass(_hitPos, toolSettings.BrushSize);
+                    GrassAmount = _grassData.Count;
                     break;
                 case BrushOption.Edit:
                     _grassEditPainter.EditGrass(_mousePointRay, toolSettings, _selectedEditOption);
                     break;
                 case BrushOption.Reproject:
-                    _grassReprojectPainter.ReprojectGrass(
-                        _mousePointRay,
-                        toolSettings.PaintMask.value,
-                        toolSettings.BrushSize,
-                        toolSettings.ReprojectOffset);
-                    UpdateGrassData(false);
+                    _grassReprojectPainter.ReprojectGrass(_mousePointRay, toolSettings.PaintMask.value,
+                        toolSettings.BrushSize, toolSettings.ReprojectOffset);
                     break;
             }
         }
@@ -1634,80 +1630,18 @@ namespace Grass.Editor
             switch (_selectedToolOption)
             {
                 case BrushOption.Add:
+                    _grassAddPainter.Clear();
                     break;
                 case BrushOption.Remove:
-                    RemoveGrass().Forget();
+                    _grassRemovePainter.Clear();
                     break;
                 case BrushOption.Edit:
+                    _grassEditPainter.Clear();
                     break;
                 case BrushOption.Reproject:
                     _grassReprojectPainter.Clear();
                     break;
             }
-        }
-
-        private void AddGrass()
-        {
-            var paintMaskValue = toolSettings.PaintMask.value;
-            var brushSize = toolSettings.BrushSize;
-            var density = toolSettings.Density;
-            var normalLimit = toolSettings.NormalLimit;
-
-            var startPos = _hitPos + Vector3.up * 3f;
-
-            var distanceMoved = Vector3.Distance(_lastPosition, startPos);
-            if (distanceMoved >= brushSize * 0.5f)
-            {
-                for (var i = 0; i < density; i++)
-                {
-                    var randomPoint = Random.insideUnitCircle * brushSize;
-                    var randomPos = new Vector3(startPos.x + randomPoint.x, startPos.y, startPos.z + randomPoint.y);
-
-                    if (Physics.Raycast(randomPos + Vector3.up * 3f, Vector3.down, out var hit, float.MaxValue))
-                    {
-                        var hitLayer = hit.collider.gameObject.layer;
-                        if (((1 << hitLayer) & paintMaskValue) != 0)
-                        {
-                            if (hit.normal.y <= 1 + normalLimit && hit.normal.y >= 1 - normalLimit)
-                            {
-                                var newData = CreateGrassData(hit.point, hit.normal);
-                                _grassData.Add(newData);
-                                GrassAmount++;
-                            }
-                        }
-                    }
-                }
-
-                _lastPosition = startPos;
-            }
-        }
-
-        private GrassData CreateGrassData(Vector3 grassPosition, Vector3 grassNormal)
-        {
-            return new GrassData
-            {
-                color = GetRandomColor(),
-                position = grassPosition,
-                widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight),
-                normal = grassNormal
-            };
-        }
-
-        private async UniTask RemoveGrass()
-        {
-            _cts = new CancellationTokenSource();
-            _isProcessing = true;
-            await _grassRemovePainter.RemoveMarkedGrass(_cts.Token,
-                (progress, message) =>
-                {
-                    _objectProgress.progress = progress;
-                    _objectProgress.progressMessage = message;
-                });
-
-            UpdateGrassData(false);
-            _grassRemovePainter.Clear();
-            _isProcessing = false;
-            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
 
 
@@ -1720,11 +1654,16 @@ namespace Grass.Editor
         private void UpdateGrassData(bool fullReset = true)
         {
             GrassAmount = _grassData.Count;
-
             _grassCompute.GrassDataList = _grassData;
-            _grassTileSystem = new GrassTileSystem(_grassData, 1);
-            _grassEditPainter?.Init(_grassCompute, _grassData, _grassTileSystem);
-            _grassRemovePainter?.Init(_grassData, _grassTileSystem);
+
+            // SpatialGrid 재구성
+            var bounds = new Bounds(Vector3.zero, new Vector3(1000, 1000, 1000));
+            _spatialGrid = new SpatialGrid(bounds, toolSettings.BrushSize * 0.5f);
+            for (var i = 0; i < _grassData.Count; i++)
+            {
+                var grass = _grassData[i];
+                _spatialGrid.AddObject(grass.position);
+            }
 
             if (fullReset)
             {

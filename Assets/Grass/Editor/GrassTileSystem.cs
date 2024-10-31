@@ -1,16 +1,12 @@
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using Cysharp.Threading.Tasks;
-using NUnit.Framework;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 namespace Grass.Editor
 {
     public class GrassTileSystem
     {
-        private ConcurrentDictionary<Vector2Int, ConcurrentBag<int>> _tiles; // Thread-safe 컬렉션으로 변경
+        private Dictionary<Vector2Int, List<int>> _tiles;
         private float _tileSize;
 
         private Vector3 _lastQueryPosition;
@@ -20,52 +16,25 @@ namespace Grass.Editor
 
         public GrassTileSystem(List<GrassData> grassData, float brushSize)
         {
-            InitTileSystem(grassData, brushSize).Forget();
+            InitTileSystem(grassData, brushSize);
         }
 
-        private async UniTask InitTileSystem(List<GrassData> grassData, float brushSize)
+        private void InitTileSystem(List<GrassData> grassData, float brushSize)
         {
             _tileSize = brushSize * 5f;
-            _tiles = new ConcurrentDictionary<Vector2Int, ConcurrentBag<int>>();
+            _tiles = new Dictionary<Vector2Int, List<int>>();
             _cachedIndices = new List<int>(1000);
 
-            const int batchSize = 10000; // 각 작업자가 처리할 데이터 크기
-            var totalBatches = (grassData.Count + batchSize - 1) / batchSize;
-            var tasks = new UniTask[totalBatches];
-
-            for (var batchIndex = 0; batchIndex < totalBatches; batchIndex++)
+            for (var i = 0; i < grassData.Count; i++)
             {
-                var start = batchIndex * batchSize;
-                var end = Mathf.Min(start + batchSize, grassData.Count);
-
-                tasks[batchIndex] = UniTask.RunOnThreadPool(() =>
+                var tilePos = GetTilePosition(grassData[i].position);
+                if (!_tiles.ContainsKey(tilePos))
                 {
-                    for (var i = start; i < end; i++)
-                    {
-                        var tilePos = GetTilePosition(grassData[i].position);
-                        var bag = _tiles.GetOrAdd(tilePos, _ => new ConcurrentBag<int>());
-                        bag.Add(i);
-                    }
-                });
+                    _tiles[tilePos] = new List<int>();
+                }
+                _tiles[tilePos].Add(i);
             }
-
-            await UniTask.WhenAll(tasks);
-
-            // ConcurrentBag을 List로 변환
-            var regularDict = new Dictionary<Vector2Int, List<int>>();
-            foreach (var kvp in _tiles)
-            {
-                regularDict[kvp.Key] = kvp.Value.ToList();
-            }
-
-            _tiles = null;
-            _tiles = new ConcurrentDictionary<Vector2Int, ConcurrentBag<int>>(
-                regularDict.ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => new ConcurrentBag<int>(kvp.Value)
-                ));
         }
-
 
         private Vector2Int GetTilePosition(Vector3 worldPosition)
         {
@@ -87,7 +56,6 @@ namespace Grass.Editor
             _cachedIndices.Clear();
 
             var centralTile = GetTilePosition(worldPosition);
-
             var tilesRadius = Mathf.CeilToInt(radius / _tileSize);
 
             for (var x = -tilesRadius; x <= tilesRadius; x++)
@@ -109,31 +77,20 @@ namespace Grass.Editor
             return _cachedIndices;
         }
 
-        public async UniTask UpdateTileSystem(List<GrassData> grassData)
+        public void UpdateTileSystem(List<GrassData> grassData)
         {
             ClearCache();
             _tiles.Clear();
-            const int batchSize = 10000;
-            var totalBatches = (grassData.Count + batchSize - 1) / batchSize;
-            var tasks = new UniTask[totalBatches];
 
-            for (var batchIndex = 0; batchIndex < totalBatches; batchIndex++)
+            for (var i = 0; i < grassData.Count; i++)
             {
-                var start = batchIndex * batchSize;
-                var end = Mathf.Min(start + batchSize, grassData.Count);
-
-                tasks[batchIndex] = UniTask.RunOnThreadPool(() =>
+                var tilePos = GetTilePosition(grassData[i].position);
+                if (!_tiles.ContainsKey(tilePos))
                 {
-                    for (var i = start; i < end; i++)
-                    {
-                        var tilePos = GetTilePosition(grassData[i].position);
-                        var bag = _tiles.GetOrAdd(tilePos, _ => new ConcurrentBag<int>());
-                        bag.Add(i);
-                    }
-                });
+                    _tiles[tilePos] = new List<int>();
+                }
+                _tiles[tilePos].Add(i);
             }
-
-            await UniTask.WhenAll(tasks);
         }
 
         public void ClearCache()
