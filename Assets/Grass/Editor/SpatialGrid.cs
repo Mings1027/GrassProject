@@ -7,7 +7,26 @@ public class SpatialGrid
     private readonly float _cellSize;
     private readonly Vector3 _origin;
     private readonly Bounds _bounds;
-    private readonly Dictionary<long, Bounds> _cellBounds = new();
+
+    private Dictionary<long, Bounds> _cellBounds;
+    private readonly Queue<HashSet<int>> _hashSetPool;
+    private const int PoolSize = 100;
+
+    public Dictionary<long, HashSet<int>> Grid => _grid;
+
+    public int TotalObjectCount
+    {
+        get
+        {
+            var count = 0;
+            foreach (var cell in _grid.Values)
+            {
+                count += cell.Count;
+            }
+
+            return count;
+        }
+    }
 
     public float CellSize => _cellSize;
     public Bounds Bounds => _bounds;
@@ -17,14 +36,43 @@ public class SpatialGrid
         _cellSize = cellSize;
         _origin = bounds.min;
         _bounds = bounds;
-        _grid = new Dictionary<long, HashSet<int>>();
+        _grid = new Dictionary<long, HashSet<int>>(1000);
+        _hashSetPool = new Queue<HashSet<int>>(PoolSize);
+        InitializePool();
+    }
+
+    private void InitializePool()
+    {
+        for (var i = 0; i < PoolSize; i++)
+        {
+            _hashSetPool.Enqueue(new HashSet<int>(50));
+        }
+    }
+
+    private HashSet<int> GetHashSet()
+    {
+        if (_hashSetPool.Count > 0)
+        {
+            return _hashSetPool.Dequeue();
+        }
+
+        return new HashSet<int>(50);
+    }
+
+    private void ReturnHashSet(HashSet<int> hashSet)
+    {
+        hashSet.Clear();
+        if (_hashSetPool.Count < PoolSize)
+        {
+            _hashSetPool.Enqueue(hashSet);
+        }
     }
 
     public static long GetKey(int x, int y, int z)
     {
-        return ((long)x & 0x1FFFFF) | 
-               (((long)y & 0x1FFFFF) << 21) | 
-               (((long)z & 0x1FFFFF) << 42);
+        // 비트 마스크를 상수로 정의
+        const long mask = 0x1FFFFF;
+        return (x & mask) | ((y & mask) << 21) | ((z & mask) << 42);
     }
 
     public void AddObject(Vector3 position, int index)
@@ -34,18 +82,11 @@ public class SpatialGrid
 
         if (!_grid.TryGetValue(key, out var cellSet))
         {
-            cellSet = new HashSet<int>();
+            cellSet = GetHashSet();
             _grid[key] = cellSet;
         }
 
         cellSet.Add(index);
-
-        // 셀의 경계를 캐시
-        if (!_cellBounds.ContainsKey(key))
-        {
-            var cellCenter = CellToWorld(cell) + new Vector3(_cellSize * 0.5f, _cellSize * 0.5f, _cellSize * 0.5f);
-            _cellBounds[key] = new Bounds(cellCenter, new Vector3(_cellSize, _cellSize, _cellSize));
-        }
     }
 
     public void RemoveObject(Vector3 position, int index)
@@ -59,7 +100,7 @@ public class SpatialGrid
             if (cellSet.Count == 0)
             {
                 _grid.Remove(key);
-                _cellBounds.Remove(key);
+                ReturnHashSet(cellSet);
             }
         }
     }
@@ -69,7 +110,6 @@ public class SpatialGrid
         results.Clear();
         var cellRadius = Mathf.CeilToInt(radius / _cellSize);
         var centerCell = WorldToCell(position);
-        var radiusSqr = radius * radius;
 
         for (var x = -cellRadius; x <= cellRadius; x++)
         for (var y = -cellRadius; y <= cellRadius; y++)
@@ -78,11 +118,13 @@ public class SpatialGrid
             var checkCell = new Vector3Int(centerCell.x + x, centerCell.y + y, centerCell.z + z);
             var key = GetKey(checkCell.x, checkCell.y, checkCell.z);
 
+            // 디버깅을 위한 로그 추가
             if (_grid.TryGetValue(key, out var indices))
             {
                 results.AddRange(indices);
             }
         }
+
     }
 
     public Vector3Int WorldToCell(Vector3 position)
@@ -104,10 +146,33 @@ public class SpatialGrid
         );
     }
 
+    public Bounds GetCellBounds(long key)
+    {
+        _cellBounds ??= new Dictionary<long, Bounds>();
+
+        if (!_cellBounds.TryGetValue(key, out var bounds))
+        {
+            var cell = new Vector3Int(
+                (int)(key & 0x1FFFFF),
+                (int)((key >> 21) & 0x1FFFFF),
+                (int)((key >> 42) & 0x1FFFFF));
+
+            var cellCenter = CellToWorld(cell) + new Vector3(_cellSize * 0.5f, _cellSize * 0.5f, _cellSize * 0.5f);
+            bounds = new Bounds(cellCenter, new Vector3(_cellSize, _cellSize, _cellSize));
+            _cellBounds[key] = bounds;
+        }
+
+        return bounds;
+    }
+
     public void Clear()
     {
+        foreach (var cellSet in _grid.Values)
+        {
+            ReturnHashSet(cellSet);
+        }
+
         _grid.Clear();
-        _cellBounds.Clear();
+        _cellBounds?.Clear();
     }
-    
 }

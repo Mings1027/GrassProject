@@ -1,28 +1,21 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Grass.Editor
 {
-    public class GrassAddPainter
+    public sealed class GrassAddPainter: BasePainter
     {
         private Vector3 _lastPosition = Vector3.zero;
-
-        private GrassComputeScript _grassCompute;
-        private SpatialGrid _spatialGrid;
+        private readonly List<int> _nearbyIndices = new(100);
+        private const float MIN_GRASS_SPACING = 0.1f; // 최소 잔디 간격
 
         public GrassAddPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
         {
-            Init(grassCompute, spatialGrid);
+            Initialize(grassCompute, spatialGrid);
         }
 
-        private void Init(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
+        public void AddGrass(Vector3 hitPos, GrassToolSettingSo toolSettings)
         {
-            _grassCompute = grassCompute;
-            _spatialGrid = spatialGrid;
-        }
-
-        public void AddGrass(Vector3 hitPos, GrassToolSettingSo toolSettings, out int addedCount)
-        {
-            addedCount = 0;
             var paintMaskValue = toolSettings.PaintMask.value;
             var brushSize = toolSettings.BrushSize;
             var density = toolSettings.Density;
@@ -33,6 +26,8 @@ namespace Grass.Editor
 
             if (distanceMoved >= brushSize * 0.5f)
             {
+                var grassAdded = false;
+
                 for (var i = 0; i < density; i++)
                 {
                     var randomPoint = Random.insideUnitCircle * brushSize;
@@ -45,21 +40,51 @@ namespace Grass.Editor
                         {
                             if (hit.normal.y <= 1 + normalLimit && hit.normal.y >= 1 - normalLimit)
                             {
-                                var newData = CreateGrassData(hit.point, hit.normal, toolSettings);
-                                _grassCompute.GrassDataList.Add(newData);
-                                addedCount++;
+                                // 주변 잔디 체크
+                                _nearbyIndices.Clear();
+                                _spatialGrid.GetObjectsInRadius(hit.point, MIN_GRASS_SPACING, _nearbyIndices);
+
+                                // 너무 가까운 잔디가 없는 경우에만 추가
+                                if (!HasTooCloseGrass(hit.point))
+                                {
+                                    var newData = CreateGrassData(hit.point, hit.normal, toolSettings);
+                                    var newIndex = _grassCompute.GrassDataList.Count;
+                                    
+                                    _grassCompute.GrassDataList.Add(newData);
+                                    _spatialGrid.AddObject(hit.point, newIndex);
+                                    
+                                    grassAdded = true;
+                                }
                             }
                         }
                     }
                 }
 
-                if (addedCount > 0)
+                if (grassAdded)
                 {
                     _grassCompute.ResetFaster();
                 }
 
                 _lastPosition = startPos;
             }
+        }
+
+        private bool HasTooCloseGrass(Vector3 position)
+        {
+            var minDistanceSqr = MIN_GRASS_SPACING * MIN_GRASS_SPACING;
+            var grassList = _grassCompute.GrassDataList;
+
+            foreach (var index in _nearbyIndices)
+            {
+                var existingGrass = grassList[index];
+                var distanceSqr = (existingGrass.position - position).sqrMagnitude;
+                if (distanceSqr < minDistanceSqr)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private GrassData CreateGrassData(Vector3 grassPosition, Vector3 grassNormal, GrassToolSettingSo toolSettings)
@@ -85,9 +110,10 @@ namespace Grass.Editor
             return new Vector3(newRandomCol.r, newRandomCol.g, newRandomCol.b);
         }
 
-        public void Clear()
+        public override void Clear()
         {
             _lastPosition = Vector3.zero;
+            _nearbyIndices.Clear();
         }
     }
 }

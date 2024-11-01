@@ -632,31 +632,29 @@ public class GrassComputeScript : MonoBehaviour
         // Dispatch the compute shader
         _dispatchSize = (_grassVisibleIDList.Count + (int)_threadGroupSize - 1) >> (int)Math.Log(_threadGroupSize, 2);
     }
+
+    public void UpdateGrassDataFaster()
+    {
+        // Update only the necessary buffers
+        _sourceVertBuffer.SetData(grassData);
+
+        // Clear and reset only the necessary buffers
+        _drawBuffer.SetCounterValue(0);
+        _argsBuffer.SetData(_argsBufferReset);
+
+        // Dispatch the compute shader
+        _dispatchSize = (_grassVisibleIDList.Count + (int)_threadGroupSize - 1) >> (int)Math.Log(_threadGroupSize, 2);
+
+    }
 #endif
 }
 
 [Serializable]
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-public struct GrassData : IEquatable<GrassData>
+public struct GrassData
 {
     public Vector3 position;
     public Vector3 normal;
     public Vector2 widthHeight;
     public Vector3 color;
-
-    public bool Equals(GrassData other)
-    {
-        return position.Equals(other.position) && normal.Equals(other.normal) &&
-               widthHeight.Equals(other.widthHeight) && color.Equals(other.color);
-    }
-
-    public override bool Equals(object obj)
-    {
-        return obj is GrassData other && Equals(other);
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(position, normal, widthHeight, color);
-    }
 }

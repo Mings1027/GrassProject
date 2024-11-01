@@ -1,40 +1,23 @@
 using System.Collections.Generic;
-using Unity.Collections;
 using UnityEngine;
 
 namespace Grass.Editor
 {
-    public class GrassEditPainter
+    public sealed class GrassEditPainter : BasePainter
     {
         private readonly Dictionary<int, float> _cumulativeChanges = new();
-        private readonly List<int> _changedIndices = new(10000);
-        private readonly List<GrassData> _changedData = new(10000);
+        private readonly Dictionary<int, GrassData> _modifiedGrassData = new(BatchSize);
+        private readonly HashSet<int> _processedIndices;
 
-        private GrassComputeScript _grassCompute;
-        private SpatialGrid _spatialGrid;
-
-        private struct EditWorkData
-        {
-            public Vector2 adjustSize;
-            public Color adjustColor;
-            public Vector3 colorRange;
-            public float brushSizeSqr;
-            public Vector3 hitPosition;
-            public bool editColor;
-            public bool editSize;
-            public float changeSpeed;
-            public float radius;  // 추가
-        }
+        private float _currentBrushSizeSqr;
+        private Vector3 _currentHitPoint;
+        private Vector3 _targetColor;
+        private float _deltaTimeSpeed;
 
         public GrassEditPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
         {
-            Init(grassCompute, spatialGrid);
-        }
-
-        public void Init(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
-        {
-            _grassCompute = grassCompute;
-            _spatialGrid = spatialGrid;
+            Initialize(grassCompute, spatialGrid);
+            _processedIndices = PainterUtils.GetHashSet();
         }
 
         public void EditGrass(Ray mouseRay, GrassToolSettingSo toolSettings, EditOption editOption)
@@ -42,147 +25,128 @@ namespace Grass.Editor
             if (!Physics.Raycast(mouseRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
                 return;
 
-            var workData = CreateWorkData(hit, toolSettings, editOption);
-        
-            // 브러시 영역 내의 모든 풀 검사
-            var grassList = _grassCompute.GrassDataList;
-            var indices = new List<int>();
-        
-            for (int i = 0; i < grassList.Count; i++)
+            sharedIndices.Clear();
+            _processedIndices.Clear();
+            _modifiedGrassData.Clear();
+
+            // 자주 사용되는 값들을 미리 계산
+            _currentHitPoint = hit.point;
+            _currentBrushSizeSqr = toolSettings.BrushSize * toolSettings.BrushSize;
+            _deltaTimeSpeed = Time.deltaTime * toolSettings.FalloffOuterSpeed;
+
+            if (editOption is EditOption.EditColors or EditOption.Both)
             {
-                var distSqr = (grassList[i].position - workData.hitPosition).sqrMagnitude;
-                if (distSqr <= workData.brushSizeSqr)
+                _targetColor = CalculateNewColor(
+                    toolSettings.BrushColor,
+                    toolSettings.RangeR,
+                    toolSettings.RangeG,
+                    toolSettings.RangeB
+                );
+            }
+
+            // 범위 내의 잔디 인덱스들 가져오기
+            _spatialGrid.GetObjectsInRadius(hit.point, toolSettings.BrushSize, sharedIndices);
+
+            // 배치 처리
+            ProcessInBatches(sharedIndices, (start, end) =>
+                ProcessGrassBatch(start, end, _grassCompute.GrassDataList, toolSettings, editOption));
+
+            // 변경된 데이터가 있을 경우에만 업데이트
+            if (_modifiedGrassData.Count > 0)
+            {
+                ApplyModifications(_grassCompute.GrassDataList);
+                _grassCompute.UpdateGrassDataFaster();
+            }
+        }
+
+        private void ProcessGrassBatch(int startIdx, int endIdx, List<GrassData> grassDataList,
+                                       GrassToolSettingSo toolSettings, EditOption editOption)
+        {
+            for (int i = startIdx; i < endIdx; i++)
+            {
+                int index = sharedIndices[i];
+
+                // 이미 처리된 인덱스는 건너뛰기
+                if (_processedIndices.Contains(index)) continue;
+
+                var grassData = grassDataList[index];
+                float distanceSqr = (grassData.position - _currentHitPoint).sqrMagnitude;
+
+                if (distanceSqr <= _currentBrushSizeSqr)
                 {
-                    indices.Add(i);
+                    float distanceFalloff = 1f - (distanceSqr / _currentBrushSizeSqr);
+
+                    if (editOption is EditOption.EditColors or EditOption.Both)
+                    {
+                        ProcessColorEdit(ref grassData, index, distanceFalloff);
+                    }
+
+                    if (editOption is EditOption.EditWidthHeight or EditOption.Both)
+                    {
+                        ProcessWidthHeightEdit(ref grassData, index, distanceFalloff, toolSettings);
+                    }
+
+                    _modifiedGrassData[index] = grassData;
+                    _processedIndices.Add(index);
                 }
             }
-
-            ProcessGrassBatch(indices, workData);
         }
 
-        public void Clear()
+        private void ProcessColorEdit(ref GrassData grassData, int index, float distanceFalloff)
         {
-            _cumulativeChanges.Clear();
-            _changedIndices.Clear();
-            _changedData.Clear();
+            _cumulativeChanges.TryAdd(index, 0f);
+
+            _cumulativeChanges[index] = Mathf.Clamp01(
+                _cumulativeChanges[index] + _deltaTimeSpeed * distanceFalloff
+            );
+
+            var t = _cumulativeChanges[index];
+            grassData.color = Vector3.Lerp(grassData.color, _targetColor, t);
         }
 
-        private EditWorkData CreateWorkData(RaycastHit hit, GrassToolSettingSo toolSettings, EditOption editOption)
+        private void ProcessWidthHeightEdit(ref GrassData grassData, int index, float distanceFalloff,
+                                            GrassToolSettingSo toolSettings)
         {
-            return new EditWorkData
-            {
-                hitPosition = hit.point,
-                brushSizeSqr = toolSettings.BrushSize * toolSettings.BrushSize,
-                adjustSize = new Vector2(toolSettings.AdjustWidth, toolSettings.AdjustHeight),
-                adjustColor = toolSettings.BrushColor,
-                colorRange = new Vector3(toolSettings.RangeR, toolSettings.RangeG, toolSettings.RangeB),
-                editColor = editOption is EditOption.EditColors or EditOption.Both,
-                editSize = editOption is EditOption.EditWidthHeight or EditOption.Both,
-                changeSpeed = toolSettings.FalloffOuterSpeed,
-            };
+            _cumulativeChanges.TryAdd(index, 0f);
+
+            _cumulativeChanges[index] = Mathf.Clamp01(
+                _cumulativeChanges[index] + _deltaTimeSpeed * distanceFalloff
+            );
+
+            var targetSize = new Vector2(
+                grassData.widthHeight.x + toolSettings.AdjustWidth,
+                grassData.widthHeight.y + toolSettings.AdjustHeight
+            );
+
+            var t = _cumulativeChanges[index];
+            grassData.widthHeight = Vector2.Lerp(grassData.widthHeight, targetSize, t);
         }
 
-        private void ProcessGrassBatch(List<int> indices, EditWorkData workData)
+        private void ApplyModifications(List<GrassData> grassDataList)
         {
-            _changedIndices.Clear();
-            _changedData.Clear();
-
-            const int batchSize = 1024;
-            using var positions = new NativeArray<Vector3>(batchSize, Allocator.Temp);
-            using var distancesSqr = new NativeArray<float>(batchSize, Allocator.Temp);
-
-            for (int i = 0; i < indices.Count; i += batchSize)
+            foreach (var kvp in _modifiedGrassData)
             {
-                var currentBatchSize = Mathf.Min(batchSize, indices.Count - i);
-                ProcessBatch(indices, i, currentBatchSize, positions, distancesSqr, workData);
-            }
-
-            if (_changedIndices.Count > 0)
-            {
-                _grassCompute.ResetFaster();
-            }
-        }
-        private void ProcessBatch(List<int> indices, int startIndex, int batchSize,
-                                  NativeArray<Vector3> positions, NativeArray<float> distancesSqr,
-                                  EditWorkData workData)
-        {
-            for (int j = 0; j < batchSize; j++)
-            {
-                var grassIndex = indices[startIndex + j];
-                positions[j] = _grassCompute.GrassDataList[grassIndex].position;
-            }
-
-            for (int j = 0; j < batchSize; j++)
-            {
-                distancesSqr[j] = (workData.hitPosition - positions[j]).sqrMagnitude;
-            }
-
-            for (int j = 0; j < batchSize; j++)
-            {
-                var grassIndex = indices[startIndex + j];
-                ProcessGrassInstance(grassIndex, distancesSqr[j], workData);
+                grassDataList[kvp.Key] = kvp.Value;
             }
         }
 
-        private void ProcessGrassInstance(int grassIndex, float distSqr, in EditWorkData workData)
-        {
-            if (distSqr > workData.brushSizeSqr)
-                return;
-
-            var falloff = 1f - (distSqr / workData.brushSizeSqr);
-
-            var currentData = _grassCompute.GrassDataList[grassIndex];
-            var targetData = currentData;
-
-            _cumulativeChanges.TryAdd(grassIndex, 0f);
-            _cumulativeChanges[grassIndex] = Mathf.Clamp01(
-                _cumulativeChanges[grassIndex] + Time.deltaTime * falloff * workData.changeSpeed);
-
-            var t = _cumulativeChanges[grassIndex];
-
-            if (workData.editColor)
-            {
-                var targetColor = CalculateNewColor(workData.adjustColor, workData.colorRange);
-                targetData.color = targetColor;
-            }
-
-            if (workData.editSize)
-            {
-                targetData.widthHeight = CalculateNewSize(currentData.widthHeight, workData.adjustSize);
-            }
-
-            // Create interpolated data
-            var newData = new GrassData
-            {
-                position = currentData.position,
-                normal = currentData.normal,
-                color = workData.editColor ? Vector3.Lerp(currentData.color, targetData.color, t) : currentData.color,
-                widthHeight = workData.editSize
-                    ? Vector2.Lerp(currentData.widthHeight, targetData.widthHeight, t)
-                    : currentData.widthHeight
-            };
-
-            _grassCompute.GrassDataList[grassIndex] = newData;
-            _changedIndices.Add(grassIndex);
-            _changedData.Add(newData);
-        }
-
-        private Vector3 CalculateNewColor(Color adjustColor, Vector3 colorRange)
+        private Vector3 CalculateNewColor(Color brushColor, float rangeR, float rangeG, float rangeB)
         {
             return new Vector3(
-                adjustColor.r + Random.value * colorRange.x,
-                adjustColor.g + Random.value * colorRange.y,
-                adjustColor.b + Random.value * colorRange.z
+                brushColor.r + Random.value * rangeR, // Red 값에 랜덤 변화
+                brushColor.g + Random.value * rangeG, // Green 값에 랜덤 변화
+                brushColor.b + Random.value * rangeB // Blue 값에 랜덤 변화
             );
         }
 
-        private Vector2 CalculateNewSize(Vector2 currentSize, Vector2 adjustSize)
+        public override void Clear()
         {
-            return new Vector2(
-                currentSize.x + adjustSize.x,
-                currentSize.y + adjustSize.y
-            );
+            base.Clear();
+            _cumulativeChanges.Clear();
+            if (_processedIndices != null)
+            {
+                PainterUtils.ReturnHashSet(_processedIndices);
+            }
         }
- 
     }
 }

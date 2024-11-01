@@ -26,27 +26,27 @@ MonoBehaviour:
   vertexFade: 0
   grassWidth: 0.234
   grassHeight: 0.369
-  adjustWidth: 0.1
-  adjustHeight: 0.1
+  adjustWidth: 0
+  adjustHeight: 0.144
   adjustWidthMax: 0.3
   adjustHeightMax: 2
   reprojectOffset: 100
   rangeR: 0.532
   rangeG: 0.121
   rangeB: 0.111
-  brushColor: {r: 0.0705882, g: 0.98039216, b: 0.12784292, a: 1}
+  brushColor: {r: 0.84973866, g: 0.0705882, b: 0.98039216, a: 1}
   paintMask:
     serializedVersion: 2
     m_Bits: 8
   paintBlockMask:
     serializedVersion: 2
     m_Bits: 64
-  brushSize: 7.4499874
+  brushSize: 11.000003
   brushFalloffSize: 1
-  falloffOuterSpeed: 0.137
-  density: 52
+  falloffOuterSpeed: 0.193
+  density: 50
   normalLimit: 1
   grassAmountToGenerate: 100000
-  generationDensity: 1
+  generationDensity: 0.54
   paintKey: 10
   paintButton: 0

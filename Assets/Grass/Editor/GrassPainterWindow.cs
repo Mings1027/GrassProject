@@ -26,6 +26,7 @@ namespace Grass.Editor
 
         private bool _paintModeActive;
         private bool _enableGrass;
+        private bool _showSpatialGrid;
 
         private readonly string[] _toolbarStrings = { "Add", "Remove", "Edit", "Reproject" };
         private readonly string[] _editOptionStrings = { "Edit Colors", "Edit Width/Height", "Both" };
@@ -40,8 +41,6 @@ namespace Grass.Editor
         private BrushOption _selectedToolOption;
         private EditOption _selectedEditOption;
         private ModifyOption _selectedModifyOption;
-
-        private int GrassAmount { get; set; }
 
         private Ray _mousePointRay;
 
@@ -106,6 +105,7 @@ namespace Grass.Editor
             window.titleContent = new GUIContent("Grass Tool", icon);
             window.toolSettings = mToolSettings;
             window.Show();
+            window._enableGrass = true;
         }
 
         private void OnGUI()
@@ -148,6 +148,7 @@ namespace Grass.Editor
         {
             Debug.Log("OnDisable");
             RemoveDelegates();
+            _spatialGrid.Clear();
         }
 
         private void OnDestroy()
@@ -205,19 +206,8 @@ namespace Grass.Editor
 
             if (_spatialGrid == null)
             {
-                var bounds = new Bounds(Vector3.zero, new Vector3(1000, 1000, 1000));
-                _spatialGrid = new SpatialGrid(bounds, toolSettings.BrushSize * 0.5f);
-                for (int i = 0; i < _grassData.Count; i++)
-                {
-                    _spatialGrid.AddObject(_grassData[i].position, i);
-                }
+                InitSpatialGrid();
             }
-
-            // 페인터들 초기화를 SpatialGrid로 변경
-            _grassAddPainter ??= new GrassAddPainter(_grassCompute, _spatialGrid);
-            _grassEditPainter ??= new GrassEditPainter(_grassCompute, _spatialGrid);
-            _grassRemovePainter ??= new GrassRemovePainter(_grassCompute);
-            _grassReprojectPainter ??= new GrassReprojectPainter(_grassCompute, _spatialGrid);
 
             if (GUILayout.Button("Manual Update", GUILayout.Height(50)))
             {
@@ -298,7 +288,7 @@ namespace Grass.Editor
             ShowKeyBindingsUI();
             DrawGrassToggle();
             EditorGUILayout.Separator();
-            EditorGUILayout.LabelField("Total Grass Amount: " + GrassAmount, EditorStyles.label);
+            EditorGUILayout.LabelField("Total Grass Amount: " + _grassCompute.GrassDataList.Count, EditorStyles.label);
 
             EditorGUILayout.BeginHorizontal();
             _mainTabCurrent = GUILayout.Toolbar(
@@ -322,6 +312,11 @@ namespace Grass.Editor
                 _grassCompute = grassObject.GetComponent<GrassComputeScript>();
 
             _grassCompute.enabled = _enableGrass;
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Show Spatial Grid:", EditorStyles.boldLabel, GUILayout.Width(100));
+            _showSpatialGrid = EditorGUILayout.Toggle(_showSpatialGrid);
             EditorGUILayout.EndHorizontal();
         }
 
@@ -411,8 +406,8 @@ namespace Grass.Editor
         {
             return totalCount switch
             {
-                <= 100000 => 10000,
-                <= 1000000 => 50000,
+                <= 100000 => 100000,
+                <= 1000000 => 100000,
                 <= 10000000 => 100000,
                 <= 100000000 => 200000,
                 _ => 200000
@@ -430,15 +425,19 @@ namespace Grass.Editor
                 _grassData.Clear();
             }
 
-            var bounds = new Bounds(Vector3.zero, new Vector3(1000, 1000, 1000)); // 적절한 크기로 조정
-            _spatialGrid = new SpatialGrid(bounds, toolSettings.BrushSize * 0.5f);
-            for (var i = 0; i < _grassData.Count; i++)
-            {
-                var data = _grassData[i];
-                _spatialGrid.AddObject(data.position, i);
-            }
+            InitSpatialGrid();
 
-            GrassAmount = _grassData.Count;
+            // 이미 생성된 painter가 있다면 Initialize만 호출
+            _grassAddPainter?.Initialize(_grassCompute, _spatialGrid);
+            _grassRemovePainter?.Initialize(_grassCompute, _spatialGrid);
+            _grassEditPainter?.Initialize(_grassCompute, _spatialGrid);
+            _grassReprojectPainter?.Initialize(_grassCompute, _spatialGrid);
+
+            // painter가 없는 경우에만 새로 생성
+            _grassAddPainter ??= new GrassAddPainter(_grassCompute, _spatialGrid);
+            _grassRemovePainter ??= new GrassRemovePainter(_grassCompute, _spatialGrid);
+            _grassEditPainter ??= new GrassEditPainter(_grassCompute, _spatialGrid);
+            _grassReprojectPainter ??= new GrassReprojectPainter(_grassCompute, _spatialGrid);
         }
 
         private void ShowKeyBindingsUI()
@@ -952,9 +951,17 @@ namespace Grass.Editor
 
         private void OnSceneGUI(SceneView sceneView)
         {
-            if (hasFocus && _paintModeActive)
+            if (hasFocus)
             {
-                DrawHandles();
+                if (_paintModeActive)
+                {
+                    DrawHandles();
+
+                    if (_showSpatialGrid)
+                    {
+                        DrawGridHandles();
+                    }
+                }
             }
         }
 
@@ -1003,6 +1010,87 @@ namespace Grass.Editor
             }
         }
 
+        private void DrawGridHandles()
+        {
+            if (_spatialGrid == null) return;
+            var cellSize = _spatialGrid.CellSize;
+
+            // 마우스 근처의 셀만 표시하기 위한 범위 계산
+            var hitCellCenter = Vector3.zero;
+            if (Physics.Raycast(_mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
+            {
+                var hitCell = _spatialGrid.WorldToCell(hit.point);
+                hitCellCenter = _spatialGrid.CellToWorld(hitCell);
+            }
+
+            // 브러시 크기를 기준으로 표시할 셀 범위 계산
+            var cellRadius = Mathf.CeilToInt(toolSettings.BrushSize / cellSize);
+            var centerCell = _spatialGrid.WorldToCell(hitCellCenter);
+
+            // 그리드 색상 설정
+            Handles.color = new Color(0.2f, 0.8f, 1f, 0.2f); // 기본 셀 색상
+            var activeCellColor = new Color(0.3f, 1f, 0.3f, 0.4f); // 활성 셀 색상 (풀이 있는 셀)
+
+            // 브러시 범위 내의 셀들만 표시
+            for (var x = -cellRadius; x <= cellRadius; x++)
+            {
+                for (var y = -cellRadius; y <= cellRadius; y++)
+                {
+                    for (var z = -cellRadius; z <= cellRadius; z++)
+                    {
+                        var checkCell = new Vector3Int(centerCell.x + x, centerCell.y + y, centerCell.z + z);
+                        var cellWorldPos = _spatialGrid.CellToWorld(checkCell);
+                        var cellCenter = cellWorldPos + new Vector3(cellSize * 0.5f, cellSize * 0.5f, cellSize * 0.5f);
+
+                        // 셀이 브러시 범위 안에 있는지 확인
+                        var distanceToHit = Vector3.Distance(cellCenter, hitCellCenter);
+                        // if (distanceToHit > toolSettings.BrushSize * 1.5f) continue;
+
+                        // 셀에 풀이 있는지 확인하고 색상 설정
+                        var key = SpatialGrid.GetKey(checkCell.x, checkCell.y, checkCell.z);
+                        bool hasGrass = _spatialGrid.Grid.ContainsKey(key) && _spatialGrid.Grid[key].Count > 0;
+                        Handles.color = hasGrass ? activeCellColor : new Color(0.2f, 0.8f, 1f, 0.1f);
+
+                        // 셀 그리기
+                        DrawCellCube(cellCenter, cellSize);
+                    }
+                }
+            }
+        }
+
+        private void DrawCellCube(Vector3 center, float size)
+        {
+            var halfSize = size * 0.5f;
+            var points = new Vector3[]
+            {
+                center + new Vector3(-halfSize, -halfSize, -halfSize),
+                center + new Vector3(halfSize, -halfSize, -halfSize),
+                center + new Vector3(halfSize, -halfSize, halfSize),
+                center + new Vector3(-halfSize, -halfSize, halfSize),
+                center + new Vector3(-halfSize, halfSize, -halfSize),
+                center + new Vector3(halfSize, halfSize, -halfSize),
+                center + new Vector3(halfSize, halfSize, halfSize),
+                center + new Vector3(-halfSize, halfSize, halfSize)
+            };
+
+            // 아래쪽 면
+            Handles.DrawLine(points[0], points[1]);
+            Handles.DrawLine(points[1], points[2]);
+            Handles.DrawLine(points[2], points[3]);
+            Handles.DrawLine(points[3], points[0]);
+
+            // 위쪽 면
+            Handles.DrawLine(points[4], points[5]);
+            Handles.DrawLine(points[5], points[6]);
+            Handles.DrawLine(points[6], points[7]);
+            Handles.DrawLine(points[7], points[4]);
+
+            // 수직선
+            Handles.DrawLine(points[0], points[4]);
+            Handles.DrawLine(points[1], points[5]);
+            Handles.DrawLine(points[2], points[6]);
+            Handles.DrawLine(points[3], points[7]);
+        }
 
         private void OnScene(SceneView scene)
         {
@@ -1084,7 +1172,6 @@ namespace Grass.Editor
         private void ClearMesh()
         {
             Undo.RegisterCompleteObjectUndo(this, "Cleared Grass");
-            GrassAmount = 0;
             _grassData.Clear();
             _grassCompute.GrassDataList = _grassData;
             _grassCompute.Reset();
@@ -1181,7 +1268,6 @@ namespace Grass.Editor
             var oNormals = sharedMesh.normals;
 
             var numPoints = CalculatePointsForMesh(sourceMesh);
-            var spatialGrid = new SpatialGrid(sharedMesh.bounds, 0.4f);
             var updateInterval = GetUpdateInterval(numPoints);
             for (var j = 0; j < numPoints; j++)
             {
@@ -1189,7 +1275,7 @@ namespace Grass.Editor
                     $"Generating grass: {startPoint + j}/{totalPoints}");
 
                 var (success, grassData) = GenerateGrassDataForMesh(sourceMesh, localToWorld, sharedMesh, oVertices,
-                    oColors, oNormals, spatialGrid);
+                    oColors, oNormals);
                 if (success)
                 {
                     newGrassData.Add(grassData);
@@ -1208,7 +1294,7 @@ namespace Grass.Editor
 
         private (bool success, GrassData grassData) GenerateGrassDataForMesh(
             MeshFilter sourceMesh, Matrix4x4 localToWorld, Mesh sharedMesh, Vector3[] oVertices, Color[] oColors,
-            Vector3[] oNormals, SpatialGrid spatialGrid)
+            Vector3[] oNormals)
         {
             var randomTriIndex = Random.Range(0, sharedMesh.triangles.Length / 3);
             var randomBarycentricCoord = GrassPainterHelper.GetRandomBarycentricCoord();
@@ -1253,18 +1339,17 @@ namespace Grass.Editor
             return (false, default);
         }
 
-        private async UniTask GenerateGrassForTerrain(Terrain terrain, List<GrassData> newGrassData,
-                                                      int startPoint, int totalPoints)
+        private async UniTask GenerateGrassForTerrain(Terrain terrain, List<GrassData> newGrassData, int startPoint,
+                                                      int totalPoints)
         {
             var numPoints = CalculatePointsForTerrain(terrain);
-            var spatialGrid = new SpatialGrid(terrain.terrainData.bounds, 0.4f);
             var updateInterval = GetUpdateInterval(numPoints);
             for (var j = 0; j < numPoints; j++)
             {
                 await UpdateProgress(startPoint + j, totalPoints, updateInterval,
                     $"Generating grass: {startPoint + j}/{totalPoints}");
 
-                var (success, grassData) = GenerateGrassDataForTerrain(terrain, spatialGrid);
+                var (success, grassData) = GenerateGrassDataForTerrain(terrain);
                 if (success)
                 {
                     newGrassData.Add(grassData);
@@ -1281,8 +1366,7 @@ namespace Grass.Editor
                 toolSettings.GrassAmountToGenerate);
         }
 
-        private (bool success, GrassData grassData) GenerateGrassDataForTerrain(
-            Terrain terrain, SpatialGrid spatialGrid)
+        private (bool success, GrassData grassData) GenerateGrassDataForTerrain(Terrain terrain)
         {
             var terrainData = terrain.terrainData;
             var terrainSize = terrainData.size;
@@ -1518,7 +1602,6 @@ namespace Grass.Editor
             }
 
             _grassData = finalGrassToKeep;
-            GrassAmount = _grassData.Count;
 
             Debug.Log($"Removed {totalRemoveGrassCount} grass instances in total");
         }
@@ -1582,7 +1665,7 @@ namespace Grass.Editor
                     Undo.RegisterCompleteObjectUndo(this, "Added Grass");
                     break;
                 case BrushOption.Remove:
-                    _grassRemovePainter ??= new GrassRemovePainter(_grassCompute);
+                    _grassRemovePainter ??= new GrassRemovePainter(_grassCompute, _spatialGrid);
                     Undo.RegisterCompleteObjectUndo(this, "Removed Grass");
                     break;
                 case BrushOption.Edit:
@@ -1603,8 +1686,7 @@ namespace Grass.Editor
             switch (_selectedToolOption)
             {
                 case BrushOption.Add:
-                    _grassAddPainter.AddGrass(_hitPos, toolSettings, out var addedCount);
-                    GrassAmount += addedCount;
+                    _grassAddPainter.AddGrass(_hitPos, toolSettings);
                     break;
                 case BrushOption.Remove:
                     _grassRemovePainter.RemoveGrass(_hitPos, toolSettings.BrushSize);
@@ -1647,20 +1729,28 @@ namespace Grass.Editor
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
 
-        private void UpdateGrassData(bool fullReset = true)
+        private void InitSpatialGrid()
         {
-            GrassAmount = _grassData.Count;
-            _grassCompute.GrassDataList = _grassData;
-
-            // SpatialGrid 재구성
             var bounds = new Bounds(Vector3.zero, new Vector3(1000, 1000, 1000));
-            _spatialGrid = new SpatialGrid(bounds, toolSettings.BrushSize * 0.5f);
+            _spatialGrid = new SpatialGrid(bounds, toolSettings.BrushSize * 2);
+
+            _spatialGrid.Clear();
+
             for (var i = 0; i < _grassData.Count; i++)
             {
                 var grass = _grassData[i];
                 _spatialGrid.AddObject(grass.position, i);
             }
 
+            // 유효성 검사
+            Debug.Assert(_spatialGrid.TotalObjectCount == _grassData.Count,
+                "SpatialGrid object count doesn't match grass data count!");
+        }
+
+        private void UpdateGrassData(bool fullReset = true)
+        {
+            _grassCompute.GrassDataList = _grassData;
+            InitSpatialGrid();
             if (fullReset)
             {
                 _grassCompute.Reset();

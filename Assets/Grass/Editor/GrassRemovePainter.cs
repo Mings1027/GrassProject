@@ -1,57 +1,138 @@
 using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
+using Grass.Editor;
 using UnityEngine;
 
-public class GrassRemovePainter
+public class GrassRemovePainter : BasePainter
 {
-    private const int CHUNK_SIZE = 100000; // 각 리스트당 최대 잔디 수
-    private readonly List<GrassData> _grassList;
-    private readonly GrassComputeScript _grassCompute;
+    private List<GrassData> _grassList;
 
-    public GrassRemovePainter(GrassComputeScript grassCompute)
+    private Vector3 _lastRemovePosition;
+
+    private readonly List<int> _indicesToRemove;
+    private readonly HashSet<int> _validIndices; // 유효한 인덱스 추적용
+    private const float MinRemoveDistanceFactor = 0.25f;
+    private float _currentRadiusSqr;
+
+    public GrassRemovePainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
     {
-        _grassCompute = grassCompute;
+        _indicesToRemove = PainterUtils.GetList();
+        _validIndices = PainterUtils.GetHashSet();
+        Initialize(grassCompute, spatialGrid);
+    }
+
+    public sealed override void Initialize(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
+    {
+        base.Initialize(grassCompute, spatialGrid);
         _grassList = _grassCompute.GrassDataList;
     }
 
-    public async UniTask RemoveGrass(Vector3 hitPoint, float radius)
+    public void RemoveGrass(Vector3 hitPoint, float radius)
     {
-        float radiusSqr = radius * radius;
-        var grassListCount = _grassList.Count;
-        var totalChunks = (grassListCount + CHUNK_SIZE - 1) / CHUNK_SIZE;
-        var tasks = new UniTask[totalChunks];
+        if (_grassList == null || _grassList.Count == 0)
+            return;
 
-        // 각 청크별로 병렬 처리
-        for (int i = 0; i < totalChunks; i++)
+        _currentRadiusSqr = radius * radius;
+        float minMoveSqr = _currentRadiusSqr * MinRemoveDistanceFactor;
+
+        if (PainterUtils.SqrDistance(hitPoint, _lastRemovePosition) < minMoveSqr)
+            return;
+
+        _lastRemovePosition = hitPoint;
+        PrepareForRemoval();
+
+        // SpatialGrid 검색 시간 측정
+        _spatialGrid.GetObjectsInRadius(hitPoint, radius, sharedIndices);
+
+        if (sharedIndices.Count == 0) return;
+
+        ProcessInBatches(sharedIndices, (start, end) =>
+            CollectValidIndices(start, end, hitPoint));
+
+        if (_indicesToRemove.Count > 0)
         {
-            int startIdx = i * CHUNK_SIZE;
-            int endIdx = Mathf.Min(startIdx + CHUNK_SIZE, grassListCount);
-
-            tasks[i] = UniTask.RunOnThreadPool(() =>
-            {
-                for (int j = endIdx - 1; j >= startIdx && j < grassListCount; j--)
-                {
-                    var grassData = _grassList[j];
-                    var distanceSqr = Vector3.SqrMagnitude(grassData.position - hitPoint);
-                    if (distanceSqr <= radiusSqr)
-                    {
-                        _grassList.RemoveAt(j);
-                    }
-                }
-            });
+            RemoveGrassItems();
         }
-
-        await UniTask.WhenAll(tasks);
-
-        // 변경사항 적용
-        _grassCompute.GrassDataList = _grassList;
-        _grassCompute.ResetFaster();
     }
 
-    public void Clear()
+    private void PrepareForRemoval()
     {
-        // 필요한 경우 여기에 정리 로직 추가
-        // 여기서 Reset호출하면 로딩이 김 수정해야함
-        _grassCompute.Reset();
+        sharedIndices.Clear();
+        _indicesToRemove.Clear();
+        _validIndices.Clear();
+    }
+
+    private void CollectValidIndices(int start, int end, Vector3 hitPoint)
+    {
+        int currentGrassCount = _grassList.Count;
+        var indices = sharedIndices;
+
+        for (int i = start; i < end; i++)
+        {
+            int index = indices[i];
+            if (index >= 0 && index < currentGrassCount)
+            {
+                var grassPosition = _grassList[index].position;
+                if (PainterUtils.SqrDistance(grassPosition, hitPoint) <= _currentRadiusSqr)
+                {
+                    _indicesToRemove.Add(index);
+                }
+            }
+        }
+    }
+
+    private void RemoveGrassItems()
+    {
+        _indicesToRemove.Sort((a, b) => b.CompareTo(a));
+        var lastIndex = _grassList.Count - 1;
+        foreach (var index in _indicesToRemove)
+        {
+            if (index < lastIndex && index >= 0)
+            {
+                SwapAndRemoveGrass(index, lastIndex);
+                lastIndex--;
+            }
+        }
+
+        var removeCount = Mathf.Min(_indicesToRemove.Count, _grassList.Count);
+        if (removeCount > 0)
+        {
+            _grassList.RemoveRange(_grassList.Count - removeCount, removeCount);
+            _grassCompute.GrassDataList = _grassList;
+            _grassCompute.UpdateGrassDataFaster();
+        }
+    }
+
+    private void SwapAndRemoveGrass(int index, int lastIndex)
+    {
+        var lastGrass = _grassList[lastIndex];
+        var currentGrass = _grassList[index];
+
+        // 1. 현재 위치의 잔디를 Grid에서 제거
+        _spatialGrid.RemoveObject(currentGrass.position, index);
+
+        // 2. 마지막 잔디를 현재 위치로 이동
+        _grassList[index] = lastGrass;
+        _spatialGrid.AddObject(lastGrass.position, index);
+
+        // 3. Grid에서 마지막 위치의 잔디 제거
+        _spatialGrid.RemoveObject(lastGrass.position, lastIndex);
+    }
+
+    private void ApplyGridUpdates(List<(int oldIndex, int newIndex)> modifications)
+    {
+        foreach (var (oldIndex, newIndex) in modifications)
+        {
+            var grass = _grassList[oldIndex];
+            _spatialGrid.RemoveObject(_grassList[newIndex].position, newIndex);
+            _spatialGrid.AddObject(grass.position, oldIndex);
+        }
+    }
+
+    public override void Clear()
+    {
+        base.Clear();
+        _lastRemovePosition = Vector3.zero;
+        PainterUtils.ReturnList(_indicesToRemove);
+        PainterUtils.ReturnHashSet(_validIndices);
     }
 }
