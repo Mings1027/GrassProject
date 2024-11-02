@@ -613,26 +613,6 @@ public class GrassComputeScript : MonoBehaviour
     private static readonly int BottomTint = Shader.PropertyToID("_BottomTint");
 
 #if UNITY_EDITOR
-    public void UpdateGrassData(List<int> changedIndices, List<GrassData> changedData)
-    {
-        // Update only the changed grass data
-        for (int i = 0; i < changedIndices.Count; i++)
-        {
-            int index = changedIndices[i];
-            grassData[index] = changedData[i];
-        }
-
-        // Update only the necessary buffers
-        _sourceVertBuffer.SetData(grassData);
-
-        // Clear and reset only the necessary buffers
-        _drawBuffer.SetCounterValue(0);
-        _argsBuffer.SetData(_argsBufferReset);
-
-        // Dispatch the compute shader
-        _dispatchSize = (_grassVisibleIDList.Count + (int)_threadGroupSize - 1) >> (int)Math.Log(_threadGroupSize, 2);
-    }
-
     public void UpdateGrassDataFaster()
     {
         // Update only the necessary buffers
@@ -644,7 +624,6 @@ public class GrassComputeScript : MonoBehaviour
 
         // Dispatch the compute shader
         _dispatchSize = (_grassVisibleIDList.Count + (int)_threadGroupSize - 1) >> (int)Math.Log(_threadGroupSize, 2);
-
     }
 #endif
 }

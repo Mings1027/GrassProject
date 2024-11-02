@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Grass.Editor;
 using UnityEngine;
 
-public class GrassRemovePainter : BasePainter
+public sealed class GrassRemovePainter : BasePainter
 {
     private List<GrassData> _grassList;
 
@@ -13,19 +13,13 @@ public class GrassRemovePainter : BasePainter
     private const float MinRemoveDistanceFactor = 0.25f;
     private float _currentRadiusSqr;
 
-    public GrassRemovePainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
+    public GrassRemovePainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute, spatialGrid)
     {
-        _indicesToRemove = PainterUtils.GetList();
-        _validIndices = PainterUtils.GetHashSet();
-        Initialize(grassCompute, spatialGrid);
+        _indicesToRemove = PainterUtils.GetList(100);
+        _validIndices = PainterUtils.GetHashSet(100);
+        _grassList = grassCompute.GrassDataList;
     }
-
-    public sealed override void Initialize(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
-    {
-        base.Initialize(grassCompute, spatialGrid);
-        _grassList = _grassCompute.GrassDataList;
-    }
-
+    
     public void RemoveGrass(Vector3 hitPoint, float radius)
     {
         if (_grassList == null || _grassList.Count == 0)
@@ -41,7 +35,7 @@ public class GrassRemovePainter : BasePainter
         PrepareForRemoval();
 
         // SpatialGrid 검색 시간 측정
-        _spatialGrid.GetObjectsInRadius(hitPoint, radius, sharedIndices);
+        spatialGrid.GetObjectsInRadius(hitPoint, radius, sharedIndices);
 
         if (sharedIndices.Count == 0) return;
 
@@ -97,8 +91,8 @@ public class GrassRemovePainter : BasePainter
         if (removeCount > 0)
         {
             _grassList.RemoveRange(_grassList.Count - removeCount, removeCount);
-            _grassCompute.GrassDataList = _grassList;
-            _grassCompute.UpdateGrassDataFaster();
+            grassCompute.GrassDataList = _grassList;
+            grassCompute.ResetFaster();
         }
     }
 
@@ -108,24 +102,14 @@ public class GrassRemovePainter : BasePainter
         var currentGrass = _grassList[index];
 
         // 1. 현재 위치의 잔디를 Grid에서 제거
-        _spatialGrid.RemoveObject(currentGrass.position, index);
+        spatialGrid.RemoveObject(currentGrass.position, index);
 
         // 2. 마지막 잔디를 현재 위치로 이동
         _grassList[index] = lastGrass;
-        _spatialGrid.AddObject(lastGrass.position, index);
+        spatialGrid.AddObject(lastGrass.position, index);
 
         // 3. Grid에서 마지막 위치의 잔디 제거
-        _spatialGrid.RemoveObject(lastGrass.position, lastIndex);
-    }
-
-    private void ApplyGridUpdates(List<(int oldIndex, int newIndex)> modifications)
-    {
-        foreach (var (oldIndex, newIndex) in modifications)
-        {
-            var grass = _grassList[oldIndex];
-            _spatialGrid.RemoveObject(_grassList[newIndex].position, newIndex);
-            _spatialGrid.AddObject(grass.position, oldIndex);
-        }
+        spatialGrid.RemoveObject(lastGrass.position, lastIndex);
     }
 
     public override void Clear()

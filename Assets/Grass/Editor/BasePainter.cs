@@ -1,20 +1,24 @@
 using System.Collections.Generic;
-using NUnit.Framework;
 using UnityEngine;
 
 namespace Grass.Editor
 {
     public abstract class BasePainter
     {
-        protected GrassComputeScript _grassCompute;
-        protected SpatialGrid _spatialGrid;
-        protected List<int> sharedIndices = PainterUtils.GetList();
+        protected GrassComputeScript grassCompute;
+        protected SpatialGrid spatialGrid;
+        protected readonly List<int> sharedIndices = PainterUtils.GetList();
         protected const int BatchSize = 100;
 
-        public virtual void Initialize(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
+        protected BasePainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
         {
-            _grassCompute = grassCompute;
-            _spatialGrid = spatialGrid;
+            Initialize(grassCompute, spatialGrid);
+        }
+
+        public void Initialize(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
+        {
+            this.grassCompute = grassCompute;
+            this.spatialGrid = spatialGrid;
         }
 
         // 배치 처리를 위한 공통 메서드

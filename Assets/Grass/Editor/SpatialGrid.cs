@@ -10,7 +10,11 @@ public class SpatialGrid
 
     private Dictionary<long, Bounds> _cellBounds;
     private readonly Queue<HashSet<int>> _hashSetPool;
+
     private const int PoolSize = 100;
+
+    // 임시 리스트를 재사용하기 위한 필드
+    private readonly HashSet<long> _tempCellKeys = new();
 
     public Dictionary<long, HashSet<int>> Grid => _grid;
 
@@ -108,6 +112,8 @@ public class SpatialGrid
     public void GetObjectsInRadius(Vector3 position, float radius, List<int> results)
     {
         results.Clear();
+        _tempCellKeys.Clear();
+
         var cellRadius = Mathf.CeilToInt(radius / _cellSize);
         var centerCell = WorldToCell(position);
 
@@ -118,13 +124,14 @@ public class SpatialGrid
             var checkCell = new Vector3Int(centerCell.x + x, centerCell.y + y, centerCell.z + z);
             var key = GetKey(checkCell.x, checkCell.y, checkCell.z);
 
-            // 디버깅을 위한 로그 추가
+            // 이미 처리한 셀은 건너뛰기
+            if (!_tempCellKeys.Add(key)) continue;
+
             if (_grid.TryGetValue(key, out var indices))
             {
                 results.AddRange(indices);
             }
         }
-
     }
 
     public Vector3Int WorldToCell(Vector3 position)
@@ -174,5 +181,6 @@ public class SpatialGrid
 
         _grid.Clear();
         _cellBounds?.Clear();
+        _tempCellKeys.Clear();
     }
 }

@@ -4,17 +4,12 @@ using UnityEngine;
 
 public sealed class GrassReprojectPainter : BasePainter
 {
-    private List<int> _changedIndices;
+    private readonly List<int> _changedIndices;
 
-    public GrassReprojectPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
+    public GrassReprojectPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
+        spatialGrid)
     {
-        Initialize(grassCompute, spatialGrid);
-    }
-
-    public override void Initialize(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
-    {
-        base.Initialize(grassCompute, spatialGrid);
-        _changedIndices = PainterUtils.GetList();
+        _changedIndices = PainterUtils.GetList(100);
     }
 
     public void ReprojectGrass(Ray mousePointRay, LayerMask paintMask, float brushSize, float offset)
@@ -28,9 +23,9 @@ public sealed class GrassReprojectPainter : BasePainter
         // SpatialGrid를 사용하여 브러시 영역 내의 잔디 인덱스들을 가져옴
         sharedIndices.Clear();
         _changedIndices.Clear();
-        _spatialGrid.GetObjectsInRadius(hitPoint, brushSize, sharedIndices);
+        spatialGrid.GetObjectsInRadius(hitPoint, brushSize, sharedIndices);
 
-        var grassList = _grassCompute.GrassDataList;
+        var grassList = grassCompute.GrassDataList;
 
         // 배치 처리 적용
         ProcessInBatches(sharedIndices, (start, end) =>
@@ -38,7 +33,7 @@ public sealed class GrassReprojectPainter : BasePainter
 
         if (_changedIndices.Count > 0)
         {
-            _grassCompute.UpdateGrassDataFaster();
+            grassCompute.UpdateGrassDataFaster();
         }
     }
 
@@ -66,8 +61,8 @@ public sealed class GrassReprojectPainter : BasePainter
                     newData.normal = hitInfo.normal;
 
                     // SpatialGrid 업데이트
-                    _spatialGrid.RemoveObject(grassData.position, index);
-                    _spatialGrid.AddObject(hitInfo.point, index);
+                    spatialGrid.RemoveObject(grassData.position, index);
+                    spatialGrid.AddObject(hitInfo.point, index);
 
                     grassList[index] = newData;
                     _changedIndices.Add(index);
@@ -79,9 +74,6 @@ public sealed class GrassReprojectPainter : BasePainter
     public override void Clear()
     {
         base.Clear();
-        if (_changedIndices != null)
-        {
-            PainterUtils.ReturnList(_changedIndices);
-        }
+        PainterUtils.ReturnList(_changedIndices);
     }
 }

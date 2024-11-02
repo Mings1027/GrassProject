@@ -5,8 +5,8 @@ namespace Grass.Editor
 {
     public sealed class GrassEditPainter : BasePainter
     {
-        private readonly Dictionary<int, float> _cumulativeChanges = new();
-        private readonly Dictionary<int, GrassData> _modifiedGrassData = new(BatchSize);
+        private readonly Dictionary<int, float> _cumulativeChanges;
+        private readonly Dictionary<int, GrassData> _modifiedGrassData;
         private readonly HashSet<int> _processedIndices;
 
         private float _currentBrushSizeSqr;
@@ -14,9 +14,12 @@ namespace Grass.Editor
         private Vector3 _targetColor;
         private float _deltaTimeSpeed;
 
-        public GrassEditPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
+
+        public GrassEditPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
+            spatialGrid)
         {
-            Initialize(grassCompute, spatialGrid);
+            _cumulativeChanges = PainterUtils.GetDictionary<int, float>(100);
+            _modifiedGrassData = PainterUtils.GetDictionary<int, GrassData>(BatchSize);
             _processedIndices = PainterUtils.GetHashSet();
         }
 
@@ -45,17 +48,17 @@ namespace Grass.Editor
             }
 
             // 범위 내의 잔디 인덱스들 가져오기
-            _spatialGrid.GetObjectsInRadius(hit.point, toolSettings.BrushSize, sharedIndices);
+            spatialGrid.GetObjectsInRadius(hit.point, toolSettings.BrushSize, sharedIndices);
 
             // 배치 처리
             ProcessInBatches(sharedIndices, (start, end) =>
-                ProcessGrassBatch(start, end, _grassCompute.GrassDataList, toolSettings, editOption));
+                ProcessGrassBatch(start, end, grassCompute.GrassDataList, toolSettings, editOption));
 
             // 변경된 데이터가 있을 경우에만 업데이트
             if (_modifiedGrassData.Count > 0)
             {
-                ApplyModifications(_grassCompute.GrassDataList);
-                _grassCompute.UpdateGrassDataFaster();
+                ApplyModifications(grassCompute.GrassDataList);
+                grassCompute.UpdateGrassDataFaster();
             }
         }
 
@@ -142,11 +145,9 @@ namespace Grass.Editor
         public override void Clear()
         {
             base.Clear();
-            _cumulativeChanges.Clear();
-            if (_processedIndices != null)
-            {
-                PainterUtils.ReturnHashSet(_processedIndices);
-            }
+            PainterUtils.ReturnDictionary(_cumulativeChanges);
+            PainterUtils.ReturnDictionary(_modifiedGrassData);
+            PainterUtils.ReturnHashSet(_processedIndices);
         }
     }
 }

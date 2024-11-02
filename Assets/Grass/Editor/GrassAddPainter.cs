@@ -3,15 +3,16 @@ using UnityEngine;
 
 namespace Grass.Editor
 {
-    public sealed class GrassAddPainter: BasePainter
+    public sealed class GrassAddPainter : BasePainter
     {
         private Vector3 _lastPosition = Vector3.zero;
-        private readonly List<int> _nearbyIndices = new(100);
+        private readonly List<int> _nearbyIndices;
         private const float MIN_GRASS_SPACING = 0.1f; // 최소 잔디 간격
 
-        public GrassAddPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
+        public GrassAddPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
+            spatialGrid)
         {
-            Initialize(grassCompute, spatialGrid);
+            _nearbyIndices = PainterUtils.GetList(100);
         }
 
         public void AddGrass(Vector3 hitPos, GrassToolSettingSo toolSettings)
@@ -42,17 +43,17 @@ namespace Grass.Editor
                             {
                                 // 주변 잔디 체크
                                 _nearbyIndices.Clear();
-                                _spatialGrid.GetObjectsInRadius(hit.point, MIN_GRASS_SPACING, _nearbyIndices);
+                                spatialGrid.GetObjectsInRadius(hit.point, MIN_GRASS_SPACING, _nearbyIndices);
 
                                 // 너무 가까운 잔디가 없는 경우에만 추가
                                 if (!HasTooCloseGrass(hit.point))
                                 {
                                     var newData = CreateGrassData(hit.point, hit.normal, toolSettings);
-                                    var newIndex = _grassCompute.GrassDataList.Count;
-                                    
-                                    _grassCompute.GrassDataList.Add(newData);
-                                    _spatialGrid.AddObject(hit.point, newIndex);
-                                    
+                                    var newIndex = grassCompute.GrassDataList.Count;
+
+                                    grassCompute.GrassDataList.Add(newData);
+                                    spatialGrid.AddObject(hit.point, newIndex);
+
                                     grassAdded = true;
                                 }
                             }
@@ -62,7 +63,7 @@ namespace Grass.Editor
 
                 if (grassAdded)
                 {
-                    _grassCompute.ResetFaster();
+                    grassCompute.ResetFaster();
                 }
 
                 _lastPosition = startPos;
@@ -72,7 +73,7 @@ namespace Grass.Editor
         private bool HasTooCloseGrass(Vector3 position)
         {
             var minDistanceSqr = MIN_GRASS_SPACING * MIN_GRASS_SPACING;
-            var grassList = _grassCompute.GrassDataList;
+            var grassList = grassCompute.GrassDataList;
 
             foreach (var index in _nearbyIndices)
             {
@@ -113,7 +114,7 @@ namespace Grass.Editor
         public override void Clear()
         {
             _lastPosition = Vector3.zero;
-            _nearbyIndices.Clear();
+            PainterUtils.ReturnList(_nearbyIndices);
         }
     }
 }

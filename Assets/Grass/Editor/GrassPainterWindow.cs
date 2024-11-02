@@ -1042,11 +1042,7 @@ namespace Grass.Editor
                         var cellWorldPos = _spatialGrid.CellToWorld(checkCell);
                         var cellCenter = cellWorldPos + new Vector3(cellSize * 0.5f, cellSize * 0.5f, cellSize * 0.5f);
 
-                        // 셀이 브러시 범위 안에 있는지 확인
-                        var distanceToHit = Vector3.Distance(cellCenter, hitCellCenter);
-                        // if (distanceToHit > toolSettings.BrushSize * 1.5f) continue;
-
-                        // 셀에 풀이 있는지 확인하고 색상 설정
+                         // 셀에 풀이 있는지 확인하고 색상 설정
                         var key = SpatialGrid.GetKey(checkCell.x, checkCell.y, checkCell.z);
                         bool hasGrass = _spatialGrid.Grid.ContainsKey(key) && _spatialGrid.Grid[key].Count > 0;
                         Handles.color = hasGrass ? activeCellColor : new Color(0.2f, 0.8f, 1f, 0.1f);
@@ -1061,7 +1057,7 @@ namespace Grass.Editor
         private void DrawCellCube(Vector3 center, float size)
         {
             var halfSize = size * 0.5f;
-            var points = new Vector3[]
+            var points = new[]
             {
                 center + new Vector3(-halfSize, -halfSize, -halfSize),
                 center + new Vector3(halfSize, -halfSize, -halfSize),
@@ -1175,6 +1171,9 @@ namespace Grass.Editor
             _grassData.Clear();
             _grassCompute.GrassDataList = _grassData;
             _grassCompute.Reset();
+
+            // Clear the spatial grid
+            _spatialGrid?.Clear();
 
             UpdateGrassData();
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
@@ -1588,11 +1587,12 @@ namespace Grass.Editor
                     $"Removing grass - {index}/{totalRemoveGrassCount}");
             }
 
-            // 모든 배치의 결과를 수집
+            // Collect results from all batches
             var results = await UniTask.WhenAll(tasks);
             var finalGrassToKeep = new List<GrassData>();
             var updateInterval = GetUpdateInterval(results.Length);
-            // 결과 병합
+            
+            // Merge results
             for (var index = 0; index < results.Length; index++)
             {
                 var result = results[index];
@@ -1602,7 +1602,7 @@ namespace Grass.Editor
             }
 
             _grassData = finalGrassToKeep;
-
+            InitSpatialGrid();
             Debug.Log($"Removed {totalRemoveGrassCount} grass instances in total");
         }
 

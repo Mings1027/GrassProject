@@ -7,7 +7,6 @@ public class CullingTree
     private Bounds _bounds;
     private readonly CullingTree[] _children;
     private readonly List<int> _grassIDHeld = new();
-    private readonly object _lockObject = new();
 
     public CullingTree(Bounds bounds, int depth)
     {
@@ -102,11 +101,8 @@ public class CullingTree
             }
             else
             {
-                lock (_lockObject)
-                {
-                    _grassIDHeld.Add(index);
-                    return true;
-                }
+                _grassIDHeld.Add(index);
+                return true;
             }
         }
 
