@@ -7,18 +7,18 @@ using UnityEngine;
 
 public class ShaderVariantChecker : EditorWindow
 {
-    private static MethodInfo GetVariantCount, GetShaderGlobalKeywords, GetShaderLocalKeywords;
+    private static MethodInfo _getVariantCount, _getShaderGlobalKeywords, _getShaderLocalKeywords;
 
     private Shader _shader;
 
-    private ulong _variantCount = 0;
-    private ulong _usedVariantCount = 0;
-    private int _keywordCount = 0;
-    private int _materialCount = 0;
-    private Dictionary<string, int> _materialKeywords = new();
-    private bool _isChecked = false;
+    private ulong _variantCount;
+    private ulong _usedVariantCount;
+    private int _keywordCount;
+    private int _materialCount;
+    private readonly Dictionary<string, int> _materialKeywords = new();
+    private bool _isChecked;
 
-    private Vector2 scrollPosition;
+    private Vector2 _scrollPosition;
 
     [MenuItem("CustomTool/ShaderVariantChecker")]
     private static void ShowWindow()
@@ -45,7 +45,7 @@ public class ShaderVariantChecker : EditorWindow
         EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.LabelField("Used Material Count : " + _materialCount);
-        scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
+        _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
 
         Color defaultColor = GUI.color;
         foreach (KeyValuePair<string, int> keyword in _materialKeywords)
@@ -111,14 +111,14 @@ public class ShaderVariantChecker : EditorWindow
     void GetShaderDetails(Shader requestedShader, out ulong shaderVariantCount, out ulong usedShaderVariantCount,
                           out string[] localKeywords, out string[] globalKeywords)
     {
-        if (GetVariantCount == null)
-            GetVariantCount = typeof(ShaderUtil).GetMethod("GetVariantCount", (BindingFlags)(-1));
-        if (GetShaderGlobalKeywords == null)
-            GetShaderGlobalKeywords = typeof(ShaderUtil).GetMethod("GetShaderGlobalKeywords", (BindingFlags)(-1));
-        if (GetShaderLocalKeywords == null)
-            GetShaderLocalKeywords = typeof(ShaderUtil).GetMethod("GetShaderLocalKeywords", (BindingFlags)(-1));
+        if (_getVariantCount == null)
+            _getVariantCount = typeof(ShaderUtil).GetMethod("GetVariantCount", (BindingFlags)(-1));
+        if (_getShaderGlobalKeywords == null)
+            _getShaderGlobalKeywords = typeof(ShaderUtil).GetMethod("GetShaderGlobalKeywords", (BindingFlags)(-1));
+        if (_getShaderLocalKeywords == null)
+            _getShaderLocalKeywords = typeof(ShaderUtil).GetMethod("GetShaderLocalKeywords", (BindingFlags)(-1));
 
-        if (GetVariantCount == null || GetShaderGlobalKeywords == null || GetShaderLocalKeywords == null)
+        if (_getVariantCount == null || _getShaderGlobalKeywords == null || _getShaderLocalKeywords == null)
         {
             shaderVariantCount = 0;
             usedShaderVariantCount = 0;
@@ -127,15 +127,15 @@ public class ShaderVariantChecker : EditorWindow
             return;
         }
 
-        shaderVariantCount = (ulong)GetVariantCount.Invoke(null, new object[] { requestedShader, false });
-        usedShaderVariantCount = (ulong)GetVariantCount.Invoke(null, new object[] { requestedShader, true });
-        localKeywords = (string[])GetShaderLocalKeywords.Invoke(null, new object[] { requestedShader });
-        globalKeywords = (string[])GetShaderGlobalKeywords.Invoke(null, new object[] { requestedShader });
+        shaderVariantCount = (ulong)_getVariantCount.Invoke(null, new object[] { requestedShader, false });
+        usedShaderVariantCount = (ulong)_getVariantCount.Invoke(null, new object[] { requestedShader, true });
+        localKeywords = (string[])_getShaderLocalKeywords.Invoke(null, new object[] { requestedShader });
+        globalKeywords = (string[])_getShaderGlobalKeywords.Invoke(null, new object[] { requestedShader });
 
         // var name = $"{requestedShader.name}: ({shaderVariantCount} variants, {localKeywords.Length} local, {globalKeywords.Length} global)";
     }
 
-    public static List<Material> FindMaterialsUsingShader(Shader shader)
+    private static List<Material> FindMaterialsUsingShader(Shader shader)
     {
         var materialsUsingShader = new List<Material>();
         var materialAssetGUIDs = AssetDatabase.FindAssets("t:Material");

@@ -9,7 +9,7 @@ public sealed class GrassReprojectPainter : BasePainter
     public GrassReprojectPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
         spatialGrid)
     {
-        _changedIndices = PainterUtils.GetList(100);
+        _changedIndices = CollectionsPool.GetList(100);
     }
 
     public void ReprojectGrass(Ray mousePointRay, LayerMask paintMask, float brushSize, float offset)
@@ -44,7 +44,7 @@ public sealed class GrassReprojectPainter : BasePainter
         {
             int index = sharedIndices[i];
             var grassData = grassList[index];
-            float distanceSqr = PainterUtils.SqrDistance(grassData.position, hitPoint);
+            float distanceSqr = CollectionsPool.SqrDistance(grassData.position, hitPoint);
 
             if (distanceSqr <= brushSizeSqr)
             {
@@ -74,6 +74,6 @@ public sealed class GrassReprojectPainter : BasePainter
     public override void Clear()
     {
         base.Clear();
-        PainterUtils.ReturnList(_changedIndices);
+        CollectionsPool.ReturnList(_changedIndices);
     }
 }

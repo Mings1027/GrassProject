@@ -15,8 +15,8 @@ public sealed class GrassRemovePainter : BasePainter
 
     public GrassRemovePainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute, spatialGrid)
     {
-        _indicesToRemove = PainterUtils.GetList(100);
-        _validIndices = PainterUtils.GetHashSet(100);
+        _indicesToRemove = CollectionsPool.GetList(100);
+        _validIndices = CollectionsPool.GetHashSet(100);
         _grassList = grassCompute.GrassDataList;
     }
     
@@ -28,7 +28,7 @@ public sealed class GrassRemovePainter : BasePainter
         _currentRadiusSqr = radius * radius;
         float minMoveSqr = _currentRadiusSqr * MinRemoveDistanceFactor;
 
-        if (PainterUtils.SqrDistance(hitPoint, _lastRemovePosition) < minMoveSqr)
+        if (CollectionsPool.SqrDistance(hitPoint, _lastRemovePosition) < minMoveSqr)
             return;
 
         _lastRemovePosition = hitPoint;
@@ -66,7 +66,7 @@ public sealed class GrassRemovePainter : BasePainter
             if (index >= 0 && index < currentGrassCount)
             {
                 var grassPosition = _grassList[index].position;
-                if (PainterUtils.SqrDistance(grassPosition, hitPoint) <= _currentRadiusSqr)
+                if (CollectionsPool.SqrDistance(grassPosition, hitPoint) <= _currentRadiusSqr)
                 {
                     _indicesToRemove.Add(index);
                 }
@@ -116,7 +116,7 @@ public sealed class GrassRemovePainter : BasePainter
     {
         base.Clear();
         _lastRemovePosition = Vector3.zero;
-        PainterUtils.ReturnList(_indicesToRemove);
-        PainterUtils.ReturnHashSet(_validIndices);
+        CollectionsPool.ReturnList(_indicesToRemove);
+        CollectionsPool.ReturnHashSet(_validIndices);
     }
 }

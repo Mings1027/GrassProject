@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public static class PainterUtils
+public static class CollectionsPool
 {
     private static readonly Stack<List<int>> ListPool = new();
     private static readonly Stack<HashSet<int>> HashSetPool = new();
@@ -34,7 +34,7 @@ public static class PainterUtils
         }
     }
 
-    static PainterUtils()
+    static CollectionsPool()
     {
         // 풀 초기화
         for (var i = 0; i < InitialPoolSize; i++)
@@ -59,7 +59,7 @@ public static class PainterUtils
 
     public static HashSet<int> GetHashSet(int capacity = 1000)
     {
-        return HashSetPool.Count > 0 ? HashSetPool.Pop() : new HashSet<int>(100);
+        return HashSetPool.Count > 0 ? HashSetPool.Pop() : new HashSet<int>(capacity);
     }
 
     public static void ReturnHashSet(HashSet<int> set)

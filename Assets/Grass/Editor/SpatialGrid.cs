@@ -6,18 +6,14 @@ public class SpatialGrid
     private readonly Dictionary<long, HashSet<int>> _grid;
     private readonly float _cellSize;
     private readonly Vector3 _origin;
-    private readonly Bounds _bounds;
 
-    private Dictionary<long, Bounds> _cellBounds;
     private readonly Queue<HashSet<int>> _hashSetPool;
 
     private const int PoolSize = 100;
 
     // 임시 리스트를 재사용하기 위한 필드
     private readonly HashSet<long> _tempCellKeys = new();
-
-    public Dictionary<long, HashSet<int>> Grid => _grid;
-
+    
     public int TotalObjectCount
     {
         get
@@ -33,13 +29,11 @@ public class SpatialGrid
     }
 
     public float CellSize => _cellSize;
-    public Bounds Bounds => _bounds;
 
     public SpatialGrid(Bounds bounds, float cellSize)
     {
         _cellSize = cellSize;
         _origin = bounds.min;
-        _bounds = bounds;
         _grid = new Dictionary<long, HashSet<int>>(1000);
         _hashSetPool = new Queue<HashSet<int>>(PoolSize);
         InitializePool();
@@ -77,6 +71,11 @@ public class SpatialGrid
         // 비트 마스크를 상수로 정의
         const long mask = 0x1FFFFF;
         return (x & mask) | ((y & mask) << 21) | ((z & mask) << 42);
+    }
+
+    public bool HasAnyObject(long key)
+    {
+        return _grid.TryGetValue(key, out var cellSet) && cellSet.Count > 0;
     }
 
     public void AddObject(Vector3 position, int index)
@@ -153,25 +152,6 @@ public class SpatialGrid
         );
     }
 
-    public Bounds GetCellBounds(long key)
-    {
-        _cellBounds ??= new Dictionary<long, Bounds>();
-
-        if (!_cellBounds.TryGetValue(key, out var bounds))
-        {
-            var cell = new Vector3Int(
-                (int)(key & 0x1FFFFF),
-                (int)((key >> 21) & 0x1FFFFF),
-                (int)((key >> 42) & 0x1FFFFF));
-
-            var cellCenter = CellToWorld(cell) + new Vector3(_cellSize * 0.5f, _cellSize * 0.5f, _cellSize * 0.5f);
-            bounds = new Bounds(cellCenter, new Vector3(_cellSize, _cellSize, _cellSize));
-            _cellBounds[key] = bounds;
-        }
-
-        return bounds;
-    }
-
     public void Clear()
     {
         foreach (var cellSet in _grid.Values)
@@ -180,7 +160,6 @@ public class SpatialGrid
         }
 
         _grid.Clear();
-        _cellBounds?.Clear();
         _tempCellKeys.Clear();
     }
 }

@@ -7,7 +7,7 @@ namespace Grass.Editor
     {
         protected GrassComputeScript grassCompute;
         protected SpatialGrid spatialGrid;
-        protected readonly List<int> sharedIndices = PainterUtils.GetList();
+        protected readonly List<int> sharedIndices = CollectionsPool.GetList();
         protected const int BatchSize = 100;
 
         protected BasePainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
@@ -37,7 +37,7 @@ namespace Grass.Editor
 
         public virtual void Clear()
         {
-            PainterUtils.ReturnList(sharedIndices);
+            CollectionsPool.ReturnList(sharedIndices);
         }
     }
 }

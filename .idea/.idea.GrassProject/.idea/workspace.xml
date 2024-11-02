@@ -8,24 +8,22 @@
       <change beforePath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/BasePainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/BasePainter.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassAddPainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassAddPainter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassDataStructure.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassDataStructure.cs.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassEditPainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassEditPainter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassJob.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassJob.cs.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassRemovePainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassRemovePainter.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassReprojectPainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassReprojectPainter.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/PainterUtils.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/PainterUtils.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassTileSystem.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassTileSystem.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/PainterUtils.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/CollectionsPool.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/PainterUtils.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/CollectionsPool.cs.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/ShaderVariantChecker.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/ShaderVariantChecker.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/SpatialGrid.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/SpatialGrid.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/CullingTree.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/CullingTree.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassToolSettingSO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassToolSettingSO.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Grass Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/Grass Mat.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Grass Mat.mat.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/Grass Mat.mat.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Grass Shader.shadergraph" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Grass Shader.shadergraph.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/TestGrass Mat.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/TestGrass Mat.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/TestGrass.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/TestGrass.shader.meta" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,8 +37,6 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="file://$USER_HOME$/Downloads/GrassComputeScript.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$USER_HOME$/Downloads/GrassPainterWindow.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/ILViewer/00c4b44a39674faa95313336d86ec94ca400/34/bd8aef40/0200000Epdb18High.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/ILViewer/00c4b44a39674faa95313336d86ec94ca400/34/bd8aef40/0200000Epdb18Low.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/ILViewer/5adbe44f02794f36b5caaf5e7baf42cd1dce00/d0/2a385841/020002E1Low.cs" root0="FORCE_HIGHLIGHTING" />
@@ -108,6 +104,7 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/cf76873c49254ed6ad9c71039de1d4721e400/cf/852ab8d2/Terrain.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/d3422287e15c4730bca1c333bb8637919b4400/da/c7a96f29/InternalEditorUtility.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/2a/9d7821a5/CollectionExtensions.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/a0/fc17f4c1/Dictionary`2.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/bc/559ad89a/Convert.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/ed/eb774271/List`1.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/e76ba1f9dd9946efbeaff28ca747bde931600/19/a8236931/Event.cs" root0="SKIP_HIGHLIGHTING" />
@@ -302,6 +299,8 @@
       <workItem from="1730440327974" duration="7626000" />
       <workItem from="1730451037155" duration="11288000" />
       <workItem from="1730506175297" duration="17624000" />
+      <workItem from="1730536983312" duration="1402000" />
+      <workItem from="1730558387276" duration="1131000" />
     </task>
     <servers />
   </component>

@@ -15,6 +15,12 @@ using Random = UnityEngine.Random;
 
 namespace Grass.Editor
 {
+    public class ObjectProgress
+    {
+        public float progress;
+        public string progressMessage;
+    }
+
     public class GrassPainterWindow : EditorWindow
     {
         // main tabs
@@ -1033,24 +1039,20 @@ namespace Grass.Editor
 
             // 브러시 범위 내의 셀들만 표시
             for (var x = -cellRadius; x <= cellRadius; x++)
+            for (var y = -cellRadius; y <= cellRadius; y++)
+            for (var z = -cellRadius; z <= cellRadius; z++)
             {
-                for (var y = -cellRadius; y <= cellRadius; y++)
-                {
-                    for (var z = -cellRadius; z <= cellRadius; z++)
-                    {
-                        var checkCell = new Vector3Int(centerCell.x + x, centerCell.y + y, centerCell.z + z);
-                        var cellWorldPos = _spatialGrid.CellToWorld(checkCell);
-                        var cellCenter = cellWorldPos + new Vector3(cellSize * 0.5f, cellSize * 0.5f, cellSize * 0.5f);
+                var checkCell = new Vector3Int(centerCell.x + x, centerCell.y + y, centerCell.z + z);
+                var cellWorldPos = _spatialGrid.CellToWorld(checkCell);
+                var cellCenter = cellWorldPos + new Vector3(cellSize * 0.5f, cellSize * 0.5f, cellSize * 0.5f);
 
-                         // 셀에 풀이 있는지 확인하고 색상 설정
-                        var key = SpatialGrid.GetKey(checkCell.x, checkCell.y, checkCell.z);
-                        bool hasGrass = _spatialGrid.Grid.ContainsKey(key) && _spatialGrid.Grid[key].Count > 0;
-                        Handles.color = hasGrass ? activeCellColor : new Color(0.2f, 0.8f, 1f, 0.1f);
+                // 셀에 풀이 있는지 확인하고 색상 설정
+                var key = SpatialGrid.GetKey(checkCell.x, checkCell.y, checkCell.z);
+                var hasGrass = _spatialGrid.HasAnyObject(key);
+                Handles.color = hasGrass ? activeCellColor : new Color(0.2f, 0.8f, 1f, 0.1f);
 
-                        // 셀 그리기
-                        DrawCellCube(cellCenter, cellSize);
-                    }
-                }
+                // 셀 그리기
+                DrawCellCube(cellCenter, cellSize);
             }
         }
 
@@ -1591,7 +1593,7 @@ namespace Grass.Editor
             var results = await UniTask.WhenAll(tasks);
             var finalGrassToKeep = new List<GrassData>();
             var updateInterval = GetUpdateInterval(results.Length);
-            
+
             // Merge results
             for (var index = 0; index < results.Length; index++)
             {

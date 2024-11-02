@@ -14,13 +14,12 @@ namespace Grass.Editor
         private Vector3 _targetColor;
         private float _deltaTimeSpeed;
 
-
         public GrassEditPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
             spatialGrid)
         {
-            _cumulativeChanges = PainterUtils.GetDictionary<int, float>(100);
-            _modifiedGrassData = PainterUtils.GetDictionary<int, GrassData>(BatchSize);
-            _processedIndices = PainterUtils.GetHashSet();
+            _cumulativeChanges = CollectionsPool.GetDictionary<int, float>(100);
+            _modifiedGrassData = CollectionsPool.GetDictionary<int, GrassData>(BatchSize);
+            _processedIndices = CollectionsPool.GetHashSet();
         }
 
         public void EditGrass(Ray mouseRay, GrassToolSettingSo toolSettings, EditOption editOption)
@@ -145,9 +144,9 @@ namespace Grass.Editor
         public override void Clear()
         {
             base.Clear();
-            PainterUtils.ReturnDictionary(_cumulativeChanges);
-            PainterUtils.ReturnDictionary(_modifiedGrassData);
-            PainterUtils.ReturnHashSet(_processedIndices);
+            CollectionsPool.ReturnDictionary(_cumulativeChanges);
+            CollectionsPool.ReturnDictionary(_modifiedGrassData);
+            CollectionsPool.ReturnHashSet(_processedIndices);
         }
     }
 }

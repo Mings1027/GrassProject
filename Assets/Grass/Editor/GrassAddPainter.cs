@@ -12,7 +12,7 @@ namespace Grass.Editor
         public GrassAddPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
             spatialGrid)
         {
-            _nearbyIndices = PainterUtils.GetList(100);
+            _nearbyIndices = CollectionsPool.GetList(100);
         }
 
         public void AddGrass(Vector3 hitPos, GrassToolSettingSo toolSettings)
@@ -114,7 +114,7 @@ namespace Grass.Editor
         public override void Clear()
         {
             _lastPosition = Vector3.zero;
-            PainterUtils.ReturnList(_nearbyIndices);
+            CollectionsPool.ReturnList(_nearbyIndices);
         }
     }
 }
