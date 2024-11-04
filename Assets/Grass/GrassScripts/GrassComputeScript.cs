@@ -613,11 +613,23 @@ public class GrassComputeScript : MonoBehaviour
     private static readonly int BottomTint = Shader.PropertyToID("_BottomTint");
 
 #if UNITY_EDITOR
-    public void UpdateGrassDataFaster()
+    public void UpdateGrassDataFaster(int startIndex = 0, int updateCount = -1)
     {
-        // Update only the necessary buffers
-        _sourceVertBuffer.SetData(grassData);
+        // 업데이트할 개수가 지정되지 않았다면 전체 데이터 업데이트
+        if (updateCount == -1)
+        {
+            updateCount = grassData.Count - startIndex;
+        }
 
+        // 범위 체크
+        if (startIndex < 0 || startIndex >= grassData.Count)
+            return;
+        if (startIndex + updateCount > grassData.Count)
+            updateCount = grassData.Count - startIndex;
+
+        // 부분 데이터만 업데이트
+        _sourceVertBuffer.SetData(grassData, startIndex, startIndex, updateCount);
+        
         // Clear and reset only the necessary buffers
         _drawBuffer.SetCounterValue(0);
         _argsBuffer.SetData(_argsBufferReset);

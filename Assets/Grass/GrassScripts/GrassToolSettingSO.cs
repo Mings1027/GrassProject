@@ -15,41 +15,119 @@ public class GrassToolSettingSo : ScriptableObject
         Green
     }
 
+    [Header("Input Setting")] public KeyBinding paintKey;
+    public MouseButton paintButton;
+
+    [Header("Paint Layer Settings")] [SerializeField]
+    private LayerMask paintMask = 1;
+    [SerializeField] private LayerMask paintBlockMask = 0;
+
+    [Header("Brush Settings")] [SerializeField]
+    private float brushSize = 4f;
+    [SerializeField] private float brushHeight = 2f;
+    [SerializeField] private float falloffOuterSpeed;
+    [SerializeField] private int density = 1;
+    [SerializeField] private float normalLimit = 1f;
+    [SerializeField] private Color brushColor = Color.white;
+
+    [Header("Grass Size Settings")] [SerializeField]
+    private float grassWidth = 0.1f;
+    [SerializeField] private float grassHeight = 1f;
+
+    [Header("Adjustment Settings")] [SerializeField]
+    private float adjustWidth = 0f;
+    [SerializeField] private float adjustHeight = 0f;
+    [SerializeField] private float adjustWidthMax = 2f;
+    [SerializeField] private float adjustHeightMax = 2f;
+    [SerializeField] private float reprojectOffset = 1f;
+
+    [Header("Color Settings")] [SerializeField]
+    private float rangeR;
+    [SerializeField] private float rangeG;
+    [SerializeField] private float rangeB;
+
+    [Header("Generation Settings")] [SerializeField]
+    private int grassAmountToGenerate = 100000;
+    [SerializeField] private float generationDensity = 1f;
+
     [Header("Terrain Layer Settings")] [SerializeField]
     private float[] layerBlocking = new float[8];
 
-    public float[] LayerBlocking
-    {
-        get => layerBlocking;
-        set => layerBlocking = value;
-    }
-
     [SerializeField] private bool[] layerFading = new bool[8];
-
-    public bool[] LayerFading
-    {
-        get => layerFading;
-        set => layerFading = value;
-    }
 
     [Header("Vertex Color Settings")] [SerializeField]
     private VertexColorSetting vertexColorSettings;
-
-    public VertexColorSetting VertexColorSettings
-    {
-        get => vertexColorSettings;
-        set => vertexColorSettings = value;
-    }
-
     [SerializeField] private VertexColorSetting vertexFade;
 
-    public VertexColorSetting VertexFade
+    #region Constants
+    public float MinSizeWidth => 0.01f;
+    public float MaxSizeWidth => 2f;
+    public float MinSizeHeight => 0.01f;
+    public float MaxSizeHeight => 2f;
+    public float MinAdjust => -1f;
+    public float MaxAdjust => 1f;
+    public float MinBrushSize => 0.1f;
+    public float MaxBrushSize => 50f;
+    public float MinBrushHeight => 0.1f;
+    public float MaxBrushHeight => 50f;
+    public int MaxDensity => 1000;
+    public int MinDensity => 1;
+    public float MaxNormalLimit => 1f;
+    public float MinNormalLimit => 0f;
+    public int MaxGrassAmountToGenerate => 100000;
+    public int MinGrassAmountToGenerate => 0;
+    public float MaxGenerationDensity => 10f;
+    public float MinGenerationDensity => 0.01f;
+    #endregion
+
+    #region Properties
+    public LayerMask PaintMask
     {
-        get => vertexFade;
-        set => vertexFade = value;
+        get => paintMask;
+        set => paintMask = value;
     }
 
-    [SerializeField] private float grassWidth = 0.1f;
+    public LayerMask PaintBlockMask
+    {
+        get => paintBlockMask;
+        set => paintBlockMask = value;
+    }
+
+    public float BrushSize
+    {
+        get => brushSize;
+        set => brushSize = Mathf.Clamp(value, MinBrushSize, MaxBrushSize);
+    }
+
+    public float BrushHeight
+    {
+        get => brushHeight;
+        set => brushHeight = Mathf.Clamp(value, MinBrushHeight, MaxBrushHeight);
+    }
+
+    public float FalloffOuterSpeed
+    {
+        get => falloffOuterSpeed;
+        set => falloffOuterSpeed = Mathf.Clamp01(value);
+    }
+
+    public int Density
+    {
+        get => density;
+        set => density = Mathf.Clamp(value, MinDensity, MaxDensity);
+    }
+
+    public float NormalLimit
+    {
+        get => normalLimit;
+        set => normalLimit = Mathf.Clamp(value, MinNormalLimit, MaxNormalLimit);
+    }
+
+    public Color BrushColor
+    {
+        get => brushColor;
+        set => brushColor = value;
+    }
 
     public float GrassWidth
     {
@@ -57,15 +135,11 @@ public class GrassToolSettingSo : ScriptableObject
         set => grassWidth = Mathf.Clamp(value, MinSizeWidth, MaxSizeWidth);
     }
 
-    [SerializeField] private float grassHeight = 1f;
-
     public float GrassHeight
     {
         get => grassHeight;
         set => grassHeight = Mathf.Clamp(value, MinSizeHeight, MaxSizeHeight);
     }
-
-    [SerializeField] private float adjustWidth = 0f;
 
     public float AdjustWidth
     {
@@ -73,15 +147,11 @@ public class GrassToolSettingSo : ScriptableObject
         set => adjustWidth = Mathf.Clamp(value, MinAdjust, MaxAdjust);
     }
 
-    [SerializeField] private float adjustHeight = 0f;
-
     public float AdjustHeight
     {
         get => adjustHeight;
         set => adjustHeight = Mathf.Clamp(value, MinAdjust, MaxAdjust);
     }
-
-    [SerializeField] private float adjustWidthMax = 2f;
 
     public float AdjustWidthMax
     {
@@ -89,27 +159,17 @@ public class GrassToolSettingSo : ScriptableObject
         set => adjustWidthMax = Mathf.Max(0.01f, value);
     }
 
-    [SerializeField] private float adjustHeightMax = 2f;
-
     public float AdjustHeightMax
     {
         get => adjustHeightMax;
         set => adjustHeightMax = Mathf.Max(0.01f, value);
     }
 
-    [SerializeField] private float reprojectOffset = 1f;
-
     public float ReprojectOffset
     {
         get => reprojectOffset;
         set => reprojectOffset = value;
     }
-
-    [SerializeField] private float rangeR;
-
-    [SerializeField] private float rangeG;
-
-    [SerializeField] private float rangeB;
 
     public float RangeR
     {
@@ -129,21 +189,42 @@ public class GrassToolSettingSo : ScriptableObject
         set => rangeB = Mathf.Clamp01(value);
     }
 
-    [SerializeField] private Color brushColor = Color.white;
-
-    public Color BrushColor
+    public int GrassAmountToGenerate
     {
-        get => brushColor;
-        set => brushColor = value;
+        get => grassAmountToGenerate;
+        set => grassAmountToGenerate = Mathf.Clamp(value, MinGrassAmountToGenerate, MaxGrassAmountToGenerate);
     }
 
-    [SerializeField] private LayerMask paintMask = 1;
-
-    public LayerMask PaintMask
+    public float GenerationDensity
     {
-        get => paintMask;
-        set => paintMask = value;
+        get => generationDensity;
+        set => generationDensity = Mathf.Clamp(value, MinGenerationDensity, MaxGenerationDensity);
     }
+
+    public float[] LayerBlocking
+    {
+        get => layerBlocking;
+        set => layerBlocking = value;
+    }
+
+    public bool[] LayerFading
+    {
+        get => layerFading;
+        set => layerFading = value;
+    }
+
+    public VertexColorSetting VertexColorSettings
+    {
+        get => vertexColorSettings;
+        set => vertexColorSettings = value;
+    }
+
+    public VertexColorSetting VertexFade
+    {
+        get => vertexFade;
+        set => vertexFade = value;
+    }
+    #endregion
 
     public List<string> GetPaintMaskLayerNames()
     {
@@ -151,7 +232,6 @@ public class GrassToolSettingSo : ScriptableObject
 
         for (int i = 0; i < 32; i++)
         {
-            // Check if the layer is active in the LayerMask
             if ((PaintMask.value & (1 << i)) != 0)
             {
                 string layerName = LayerMask.LayerToName(i);
@@ -165,90 +245,8 @@ public class GrassToolSettingSo : ScriptableObject
         return layerNames;
     }
 
-    [SerializeField] private LayerMask paintBlockMask = 0;
-
-    public LayerMask PaintBlockMask
-    {
-        get => paintBlockMask;
-        set => paintBlockMask = value;
-    }
-
-    [SerializeField] private float brushSize = 4f;
-
-    public float BrushSize
-    {
-        get => brushSize;
-        set => brushSize = Mathf.Clamp(value, MinBrushSize, MaxBrushSize);
-    }
-
-    [SerializeField] private float brushFalloffSize = 0.8f;
-
-  
-
-    [SerializeField] private float falloffOuterSpeed;
-
-    public float FalloffOuterSpeed
-    {
-        get => falloffOuterSpeed;
-        set => falloffOuterSpeed = Mathf.Clamp01(value);
-    }
-
-    [SerializeField] private int density = 1;
-
-    public int Density
-    {
-        get => density;
-        set => density = Mathf.Clamp(value, MinDensity, MaxDensity);
-    }
-
-    [SerializeField] private float normalLimit = 1f;
-
-    public float NormalLimit
-    {
-        get => normalLimit;
-        set => normalLimit = Mathf.Clamp(value, MinNormalLimit, MaxNormalLimit);
-    }
-
-    [SerializeField] private int grassAmountToGenerate = 100000;
-
-    public int GrassAmountToGenerate
-    {
-        get => grassAmountToGenerate;
-        set => grassAmountToGenerate = Mathf.Clamp(value, MinGrassAmountToGenerate, MaxGrassAmountToGenerate);
-    }
-
-    [SerializeField] private float generationDensity = 1f;
-
-    public float GenerationDensity
-    {
-        get => generationDensity;
-        set => generationDensity = Mathf.Clamp(value, MinGenerationDensity, MaxGenerationDensity);
-    }
-
-    public KeyBinding paintKey;
-    public MouseButton paintButton;
-
-    // Constants
-    public float MinSizeWidth => 0.01f;
-    public float MaxSizeWidth => 2f;
-    public float MinSizeHeight => 0.01f;
-    public float MaxSizeHeight => 2f;
-    public float MinAdjust => -1f;
-    public float MaxAdjust => 1f;
-    public float MinBrushSize => 0.1f;
-    public float MaxBrushSize => 50f; 
-    public int MaxDensity => 1000;
-    public int MinDensity => 1;
-    public float MaxNormalLimit => 1f;
-    public float MinNormalLimit => 0f;
-    public int MaxGrassAmountToGenerate => 100000;
-    public int MinGrassAmountToGenerate => 0;
-    public float MaxGenerationDensity => 10f;
-    public float MinGenerationDensity => 0.01f;
-
     private void OnValidate()
     {
-        // 값이 변경될 때 범위를 확인하고 조정합니다.
         GrassWidth = grassWidth;
         GrassHeight = grassHeight;
         AdjustWidth = adjustWidth;

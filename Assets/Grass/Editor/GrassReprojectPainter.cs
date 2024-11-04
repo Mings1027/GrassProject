@@ -1,79 +1,79 @@
 using System.Collections.Generic;
-using Grass.Editor;
 using UnityEngine;
 
-public sealed class GrassReprojectPainter : BasePainter
+namespace Grass.Editor
 {
-    private readonly List<int> _changedIndices;
-
-    public GrassReprojectPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
-        spatialGrid)
+    public sealed class GrassReprojectPainter : BasePainter
     {
-        _changedIndices = CollectionsPool.GetList(100);
-    }
+        private int _minChangedIndex;
+        private int _maxChangedIndex;
+        private bool _hasChanges;
 
-    public void ReprojectGrass(Ray mousePointRay, LayerMask paintMask, float brushSize, float offset)
-    {
-        if (!Physics.Raycast(mousePointRay, out var hit, float.MaxValue, paintMask))
-            return;
+        public GrassReprojectPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
+            spatialGrid) { }
 
-        var hitPoint = hit.point;
-        var brushSizeSqr = brushSize * brushSize;
-
-        // SpatialGrid를 사용하여 브러시 영역 내의 잔디 인덱스들을 가져옴
-        sharedIndices.Clear();
-        _changedIndices.Clear();
-        spatialGrid.GetObjectsInRadius(hitPoint, brushSize, sharedIndices);
-
-        var grassList = grassCompute.GrassDataList;
-
-        // 배치 처리 적용
-        ProcessInBatches(sharedIndices, (start, end) =>
-            ProcessGrassBatch(start, end, grassList, hitPoint, brushSizeSqr, paintMask, offset));
-
-        if (_changedIndices.Count > 0)
+        public void ReprojectGrass(Ray mousePointRay, LayerMask paintMask, float brushSize, float offset)
         {
-            grassCompute.UpdateGrassDataFaster();
-        }
-    }
+            if (!Physics.Raycast(mousePointRay, out var hit, float.MaxValue, paintMask))
+                return;
 
-    private void ProcessGrassBatch(int startIdx, int endIdx, List<GrassData> grassList,
-                                   Vector3 hitPoint, float brushSizeSqr, LayerMask paintMask, float offset)
-    {
-        for (int i = startIdx; i < endIdx; i++)
-        {
-            int index = sharedIndices[i];
-            var grassData = grassList[index];
-            float distanceSqr = CollectionsPool.SqrDistance(grassData.position, hitPoint);
+            var hitPoint = hit.point;
+            var brushSizeSqr = brushSize * brushSize;
 
-            if (distanceSqr <= brushSizeSqr)
+            // SpatialGrid를 사용하여 브러시 영역 내의 잔디 인덱스들을 가져옴
+            CollectionsPool.ReturnList(sharedIndices);
+            spatialGrid.GetObjectsInRadius(hitPoint, brushSize, sharedIndices);
+
+            _hasChanges = false;
+            _minChangedIndex = int.MaxValue;
+            _maxChangedIndex = int.MinValue;
+
+            var grassList = grassCompute.GrassDataList;
+
+            ProcessGrassBatch(grassList, hitPoint, brushSizeSqr, paintMask, offset);
+
+            if (_hasChanges)
             {
-                var meshPoint = new Vector3(
-                    grassData.position.x,
-                    grassData.position.y + offset,
-                    grassData.position.z
-                );
+                grassCompute.UpdateGrassDataFaster(_minChangedIndex, _maxChangedIndex - _minChangedIndex + 1);
+            }
+        }
 
-                if (Physics.Raycast(meshPoint, Vector3.down, out var hitInfo, 200f, paintMask))
+        private void ProcessGrassBatch(List<GrassData> grassList, Vector3 hitPoint, float brushSizeSqr,
+                                       LayerMask paintMask, float offset)
+        {
+            var count = sharedIndices.Count;
+            for (int i = 0; i < count; i++)
+            {
+                int index = sharedIndices[i];
+                var grassData = grassList[index];
+                float distanceSqr = GrassPainterHelper.SqrDistance(grassData.position, hitPoint);
+
+                if (distanceSqr <= brushSizeSqr)
                 {
-                    var newData = grassData;
-                    newData.position = hitInfo.point;
-                    newData.normal = hitInfo.normal;
+                    var meshPoint = new Vector3(
+                        grassData.position.x,
+                        grassData.position.y + offset,
+                        grassData.position.z
+                    );
 
-                    // SpatialGrid 업데이트
-                    spatialGrid.RemoveObject(grassData.position, index);
-                    spatialGrid.AddObject(hitInfo.point, index);
+                    if (Physics.Raycast(meshPoint, Vector3.down, out var hitInfo, 200f, paintMask))
+                    {
+                        var newData = grassData;
+                        newData.position = hitInfo.point;
+                        newData.normal = hitInfo.normal;
 
-                    grassList[index] = newData;
-                    _changedIndices.Add(index);
+                        // SpatialGrid 업데이트
+                        spatialGrid.RemoveObject(grassData.position, index);
+                        spatialGrid.AddObject(hitInfo.point, index);
+
+                        grassList[index] = newData;
+
+                        _minChangedIndex = Mathf.Min(_minChangedIndex, index);
+                        _maxChangedIndex = Mathf.Max(_maxChangedIndex, index);
+                        _hasChanges = true;
+                    }
                 }
             }
         }
-    }
-
-    public override void Clear()
-    {
-        base.Clear();
-        CollectionsPool.ReturnList(_changedIndices);
     }
 }

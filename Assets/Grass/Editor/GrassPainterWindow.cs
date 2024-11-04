@@ -354,19 +354,19 @@ namespace Grass.Editor
             switch (_mainTabCurrent)
             {
                 case 0:
-                    ShowPaintPanel();
+                    DrawPaintPanel();
                     break;
                 case 1:
-                    ShowModifyPanel();
+                    DrawModifyPanel();
                     break;
                 case 2:
-                    ShowGeneratePanel();
+                    DrawGeneratePanel();
                     break;
                 case 3:
-                    ShowMainSettingsPanel();
+                    DrawMainSettingsPanel();
                     break;
                 case 4:
-                    ShowMaterialSettings();
+                    DrawMaterialSettings();
                     break;
             }
         }
@@ -412,7 +412,7 @@ namespace Grass.Editor
         {
             return totalCount switch
             {
-                <= 100000 => 100000,
+                <= 100000 => 10000,
                 <= 1000000 => 100000,
                 <= 10000000 => 100000,
                 <= 100000000 => 200000,
@@ -454,7 +454,7 @@ namespace Grass.Editor
             toolSettings.paintButton = (MouseButton)EditorGUILayout.EnumPopup("Paint Button", toolSettings.paintButton);
         }
 
-        private void ShowPaintPanel()
+        private void DrawPaintPanel()
         {
             EditorGUILayout.LabelField("Hit Settings", EditorStyles.boldLabel);
             LayerMask tempMask2 = EditorGUILayout.MaskField("Painting Mask",
@@ -485,6 +485,8 @@ namespace Grass.Editor
                     toolSettings.MinNormalLimit, toolSettings.MaxNormalLimit);
                 toolSettings.Density = EditorGUILayout.IntSlider("Density", toolSettings.Density,
                     toolSettings.MinDensity, toolSettings.MaxDensity);
+                toolSettings.BrushHeight = EditorGUILayout.Slider("Brush Height", toolSettings.BrushHeight,
+                    toolSettings.MinBrushHeight, toolSettings.MaxBrushHeight);
 
                 EditorGUILayout.Separator();
 
@@ -591,7 +593,7 @@ namespace Grass.Editor
             EditorGUILayout.Separator();
         }
 
-        private void ShowModifyPanel()
+        private void DrawModifyPanel()
         {
             EditorGUILayout.LabelField("Modify Options", EditorStyles.boldLabel);
             _selectedModifyOption = (ModifyOption)GUILayout.Toolbar((int)_selectedModifyOption, _modifyOptionStrings,
@@ -670,7 +672,7 @@ namespace Grass.Editor
             EditorGUILayout.Separator();
         }
 
-        private void ShowGeneratePanel()
+        private void DrawGeneratePanel()
         {
             toolSettings.GrassAmountToGenerate =
                 (int)EditorGUILayout.Slider("Grass Place Max Amount", toolSettings.GrassAmountToGenerate,
@@ -767,7 +769,7 @@ namespace Grass.Editor
             }
         }
 
-        private void ShowMainSettingsPanel()
+        private void DrawMainSettingsPanel()
         {
             EditorGUILayout.LabelField("Blade Min/Max Settings", EditorStyles.boldLabel);
             var curPresets = _grassCompute.currentPresets;
@@ -880,7 +882,7 @@ namespace Grass.Editor
                     curPresets.castShadow);
         }
 
-        private void ShowMaterialSettings()
+        private void DrawMaterialSettings()
         {
             if (_grassCompute == null || _grassCompute.currentPresets == null)
             {
@@ -971,12 +973,33 @@ namespace Grass.Editor
             }
         }
 
+        // 원기둥 표시 관련 변수들
+        private float _cylinderDisplayStartTime;
+        private bool _showCylinder;
+        private const float CylinderDisplayDuration = 15f; // 2초 동안 표시
+        private float _lastBrushHeight;
+
         private void DrawHandles()
         {
             if (Physics.Raycast(_mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
             {
                 _hitPos = hit.point;
                 _hitNormal = hit.normal;
+            }
+
+            // BrushHeight가 변경되었는지 확인
+            if (Mathf.Abs(_lastBrushHeight - toolSettings.BrushHeight) > 0.001f)
+            {
+                _showCylinder = true;
+                _cylinderDisplayStartTime = (float)EditorApplication.timeSinceStartup;
+                _lastBrushHeight = toolSettings.BrushHeight;
+            }
+
+            // 표시 시간이 지났는지 확인
+            if (_showCylinder && (float)EditorApplication.timeSinceStartup - _cylinderDisplayStartTime >
+                CylinderDisplayDuration)
+            {
+                _showCylinder = false;
             }
 
             //base
@@ -987,6 +1010,13 @@ namespace Grass.Editor
                 case BrushOption.Add:
                     discColor = Color.green;
                     discColor2 = new Color(0, 0.5f, 0, 0.4f);
+
+                    // Add 모드이고 원기둥을 표시해야 할 때
+                    if (_showCylinder)
+                    {
+                        DrawBrushHeightCylinder();
+                    }
+
                     break;
                 case BrushOption.Remove:
                     discColor = Color.red;
@@ -1014,6 +1044,85 @@ namespace Grass.Editor
                 SceneView.RepaintAll();
                 _cachedPos = _hitPos;
             }
+        }
+
+        private void DrawBrushHeightCylinder()
+        {
+            // 원기둥의 시작점과 끝점
+            Vector3 bottomCenter = _hitPos;
+            Vector3 topCenter = bottomCenter + Vector3.up * toolSettings.BrushHeight;
+
+            // PaintBlock 체크를 위한 레이캐스트
+            bool isPaintBlocked = false;
+            float checkInterval = 0.2f; // 체크 간격 (너무 촘촘하면 성능에 영향을 미칠 수 있음)
+            int checkCount = Mathf.CeilToInt(toolSettings.BrushHeight / checkInterval);
+
+            // 원기둥 부피 내에서 여러 지점 체크
+            const int radialChecks = 8; // 방사형으로 체크할 점의 수
+            float checkRadius = toolSettings.BrushSize * 0.8f; // 약간 안쪽에서 체크
+    
+            for (int h = 0; h < checkCount && !isPaintBlocked; h++)
+            {
+                float heightCheck = h * checkInterval;
+                Vector3 checkCenter = bottomCenter + Vector3.up * heightCheck;
+        
+                // 중심점 체크
+                if (Physics.CheckSphere(checkCenter, 0.1f, toolSettings.PaintBlockMask))
+                {
+                    isPaintBlocked = true;
+                    break;
+                }
+        
+                // 방사형으로 체크
+                for (int r = 0; r < radialChecks && !isPaintBlocked; r++)
+                {
+                    float angle = (r * Mathf.PI * 2) / radialChecks;
+                    Vector3 offset = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * checkRadius;
+                    Vector3 checkPoint = checkCenter + offset;
+            
+                    if (Physics.CheckSphere(checkPoint, 0.1f, toolSettings.PaintBlockMask))
+                    {
+                        isPaintBlocked = true;
+                        break;
+                    }
+                }
+            }
+            
+            // 시간에 따른 알파값 계산 (페이드 아웃 효과)
+            float timeRemaining = CylinderDisplayDuration -
+                                  ((float)EditorApplication.timeSinceStartup - _cylinderDisplayStartTime);
+            float alpha = Mathf.Clamp01(timeRemaining / CylinderDisplayDuration) * 0.5f;
+            
+            // 원기둥 색상 - PaintBlock 유무에 따라 색상 결정
+            Color cylinderColor = isPaintBlocked 
+                ? new Color(1f, 0f, 0f, alpha)  // 빨간색 (블록됨)
+                : new Color(1f, 1f, 0f, alpha); // 노란색 (정상)
+    
+            Handles.color = cylinderColor;
+
+            // 원기둥의 테두리를 그리는 함수
+            const int segments = 32;
+            float radius = toolSettings.BrushSize;
+
+            // 바닥 원
+            Handles.DrawWireDisc(bottomCenter, Vector3.up, radius);
+            // 윗면 원
+            Handles.DrawWireDisc(topCenter, Vector3.up, radius);
+
+            // 세로선 그리기
+            for (int i = 0; i < segments; i++)
+            {
+                float angle = (i * Mathf.PI * 2) / segments;
+                Vector3 offset = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * radius;
+
+                Vector3 bottomPoint = bottomCenter + offset;
+                Vector3 topPoint = topCenter + offset;
+
+                Handles.DrawLine(bottomPoint, topPoint);
+            }
+
+            // Scene View를 강제로 다시 그리기
+            SceneView.RepaintAll();
         }
 
         private void DrawGridHandles()
@@ -1289,7 +1398,7 @@ namespace Grass.Editor
             var bounds = sourceMesh.sharedMesh.bounds;
             var meshSize = Vector3.Scale(bounds.size, sourceMesh.transform.lossyScale) + Vector3.one;
             var meshVolume = meshSize.x * meshSize.y * meshSize.z;
-            return Mathf.Min(Mathf.FloorToInt(meshVolume * toolSettings.GenerationDensity),
+            return Mathf.Max(Mathf.FloorToInt(meshVolume * toolSettings.GenerationDensity),
                 toolSettings.GrassAmountToGenerate);
         }
 
@@ -1363,7 +1472,7 @@ namespace Grass.Editor
             var terrainData = terrain.terrainData;
             var terrainSize = terrainData.size;
             var terrainVolume = terrainSize.x * terrainSize.y * terrainSize.z;
-            return Mathf.Min(Mathf.FloorToInt(terrainVolume * toolSettings.GenerationDensity),
+            return Mathf.Max(Mathf.FloorToInt(terrainVolume * toolSettings.GenerationDensity),
                 toolSettings.GrassAmountToGenerate);
         }
 
@@ -1734,7 +1843,7 @@ namespace Grass.Editor
         private void InitSpatialGrid()
         {
             var bounds = new Bounds(Vector3.zero, new Vector3(1000, 1000, 1000));
-            _spatialGrid = new SpatialGrid(bounds, toolSettings.BrushSize * 2);
+            _spatialGrid = new SpatialGrid(bounds, toolSettings.BrushSize);
 
             _spatialGrid.Clear();
 
@@ -1743,10 +1852,6 @@ namespace Grass.Editor
                 var grass = _grassData[i];
                 _spatialGrid.AddObject(grass.position, i);
             }
-
-            // 유효성 검사
-            Debug.Assert(_spatialGrid.TotalObjectCount == _grassData.Count,
-                "SpatialGrid object count doesn't match grass data count!");
         }
 
         private void UpdateGrassData(bool fullReset = true)

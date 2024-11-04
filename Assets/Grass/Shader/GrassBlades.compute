@@ -173,20 +173,20 @@ void Main(uint id : SV_DispatchThreadID)
     if (distanceFade < 0) return;
 
     // Blades & Segments
-    int numBladesPerVertex = min(GRASS_BLADES, max(1, _MaxBladesPerVertex)); // Set the number of blades per vertex
-    int numSegmentsPerBlade = min(GRASS_SEGMENTS, max(1, _MaxSegmentsPerBlade)); // Set the number of segments per blade
+    int numBladesPerVertex = min(GRASS_BLADES, _MaxBladesPerVertex); // Set the number of blades per vertex
+    int numSegmentsPerBlade =  _MaxSegmentsPerBlade; // Set the number of segments per blade
     // -1 is because the top part of the grass only has 1 triangle
     int numTrianglesPerBlade = (numSegmentsPerBlade - 1) * 2 + 1; // Triangles per blade
 
     // Set normals
     float3 faceNormal = sv.normalOS; // Normal in object space
-    
+
     float cut = _CutBuffer[visibleID];
     // if (cut != -1)
     // {
     //     sv.color = float3(0, 0, 0);
     // }
-    
+
     float3 wind = WindCalculation(sv.positionWS);
 
     _GrassHeight = sv.uv.y;
@@ -259,7 +259,8 @@ void Main(uint id : SV_DispatchThreadID)
             float segmentWidth = _GrassWidth * (1 - t); // Width of the grass blade 
 
             // The first (0) grass segment is thinner
-            segmentWidth = i == 0 ? _BottomWidth * segmentWidth : segmentWidth; // Adjust the width using the _BottomWidth value
+            segmentWidth = i == 0 ? _BottomWidth * segmentWidth : segmentWidth;
+            // Adjust the width using the _BottomWidth value
 
             float segmentForward = pow(abs(t), _BladeCurve) * _BladeForward;
             // First grass (0) segment does not get displaced by interactor
@@ -279,7 +280,7 @@ void Main(uint id : SV_DispatchThreadID)
         float3 topPosOS = sv.positionWS + totalMovement + wind + faceNormal * _GrassHeight;
         drawVertices[numSegmentsPerBlade * 2] = GrassVertex(topPosOS, 0, _GrassHeight, offset, _BladeForward,
                                                             float2(0.5, 1), facingRotationMatrix);
-        
+
         // Add to the drawbuffer to be read by the final shader
         for (int k = 0; k < numTrianglesPerBlade; ++k)
         {
