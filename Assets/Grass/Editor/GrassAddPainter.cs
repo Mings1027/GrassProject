@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Grass.Editor
@@ -5,9 +6,14 @@ namespace Grass.Editor
     public sealed class GrassAddPainter : BasePainter
     {
         private Vector3 _lastPosition = Vector3.zero;
+        private readonly List<int> _nearbyIndices;
+        private const float MIN_GRASS_SPACING = 0.1f; // 최소 잔디 간격
 
         public GrassAddPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
-            spatialGrid) { }
+            spatialGrid)
+        {
+            _nearbyIndices = CollectionsPool.GetList(100);
+        }
 
         public void AddGrass(Vector3 hitPos, GrassToolSettingSo toolSettings)
         {
@@ -16,8 +22,7 @@ namespace Grass.Editor
             var density = toolSettings.Density;
             var normalLimit = toolSettings.NormalLimit;
 
-            var rayStartHeight = Mathf.Max(toolSettings.BrushHeight + 0.1f, 0.5f);
-            var startPos = hitPos + Vector3.up * rayStartHeight;
+            var startPos = hitPos + Vector3.up * 3f;
             var distanceMoved = Vector3.Distance(_lastPosition, startPos);
 
             if (distanceMoved >= brushSize * 0.5f)
@@ -29,14 +34,17 @@ namespace Grass.Editor
                     var randomPoint = Random.insideUnitCircle * brushSize;
                     var randomPos = new Vector3(startPos.x + randomPoint.x, startPos.y, startPos.z + randomPoint.y);
 
-                    float maxRayDistance = rayStartHeight + 1f;
-                    if (Physics.Raycast(randomPos, Vector3.down, out var hit, maxRayDistance, paintMaskValue))
+                    if (Physics.Raycast(randomPos + Vector3.up * toolSettings.BrushHeight, Vector3.down, out var hit, float.MaxValue))
                     {
                         var hitLayer = hit.collider.gameObject.layer;
                         if (((1 << hitLayer) & paintMaskValue) != 0)
                         {
                             if (hit.normal.y <= 1 + normalLimit && hit.normal.y >= 1 - normalLimit)
                             {
+                                // 주변 잔디 체크
+                                _nearbyIndices.Clear();
+                                spatialGrid.GetObjectsInRadius(hit.point, MIN_GRASS_SPACING, _nearbyIndices);
+
                                 var newData = CreateGrassData(hit.point, hit.normal, toolSettings);
                                 var newIndex = grassCompute.GrassDataList.Count;
 
@@ -84,6 +92,7 @@ namespace Grass.Editor
         public override void Clear()
         {
             _lastPosition = Vector3.zero;
+            CollectionsPool.ReturnList(_nearbyIndices);
         }
     }
 }
