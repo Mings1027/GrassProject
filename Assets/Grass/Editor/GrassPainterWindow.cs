@@ -299,7 +299,7 @@ namespace Grass.Editor
             if (_grassCompute == null)
                 _grassCompute = grassObject.GetComponent<GrassComputeScript>();
             _grassCompute.enabled = _enableGrass;
-            
+
             // 오른쪽 그룹 
             EditorGUILayout.LabelField("Auto Update", GUILayout.Width(LabelWidth));
             _grassCompute.autoUpdate = EditorGUILayout.Toggle(_grassCompute.autoUpdate, GUILayout.Width(ToggleWidth));
@@ -320,7 +320,7 @@ namespace Grass.Editor
             // 왼쪽 그룹
             EditorGUILayout.LabelField("Paint Mode", GUILayout.Width(LabelWidth));
             _paintModeActive = EditorGUILayout.Toggle(_paintModeActive, GUILayout.Width(ToggleWidth));
-            
+
             // 오른쪽 그룹
             EditorGUILayout.LabelField("Show Spatial Grid", GUILayout.Width(LabelWidth));
             _showSpatialGrid = EditorGUILayout.Toggle(_showSpatialGrid, GUILayout.Width(ToggleWidth));
@@ -911,6 +911,7 @@ namespace Grass.Editor
                 case BrushOption.Add:
                     discColor = Color.green;
                     discColor2 = new Color(0, 0.5f, 0, 0.4f);
+                    DrawBrushHeightHandles(_hitPos, _hitNormal);
                     break;
                 case BrushOption.Remove:
                     discColor = Color.red;
@@ -937,6 +938,46 @@ namespace Grass.Editor
             {
                 SceneView.RepaintAll();
                 _cachedPos = _hitPos;
+            }
+        }
+
+        private void DrawBrushHeightHandles(Vector3 basePosition, Vector3 normal)
+        {
+            var height = toolSettings.BrushHeight;
+            var radius = toolSettings.BrushSize;
+         
+            Handles.color = Color.yellow;
+            
+            var topCenter = basePosition + normal * height;
+
+            Handles.DrawWireDisc(topCenter, normal, radius);
+
+            var forward = Vector3.Cross(normal, Vector3.right).normalized;
+            if (forward == Vector3.zero) forward = Vector3.Cross(normal, Vector3.forward).normalized;
+            var right = Vector3.Cross(normal, forward).normalized;
+
+            // Calculate four points on bottom circle
+            var bottomPoints = new[]
+            {
+                basePosition + forward * radius,
+                basePosition - forward * radius,
+                basePosition + right * radius,
+                basePosition - right * radius
+            };
+
+            // Calculate corresponding points on top circle
+            var topPoints = new[]
+            {
+                topCenter + forward * radius,
+                topCenter - forward * radius,
+                topCenter + right * radius,
+                topCenter - right * radius
+            };
+
+            // Draw vertical lines connecting top and bottom circles
+            for (int i = 0; i < 4; i++)
+            {
+                Handles.DrawLine(bottomPoints[i], topPoints[i]);
             }
         }
 
@@ -1094,14 +1135,12 @@ namespace Grass.Editor
         private void ClearMesh()
         {
             Undo.RegisterCompleteObjectUndo(this, "Cleared Grass");
-            _grassData.Clear();
-            _grassCompute.GrassDataList = _grassData;
-            _grassCompute.Reset();
+            _grassCompute.ClearAllGrassData();
 
             // Clear the spatial grid
             _spatialGrid?.Clear();
-
-            UpdateGrassData();
+            InitSpatialGrid();
+            
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
             Debug.Log("Cleared all grass from the scene");
         }
@@ -1193,7 +1232,6 @@ namespace Grass.Editor
             var oNormals = sharedMesh.normals;
 
             var numPoints = CalculatePointsForMesh(sourceMesh);
-            // var updateInterval = GetUpdateInterval(numPoints);
             for (var j = 0; j < numPoints; j++)
             {
                 await UpdateProgress(startPoint + j, totalPoints,
@@ -1268,7 +1306,6 @@ namespace Grass.Editor
                                                       int totalPoints)
         {
             var numPoints = CalculatePointsForTerrain(terrain);
-            // var updateInterval = GetUpdateInterval(numPoints);
             for (var j = 0; j < numPoints; j++)
             {
                 await UpdateProgress(startPoint + j, totalPoints,

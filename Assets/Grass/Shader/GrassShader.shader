@@ -42,8 +42,8 @@ Shader "Custom/TestGrass"
 
 			// -------------------------------------
 			// Shader Stages
-			#pragma vertex vert
-			#pragma fragment frag
+			#pragma vertex Vertex
+			#pragma fragment Fragment
 
 			#pragma shader_feature BLEND
 

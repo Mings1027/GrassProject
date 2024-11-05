@@ -3,7 +3,7 @@
 #ifndef UNIVERSAL_SIMPLE_LIT_INPUT_INCLUDED
 #define UNIVERSAL_SIMPLE_LIT_INPUT_INCLUDED
 
-struct Attributes
+struct VertexData
 {
     float4 positionOS : POSITION;
     float3 normalOS : NORMAL;
@@ -12,7 +12,7 @@ struct Attributes
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
-struct Varyings
+struct FragmentData
 {
     float4 positionCS : SV_POSITION;
     float3 worldPos : TEXCOORD0;

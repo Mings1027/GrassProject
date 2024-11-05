@@ -4,9 +4,9 @@
 
 float3 _LightDirection;
 
-Varyings ShadowPassVertex(Attributes input)
+FragmentData ShadowPassVertex(VertexData input)
 {
-    Varyings output;
+    FragmentData output;
 
     output.terrainBlendingColor = float4(0, 0, 0, 0);
 
@@ -25,7 +25,7 @@ Varyings ShadowPassVertex(Attributes input)
     return output;
 }
 
-half4 ShadowPassFragment(Varyings input) : SV_TARGET
+half4 ShadowPassFragment() : SV_TARGET
 {
     return 0;
 }

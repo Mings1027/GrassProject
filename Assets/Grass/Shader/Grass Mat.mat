@@ -42,7 +42,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AdditionalLightIntensity: 0.521
+    - _AdditionalLightIntensity: 0.5
     - _AdditionalLightShadowStrength: 1
     - _AlphaTestToggle: 0
     - _BlendFloor: 0
@@ -70,7 +70,7 @@ Material:
     - _Surface: 0
     m_Colors:
     - _AdditionalLightColor: {r: 0, g: 0, b: 0, a: 0}
-    - _AdditionalLightShadowColor: {r: 0.021967473, g: 0.0039215684, b: 1, a: 1}
+    - _AdditionalLightShadowColor: {r: 0, g: 0.009653568, b: 1, a: 1}
     - _AmbientAdjustmentColor: {r: 0.7169812, g: 0.7169812, b: 0.7169812, a: 1}
     - _BottomTint: {r: 0.754717, g: 0.18867925, b: 0.18867925, a: 1}
     - _MainLightColorOverride: {r: 0.49056602, g: 0.49056602, b: 0.49056602, a: 1}
