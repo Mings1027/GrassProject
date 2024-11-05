@@ -10,18 +10,14 @@ using Random = UnityEngine.Random;
 
 public class Test : MonoBehaviour
 {
-    [SerializeField] private int count;
-    private List<int> intList1;
-    private List<int> intList2;
-
-    private void Awake()
-    {
-        intList1 = new List<int>();
-        intList2 = new List<int>();
-    }
-
     private void Start()
     {
-        
+#if UNITY_IOS
+        Debug.Log("iOS");
+#endif
+
+#if !UNITY_EDITOR
+        Debug.Log("Editor");
+#endif
     }
 }

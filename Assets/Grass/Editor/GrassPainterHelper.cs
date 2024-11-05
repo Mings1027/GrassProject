@@ -1,4 +1,5 @@
 using Grass.GrassScripts;
+using UnityEditor;
 using UnityEngine;
 
 namespace Grass.Editor
@@ -8,7 +9,7 @@ namespace Grass.Editor
         Add,
         Remove,
         Edit,
-        Reproject
+        Reposition
     }
 
     public enum EditOption
@@ -92,6 +93,16 @@ namespace Grass.Editor
             var dy = a.y - b.y;
             var dz = a.z - b.z;
             return dx * dx + dy * dy + dz * dz;
+        }
+        
+        public static void DrawHorizontalLine(Color color, int thickness = 1, int padding = 10)
+        {
+            Rect rect = EditorGUILayout.GetControlRect(GUILayout.Height(padding + thickness));
+            rect.height = thickness;
+            rect.y += padding/2;
+            rect.x -= 2;
+            rect.width += 6;
+            EditorGUI.DrawRect(rect, color);
         }
     }
 }

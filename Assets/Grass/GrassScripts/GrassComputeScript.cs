@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 #if UNITY_EDITOR
+using Unity.Mathematics;
 using UnityEditor;
 #endif
 
@@ -382,13 +383,10 @@ public class GrassComputeScript : MonoBehaviour
 
     private void UpdateBounds()
     {
-        // Get the bounds of all the grass points and then expand
-        _bounds = new Bounds(grassData[0].position, Vector3.one);
-
+        _bounds = new Bounds();
         for (var i = 0; i < grassData.Count; i++)
         {
-            var target = grassData[i].position;
-            _bounds.Encapsulate(target);
+            _bounds.Encapsulate(grassData[i].position);
         }
     }
 
@@ -613,16 +611,23 @@ public class GrassComputeScript : MonoBehaviour
     private static readonly int BottomTint = Shader.PropertyToID("_BottomTint");
 
 #if UNITY_EDITOR
-    public void UpdateGrassDataFaster()
+    public void UpdateGrassDataFaster(int startIndex = 0, int count = -1)
     {
-        // Update only the necessary buffers
-        _sourceVertBuffer.SetData(grassData);
+        if (count < 0)
+        {
+            count = grassData.Count;
+        }
 
-        // Clear and reset only the necessary buffers
+        count = Math.Min(count, grassData.Count - startIndex);
+
+        if (count <= 0 || startIndex < 0 || startIndex >= grassData.Count)
+            return;
+
+        _sourceVertBuffer.SetData(grassData, startIndex, startIndex, count);
+
         _drawBuffer.SetCounterValue(0);
         _argsBuffer.SetData(_argsBufferReset);
 
-        // Dispatch the compute shader
         _dispatchSize = (_grassVisibleIDList.Count + (int)_threadGroupSize - 1) >> (int)Math.Log(_threadGroupSize, 2);
     }
 #endif

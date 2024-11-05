@@ -215,11 +215,11 @@ void Main(uint id : SV_DispatchThreadID)
 
         float3 totalMovement = 0;
 
-        // Does not respond to the interactor if the grass has been cut
+        // Skip interaction for cut grass
         if (cut < sv.positionWS.y + 0.5)
         {
             float3 offsetWorldPos = sv.positionWS + mul(facingRotationMatrix, float3(0, 0, offset));
-            // For grass interaction in GrassInteractor.cs
+
             for (int p = 0; p < _InteractorsLength; p++)
             {
                 // Calculate the vector from the vertex to the interactor (interaction object)

@@ -11,15 +11,14 @@ namespace Grass.Editor
 
         private float _currentBrushSizeSqr;
         private Vector3 _currentHitPoint;
-        private Vector3 _targetColor;
         private float _deltaTimeSpeed;
 
         public GrassEditPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
             spatialGrid)
         {
-            _cumulativeChanges = CollectionsPool.GetDictionary<int, float>(100);
-            _modifiedGrassData = CollectionsPool.GetDictionary<int, GrassData>(BatchSize);
-            _processedIndices = CollectionsPool.GetHashSet();
+            _cumulativeChanges = CollectionsPool.GetDictionary<int, float>();
+            _modifiedGrassData = CollectionsPool.GetDictionary<int, GrassData>();
+            _processedIndices = CollectionsPool.GetHashSet<int>();
         }
 
         public void EditGrass(Ray mouseRay, GrassToolSettingSo toolSettings, EditOption editOption)
@@ -36,16 +35,6 @@ namespace Grass.Editor
             _currentBrushSizeSqr = toolSettings.BrushSize * toolSettings.BrushSize;
             _deltaTimeSpeed = Time.deltaTime * toolSettings.FalloffOuterSpeed;
 
-            if (editOption is EditOption.EditColors or EditOption.Both)
-            {
-                _targetColor = CalculateNewColor(
-                    toolSettings.BrushColor,
-                    toolSettings.RangeR,
-                    toolSettings.RangeG,
-                    toolSettings.RangeB
-                );
-            }
-
             // 범위 내의 잔디 인덱스들 가져오기
             spatialGrid.GetObjectsInRadius(hit.point, toolSettings.BrushSize, sharedIndices);
 
@@ -57,30 +46,48 @@ namespace Grass.Editor
             if (_modifiedGrassData.Count > 0)
             {
                 ApplyModifications(grassCompute.GrassDataList);
-                grassCompute.UpdateGrassDataFaster();
+                var (startIndex, count) = GetModifiedRange();
+                grassCompute.UpdateGrassDataFaster(startIndex, count);
             }
+        }
+
+        private (int startIndex, int count) GetModifiedRange()
+        {
+            if (_modifiedGrassData.Count == 0)
+                return (-1, 0);
+
+            var minIndex = int.MaxValue;
+            var maxIndex = int.MinValue;
+
+            foreach (var index in _modifiedGrassData.Keys)
+            {
+                minIndex = Mathf.Min(minIndex, index);
+                maxIndex = Mathf.Max(maxIndex, index);
+            }
+
+            return (minIndex, maxIndex - minIndex + 1);
         }
 
         private void ProcessGrassBatch(int startIdx, int endIdx, List<GrassData> grassDataList,
                                        GrassToolSettingSo toolSettings, EditOption editOption)
         {
-            for (int i = startIdx; i < endIdx; i++)
+            for (var i = startIdx; i < endIdx; i++)
             {
-                int index = sharedIndices[i];
+                var index = sharedIndices[i];
 
                 // 이미 처리된 인덱스는 건너뛰기
                 if (_processedIndices.Contains(index)) continue;
 
                 var grassData = grassDataList[index];
-                float distanceSqr = (grassData.position - _currentHitPoint).sqrMagnitude;
+                var distanceSqr = (grassData.position - _currentHitPoint).sqrMagnitude;
 
                 if (distanceSqr <= _currentBrushSizeSqr)
                 {
-                    float distanceFalloff = 1f - (distanceSqr / _currentBrushSizeSqr);
+                    var distanceFalloff = 1f - (distanceSqr / _currentBrushSizeSqr);
 
                     if (editOption is EditOption.EditColors or EditOption.Both)
                     {
-                        ProcessColorEdit(ref grassData, index, distanceFalloff);
+                        ProcessColorEdit(ref grassData, index, distanceFalloff, toolSettings);
                     }
 
                     if (editOption is EditOption.EditWidthHeight or EditOption.Both)
@@ -94,7 +101,8 @@ namespace Grass.Editor
             }
         }
 
-        private void ProcessColorEdit(ref GrassData grassData, int index, float distanceFalloff)
+        private void ProcessColorEdit(ref GrassData grassData, int index, float distanceFalloff,
+                                      GrassToolSettingSo toolSettings)
         {
             _cumulativeChanges.TryAdd(index, 0f);
 
@@ -102,8 +110,14 @@ namespace Grass.Editor
                 _cumulativeChanges[index] + _deltaTimeSpeed * distanceFalloff
             );
 
+            var targetColor = CalculateNewColor(
+                toolSettings.BrushColor,
+                toolSettings.RangeR,
+                toolSettings.RangeG,
+                toolSettings.RangeB
+            );
             var t = _cumulativeChanges[index];
-            grassData.color = Vector3.Lerp(grassData.color, _targetColor, t);
+            grassData.color = Vector3.Lerp(grassData.color, targetColor, t);
         }
 
         private void ProcessWidthHeightEdit(ref GrassData grassData, int index, float distanceFalloff,

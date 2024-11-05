@@ -17,9 +17,9 @@ MonoBehaviour:
   randomHeightMin: 0.2
   randomHeightMax: 0.5
   bladeRadius: 1
-  bladeForward: 0.719
+  bladeForward: 0.7
   bladeCurve: 2
-  bottomWidth: 0.249
+  bottomWidth: 0.25
   minWidth: 0.2
   maxWidth: 2
   minHeight: 0.5

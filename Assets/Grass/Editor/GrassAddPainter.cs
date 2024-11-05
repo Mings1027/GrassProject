@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Grass.Editor
@@ -6,14 +5,10 @@ namespace Grass.Editor
     public sealed class GrassAddPainter : BasePainter
     {
         private Vector3 _lastPosition = Vector3.zero;
-        private readonly List<int> _nearbyIndices;
-        private const float MIN_GRASS_SPACING = 0.1f; // 최소 잔디 간격
+        private const float MinGrassSpacing = 0.1f; // 최소 잔디 간격
 
         public GrassAddPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
-            spatialGrid)
-        {
-            _nearbyIndices = CollectionsPool.GetList(100);
-        }
+            spatialGrid) { }
 
         public void AddGrass(Vector3 hitPos, GrassToolSettingSo toolSettings)
         {
@@ -28,31 +23,30 @@ namespace Grass.Editor
             if (distanceMoved >= brushSize * 0.5f)
             {
                 var grassAdded = false;
-
+                sharedIndices.Clear();
                 for (var i = 0; i < density; i++)
                 {
                     var randomPoint = Random.insideUnitCircle * brushSize;
                     var randomPos = new Vector3(startPos.x + randomPoint.x, startPos.y, startPos.z + randomPoint.y);
 
-                    if (Physics.Raycast(randomPos + Vector3.up * toolSettings.BrushHeight, Vector3.down, out var hit, float.MaxValue))
+                    if (Physics.Raycast(randomPos + Vector3.up * toolSettings.BrushHeight, Vector3.down, out var hit,
+                            float.MaxValue))
                     {
                         var hitLayer = hit.collider.gameObject.layer;
-                        if (((1 << hitLayer) & paintMaskValue) != 0)
+                        if (((1 << hitLayer) & paintMaskValue) != 0 &&
+                            hit.normal.y <= 1 + normalLimit &&
+                            hit.normal.y >= 1 - normalLimit)
                         {
-                            if (hit.normal.y <= 1 + normalLimit && hit.normal.y >= 1 - normalLimit)
-                            {
-                                // 주변 잔디 체크
-                                _nearbyIndices.Clear();
-                                spatialGrid.GetObjectsInRadius(hit.point, MIN_GRASS_SPACING, _nearbyIndices);
+                            // 주변 잔디 체크
+                            spatialGrid.GetObjectsInRadius(hit.point, MinGrassSpacing, sharedIndices);
 
-                                var newData = CreateGrassData(hit.point, hit.normal, toolSettings);
-                                var newIndex = grassCompute.GrassDataList.Count;
+                            var newData = CreateGrassData(hit.point, hit.normal, toolSettings);
+                            var newIndex = grassCompute.GrassDataList.Count;
 
-                                grassCompute.GrassDataList.Add(newData);
-                                spatialGrid.AddObject(hit.point, newIndex);
+                            grassCompute.GrassDataList.Add(newData);
+                            spatialGrid.AddObject(hit.point, newIndex);
 
-                                grassAdded = true;
-                            }
+                            grassAdded = true;
                         }
                     }
                 }
@@ -92,7 +86,6 @@ namespace Grass.Editor
         public override void Clear()
         {
             _lastPosition = Vector3.zero;
-            CollectionsPool.ReturnList(_nearbyIndices);
         }
     }
 }

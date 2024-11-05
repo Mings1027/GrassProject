@@ -30,7 +30,7 @@ public class GrassToolSettingSo : ScriptableObject
     [SerializeField] private float adjustHeight = 0f;
     [SerializeField] private float adjustWidthMax = 2f;
     [SerializeField] private float adjustHeightMax = 2f;
-    [SerializeField] private float reprojectOffset = 1f;
+    [SerializeField] private float repositionOffset = 1f;
 
     [Header("Color Settings")] [SerializeField]
     private float rangeR;
@@ -54,8 +54,8 @@ public class GrassToolSettingSo : ScriptableObject
     private int grassAmountToGenerate = 100000;
     [SerializeField] private float generationDensity = 1f;
 
-    [Header("Input Settings")] public KeyBinding paintKey;
-    public MouseButton paintButton;
+    [Header("Input Settings")] public KeyBinding grassModifierKey;
+    public MouseButton grassMouseButton;
 
     // Constants
     public float MinSizeWidth => 0.01f;
@@ -128,10 +128,10 @@ public class GrassToolSettingSo : ScriptableObject
         get => adjustHeightMax;
         set => adjustHeightMax = Mathf.Max(0.01f, value);
     }
-    public float ReprojectOffset
+    public float RepositionOffset
     {
-        get => reprojectOffset;
-        set => reprojectOffset = value;
+        get => repositionOffset;
+        set => repositionOffset = value;
     }
     public float RangeR
     {

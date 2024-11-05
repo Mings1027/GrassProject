@@ -3,30 +3,12 @@ using UnityEngine;
 
 public class SpatialGrid
 {
-    private readonly Dictionary<long, HashSet<int>> _grid;
+    private readonly Dictionary<long, HashSet<int>> _grid = CollectionsPool.GetDictionary<long, HashSet<int>>();
     private readonly float _cellSize;
     private readonly Vector3 _origin;
 
-    private readonly Queue<HashSet<int>> _hashSetPool;
-
-    private const int PoolSize = 100;
-
     // 임시 리스트를 재사용하기 위한 필드
-    private readonly HashSet<long> _tempCellKeys = new();
-    
-    public int TotalObjectCount
-    {
-        get
-        {
-            var count = 0;
-            foreach (var cell in _grid.Values)
-            {
-                count += cell.Count;
-            }
-
-            return count;
-        }
-    }
+    private readonly HashSet<long> _tempCellKeys = CollectionsPool.GetHashSet<long>();
 
     public float CellSize => _cellSize;
 
@@ -34,43 +16,13 @@ public class SpatialGrid
     {
         _cellSize = cellSize;
         _origin = bounds.min;
-        _grid = new Dictionary<long, HashSet<int>>(1000);
-        _hashSetPool = new Queue<HashSet<int>>(PoolSize);
-        InitializePool();
-    }
-
-    private void InitializePool()
-    {
-        for (var i = 0; i < PoolSize; i++)
-        {
-            _hashSetPool.Enqueue(new HashSet<int>(50));
-        }
-    }
-
-    private HashSet<int> GetHashSet()
-    {
-        if (_hashSetPool.Count > 0)
-        {
-            return _hashSetPool.Dequeue();
-        }
-
-        return new HashSet<int>(50);
-    }
-
-    private void ReturnHashSet(HashSet<int> hashSet)
-    {
-        hashSet.Clear();
-        if (_hashSetPool.Count < PoolSize)
-        {
-            _hashSetPool.Enqueue(hashSet);
-        }
     }
 
     public static long GetKey(int x, int y, int z)
     {
-        // 비트 마스크를 상수로 정의
-        const long mask = 0x1FFFFF;
-        return (x & mask) | ((y & mask) << 21) | ((z & mask) << 42);
+        const int bits = 21;
+        const long mask = ((long)1 << bits) - 1;
+        return (x & mask) | ((y & mask) << bits) | ((z & mask) << bits * 2);
     }
 
     public bool HasAnyObject(long key)
@@ -85,7 +37,7 @@ public class SpatialGrid
 
         if (!_grid.TryGetValue(key, out var cellSet))
         {
-            cellSet = GetHashSet();
+            cellSet = CollectionsPool.GetHashSet<int>(10);
             _grid[key] = cellSet;
         }
 
@@ -103,7 +55,7 @@ public class SpatialGrid
             if (cellSet.Count == 0)
             {
                 _grid.Remove(key);
-                ReturnHashSet(cellSet);
+                CollectionsPool.ReturnHashSet(cellSet);
             }
         }
     }
@@ -156,7 +108,7 @@ public class SpatialGrid
     {
         foreach (var cellSet in _grid.Values)
         {
-            ReturnHashSet(cellSet);
+            CollectionsPool.ReturnHashSet(cellSet);
         }
 
         _grid.Clear();

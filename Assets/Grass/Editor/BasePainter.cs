@@ -5,17 +5,12 @@ namespace Grass.Editor
 {
     public abstract class BasePainter
     {
-        protected GrassComputeScript grassCompute;
-        protected SpatialGrid spatialGrid;
-        protected readonly List<int> sharedIndices = CollectionsPool.GetList();
-        protected const int BatchSize = 100;
+        protected readonly GrassComputeScript grassCompute;
+        protected readonly SpatialGrid spatialGrid;
+        protected readonly List<int> sharedIndices = CollectionsPool.GetList<int>();
+        private const int BatchSize = 100;
 
         protected BasePainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
-        {
-            Initialize(grassCompute, spatialGrid);
-        }
-
-        public void Initialize(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
         {
             this.grassCompute = grassCompute;
             this.spatialGrid = spatialGrid;

@@ -5,101 +5,27 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="84e81331-7910-473f-9ad1-7a03a025416d" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Assets/Grass/Editor/CollectionsPool.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/New Shader Graph.shadergraph" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/New Shader Graph.shadergraph.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scenes/TestScene.unity" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Shader Graphs_New Shader Graph.mat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/CollectionsPool.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/BasePainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/BasePainter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/CollectionsPool.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/CollectionsPool.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/CollectionsPool.cs.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassAddPainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassAddPainter.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassEditPainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassEditPainter.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterHelper.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterHelper.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassRemovePainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassRemovePainter.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassReprojectPainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassReprojectPainter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassReprojectPainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassRepositionPainter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassReprojectPainter.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassRepositionPainter.cs.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/SpatialGrid.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/SpatialGrid.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassToolSettingSO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassToolSettingSO.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassBlades.compute" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassBlades.compute" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Shader Graphs_New Shader Graph.mat.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Models.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Models/Flower1.fbx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Models/Flower1.fbx.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Models/Flower2.fbx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Models/Flower2.fbx.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Models/Flower3.fbx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Models/Flower3.fbx.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Models/Flower4.fbx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Models/Flower4.fbx.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Models/Flower5.fbx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Models/Flower5.fbx.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Prefabs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Prefabs/Flower1.prefab" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Prefabs/Flower1.prefab.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Prefabs/Flower2.prefab" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Prefabs/Flower2.prefab.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Prefabs/Flower3.prefab" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Prefabs/Flower3.prefab.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Prefabs/Flower4.prefab" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Prefabs/Flower4.prefab.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Prefabs/Flower5.prefab" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Flowers/Prefabs/Flower5.prefab.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Materials.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Materials/Grass1.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Materials/Grass1.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Materials/Grass2.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Materials/Grass2.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Materials/Grass3.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Materials/Grass3.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Materials/Grass4.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Materials/Grass4.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Materials/Grass5.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Materials/Grass5.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Materials/Grass6.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Materials/Grass6.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Models.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Models/Grass1.fbx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Models/Grass1.fbx.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Models/Grass2.fbx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Models/Grass2.fbx.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Models/Grass3.fbx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Models/Grass3.fbx.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Models/Grass4.fbx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Models/Grass4.fbx.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Models/Grass5.fbx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Models/Grass5.fbx.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Models/Grass6.fbx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Models/Grass6.fbx.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Prefabs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Prefabs/Grass1.prefab" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Prefabs/Grass1.prefab.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Prefabs/Grass2.prefab" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Prefabs/Grass2.prefab.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Prefabs/Grass3.prefab" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Prefabs/Grass3.prefab.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Prefabs/Grass4.prefab" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Prefabs/Grass4.prefab.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Prefabs/Grass5.prefab" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Prefabs/Grass5.prefab.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Prefabs/Grass6.prefab" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Grass/Prefabs/Grass6.prefab.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/GrassAndFlower.unity" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/GrassAndFlower.unity.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/GrassGround.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/GrassGround.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Info.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Nature/GrassAndFlowers/Info.txt.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/TestScene.unity.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/CollectionsPool.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/CollectionsPool.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/CollectionsPool.cs.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Settings/UniversalRenderPipelineGlobalSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Settings/UniversalRenderPipelineGlobalSettings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/TestScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/TestScene.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Test.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Test.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -160,7 +86,7 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/7a/1a0cc8a4/GameObject.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/8f/eee2a01f/Debug.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/be/14d296d7/MeshFilter.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/bf/a066736f/ComputeBuffer.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/bf/a066736f/ComputeBuffer.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/c3/1d6b62a9/Mesh.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/9813d164b8404166af09825a040c4c789ace00/1a/abc1b6a7/Handles.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/9813d164b8404166af09825a040c4c789ace00/26/32608940/EditorGUILayout.cs" root0="SKIP_HIGHLIGHTING" />
@@ -179,23 +105,27 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/cf76873c49254ed6ad9c71039de1d4721e400/58/066437c3/TerrainData.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/cf76873c49254ed6ad9c71039de1d4721e400/cf/852ab8d2/Terrain.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/d3422287e15c4730bca1c333bb8637919b4400/da/c7a96f29/InternalEditorUtility.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/12/622d6709/IEquatable`1.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/2a/9d7821a5/CollectionExtensions.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/a0/fc17f4c1/Dictionary`2.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/bc/559ad89a/Convert.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/c5/3191266e/Index.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/ed/eb774271/List`1.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/e76ba1f9dd9946efbeaff28ca747bde931600/19/a8236931/Event.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/e76ba1f9dd9946efbeaff28ca747bde931600/29/766e3f77/GUIContent.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/e76ba1f9dd9946efbeaff28ca747bde931600/92/2c9b09bf/GUILayout.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/fd7d12fa183547d8a6812db17fb089862ac00/04/d45a8a1c/QueryParameters.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/fd7d12fa183547d8a6812db17fb089862ac00/ec/e8293d13/RaycastCommand.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3ea01e77be99618395f448b16bd7cc2bd4248bd9e5d8474964b2d97f39c5d74/System.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3ea01e77be99618395f448b16bd7cc2bd4248bd9e5d8474964b2d97f39c5d74/System.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/7d303c2bf72cd4cec95665b89c457d265d2b8ef3ed6da17cd4f85587c2f9de7/System.Linq.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/8a522b806eac9bb894e6e4c5fe87f353457535e769447e79c6b396beecb5d0/System.Threading.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/d44b17e136d09081da1e8fd0e8c83fde60e11818b9f2442d7ed8cb733fae895e/System.Collections.Generic.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.cysharp.unitask/Runtime/Internal/ArrayPool.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.cysharp.unitask/Runtime/UniTask.Run.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.cysharp.unitask/Runtime/UniTask.WhenAll.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.cysharp.unitask/Runtime/UniTaskScheduler.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.collections/Unity.Collections/NativeSort.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.mathematics/Unity.Mathematics/math.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../RogueDefense/Assets/Scripts/EventControl/CameraEventManager.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../RogueDefense/Assets/Scripts/EventControl/EventManager.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../RogueDefense/Assets/Scripts/EventControl/SoundEventManager.cs" root0="SKIP_HIGHLIGHTING" />
@@ -378,6 +308,7 @@
       <workItem from="1730536983312" duration="1402000" />
       <workItem from="1730558387276" duration="1131000" />
       <workItem from="1730727308179" duration="877000" />
+      <workItem from="1730763208350" duration="23164000" />
     </task>
     <servers />
   </component>
