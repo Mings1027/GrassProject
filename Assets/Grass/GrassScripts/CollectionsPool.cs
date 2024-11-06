@@ -21,6 +21,13 @@ public static class CollectionsPool
             return Pool.Count > 0 ? Pool.Pop() : new List<T>(capacity);
         }
 
+        public static List<T> Get(IEnumerable<T> collection)
+        {
+            var list = Pool.Count > 0 ? Pool.Pop() : new List<T>();
+            list.AddRange(collection);
+            return list;
+        }
+
         public static void Return(List<T> list)
         {
             if (list == null) return;
@@ -47,6 +54,17 @@ public static class CollectionsPool
         public static HashSet<T> Get(int capacity = 100)
         {
             return Pool.Count > 0 ? Pool.Pop() : new HashSet<T>(capacity);
+        }
+
+        public static HashSet<T> Get(IEnumerable<T> collection)
+        {
+            var set = Pool.Count > 0 ? Pool.Pop() : new HashSet<T>();
+            foreach (var item in collection)
+            {
+                set.Add(item);
+            }
+
+            return set;
         }
 
         public static void Return(HashSet<T> set)
@@ -77,6 +95,28 @@ public static class CollectionsPool
             return Pool.Count > 0 ? Pool.Pop() : new Dictionary<TKey, TValue>(capacity);
         }
 
+        public static Dictionary<TKey, TValue> Get(IDictionary<TKey, TValue> dictionary)
+        {
+            var dict = Pool.Count > 0 ? Pool.Pop() : new Dictionary<TKey, TValue>();
+            foreach (var kvp in dictionary)
+            {
+                dict.Add(kvp.Key, kvp.Value);
+            }
+
+            return dict;
+        }
+
+        public static Dictionary<TKey, TValue> Get(IEnumerable<KeyValuePair<TKey, TValue>> collection)
+        {
+            var dict = Pool.Count > 0 ? Pool.Pop() : new Dictionary<TKey, TValue>();
+            foreach (var kvp in collection)
+            {
+                dict.Add(kvp.Key, kvp.Value);
+            }
+
+            return dict;
+        }
+
         public static void Return(Dictionary<TKey, TValue> dictionary)
         {
             if (dictionary == null) return;
@@ -93,6 +133,11 @@ public static class CollectionsPool
         return ListPool<T>.Get(capacity);
     }
 
+    public static List<T> GetList<T>(IEnumerable<T> collection)
+    {
+        return ListPool<T>.Get(collection);
+    }
+
     public static void ReturnList<T>(List<T> list)
     {
         ListPool<T>.Return(list);
@@ -103,6 +148,11 @@ public static class CollectionsPool
         return HashSetPool<T>.Get(capacity);
     }
 
+    public static HashSet<T> GetHashSet<T>(IEnumerable<T> collection)
+    {
+        return HashSetPool<T>.Get(collection);
+    }
+
     public static void ReturnHashSet<T>(HashSet<T> set)
     {
         HashSetPool<T>.Return(set);
@@ -111,6 +161,17 @@ public static class CollectionsPool
     public static Dictionary<TKey, TValue> GetDictionary<TKey, TValue>(int capacity = 100)
     {
         return DictionaryPool<TKey, TValue>.Get(capacity);
+    }
+
+    public static Dictionary<TKey, TValue> GetDictionary<TKey, TValue>(IDictionary<TKey, TValue> dictionary)
+    {
+        return DictionaryPool<TKey, TValue>.Get(dictionary);
+    }
+
+    public static Dictionary<TKey, TValue> GetDictionary<TKey, TValue>(
+        IEnumerable<KeyValuePair<TKey, TValue>> collection)
+    {
+        return DictionaryPool<TKey, TValue>.Get(collection);
     }
 
     public static void ReturnDictionary<TKey, TValue>(Dictionary<TKey, TValue> dictionary)

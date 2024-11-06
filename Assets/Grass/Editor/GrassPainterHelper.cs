@@ -63,7 +63,7 @@ namespace Grass.Editor
         {
             if (keyBindings == KeyBinding.None) return true;
 
-            bool isPressed = true;
+            var isPressed = true;
 
             if (keyBindings.HasFlag(KeyBinding.LeftControl) ||
                 keyBindings.HasFlag(KeyBinding.RightControl))
@@ -85,7 +85,7 @@ namespace Grass.Editor
         {
             return Event.current.button == (int)button;
         }
-           
+
         // 최적화된 거리 계산 (제곱근 계산 제거)
         public static float SqrDistance(Vector3 a, Vector3 b)
         {
@@ -94,12 +94,12 @@ namespace Grass.Editor
             var dz = a.z - b.z;
             return dx * dx + dy * dy + dz * dz;
         }
-        
+
         public static void DrawHorizontalLine(Color color, int thickness = 1, int padding = 10)
         {
-            Rect rect = EditorGUILayout.GetControlRect(GUILayout.Height(padding + thickness));
+            var rect = EditorGUILayout.GetControlRect(GUILayout.Height(padding + thickness));
             rect.height = thickness;
-            rect.y += padding/2;
+            rect.y += (float)padding / 2;
             rect.x -= 2;
             rect.width += 6;
             EditorGUI.DrawRect(rect, color);

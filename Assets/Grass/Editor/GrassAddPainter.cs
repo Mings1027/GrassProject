@@ -85,6 +85,7 @@ namespace Grass.Editor
 
         public override void Clear()
         {
+            base.Clear();
             _lastPosition = Vector3.zero;
         }
     }

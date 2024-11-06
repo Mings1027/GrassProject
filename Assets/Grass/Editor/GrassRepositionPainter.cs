@@ -69,7 +69,7 @@ namespace Grass.Editor
                         grassData.position.z
                     );
 
-                    if (Physics.Raycast(meshPoint, Vector3.down, out var hitInfo, 200f, paintMask))
+                    if (Physics.Raycast(meshPoint, Vector3.down, out var hitInfo, float.MaxValue, paintMask))
                     {
                         var newData = grassData;
                         newData.position = hitInfo.point;

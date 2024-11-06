@@ -82,7 +82,7 @@ namespace Grass.Editor
             {
                 _grassList.RemoveRange(_grassList.Count - removeCount, removeCount);
                 grassCompute.GrassDataList = _grassList;
-                grassCompute.UpdateGrassDataFaster();
+                grassCompute.ResetFaster();
             }
         }
 

@@ -33,7 +33,7 @@ namespace Grass.Editor
             // 자주 사용되는 값들을 미리 계산
             _currentHitPoint = hit.point;
             _currentBrushSizeSqr = toolSettings.BrushSize * toolSettings.BrushSize;
-            _deltaTimeSpeed = Time.deltaTime * toolSettings.FalloffOuterSpeed;
+            _deltaTimeSpeed = Time.deltaTime * toolSettings.BrushTransitionSpeed;
 
             // 범위 내의 잔디 인덱스들 가져오기
             spatialGrid.GetObjectsInRadius(hit.point, toolSettings.BrushSize, sharedIndices);
