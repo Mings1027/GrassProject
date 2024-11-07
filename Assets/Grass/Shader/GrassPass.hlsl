@@ -1,6 +1,6 @@
 #include "GrassInput.hlsl"
 #include "Grass.hlsl"
-#include "CustomLighting.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
 half4 SampleTerrainTexture(half3 worldPos)
 {
@@ -54,6 +54,61 @@ half3 CalculateMainLight(half3 albedo, half3 normalWS, half3 worldPos)
     return ambient + diffuse;
 }
 
+float3 CalculateAdditionalLight(float3 worldPos, float3 worldNormal, float lightIntensity,
+                                float shadowStrength, float3 additionalShadowColor)
+{
+    uint pixelLightCount = GetAdditionalLightsCount();
+    InputData inputData;
+    float4 screenPos = ComputeScreenPos(TransformWorldToHClip(worldPos));
+    inputData.normalizedScreenSpaceUV = screenPos.xy / screenPos.w;
+    inputData.positionWS = worldPos;
+
+    float3 diffuseColor = 0;
+
+    LIGHT_LOOP_BEGIN(pixelLightCount)
+        Light light;
+        #if _MAIN_LIGHT_SHADOWS_CASCADE || _MAIN_LIGHT_SHADOWS
+    half4 shadowMask = CalculateShadowMask(inputData);
+    light = GetAdditionalLight(lightIndex, worldPos, shadowMask);
+        #else
+        light = GetAdditionalLight(lightIndex, worldPos);
+        #endif
+        #ifdef _LIGHT_LAYERS
+    if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
+        #endif
+        {
+            /*===================================================================================================
+            *
+            *  이 아래 코드 잘되긴함 근데 왜 되는지 모르겠음 괘씸함
+            *
+             ===================================================================================================*/
+            float3 lightColor = light.color * light.distanceAttenuation * lightIntensity;
+            float3 lightContribution = LightingLambert(lightColor, light.direction, worldNormal);
+
+            float shadowAttenuation = light.shadowAttenuation;
+            float calculatedShadowStrength = shadowStrength * (1 - shadowAttenuation);
+
+            float3 shadowedColor = lerp(lightContribution,
+                                        additionalShadowColor * dot(lightContribution, float3(0.299, 0.587, 0.114)),
+                                        calculatedShadowStrength);
+
+            diffuseColor += shadowedColor;
+        }
+    LIGHT_LOOP_END
+    return diffuseColor;
+}
+
+half3 CalculateRimLight(half3 normalWS, half3 viewDirWS)
+{
+    half3 lightDir = GetMainLight().direction;
+    half t = smoothstep(0, 0.1, lightDir.y);
+    half rimDot = 1 - dot(normalWS, viewDirWS);
+    half rimPower = pow(rimDot, _RimPower);
+    half rimIntensity = rimPower * _RimIntensity;
+    half3 rimColor = rimIntensity * _RimColor * t;
+    return rimColor;
+}
+
 half3 AdjustSaturation(half3 color, half saturation)
 {
     half grey = dot(color, half3(0.2126, 0.7152, 0.0722));
@@ -92,14 +147,17 @@ half4 Fragment(FragmentData input) : SV_Target
 
     CalculateCutOff(input.extraBuffer.x, input.worldPos.y);
 
-    half3 mainLight = CalculateMainLight(baseColor.rgb, input.normalWS, input.worldPos);
+    half3 mainLighting = CalculateMainLight(baseColor.rgb, input.normalWS, input.worldPos);
 
     half3 additionalLight = CalculateAdditionalLight(input.worldPos, input.normalWS, _AdditionalLightIntensity,
-                                                           _AdditionalLightShadowStrength,
-                                                           _AdditionalLightShadowColor.rgb);
+                                                     _AdditionalLightShadowStrength, _AdditionalShadowColor.rgb);
 
-    half3 finalColor = mainLight + additionalLight;
+    // 뷰 방향 계산
+    half3 viewDirWS = normalize(_WorldSpaceCameraPos - input.worldPos);
 
+    half3 rimLight = CalculateRimLight(input.normalWS, viewDirWS);
+
+    half3 finalColor = mainLighting + additionalLight + rimLight;
 
     finalColor *= _OverallIntensity;
     finalColor = CustomNeutralToneMapping(finalColor, _Exposure);

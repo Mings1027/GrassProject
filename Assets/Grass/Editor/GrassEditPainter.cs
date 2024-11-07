@@ -21,9 +21,10 @@ namespace Grass.Editor
             _processedIndices = CollectionsPool.GetHashSet<int>();
         }
 
-        public void EditGrass(Ray mouseRay, GrassToolSettingSo toolSettings, EditOption editOption)
+        public void EditGrass(Vector3 hitPos, GrassToolSettingSo toolSettings, EditOption editOption)
         {
-            if (!Physics.Raycast(mouseRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
+            var startPos = hitPos + Vector3.up * toolSettings.BrushHeight;
+            if (!Physics.Raycast(startPos, Vector3.down, out var hit, float.MaxValue, toolSettings.PaintMask.value))
                 return;
 
             sharedIndices.Clear();

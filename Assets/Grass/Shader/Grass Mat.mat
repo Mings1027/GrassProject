@@ -60,6 +60,14 @@ Material:
     - _Metallic: 1
     - _NightColorMultiplier: 1
     - _OverallIntensity: 1
+    - _RimGradientEnd: 0.163
+    - _RimGradientStart: 0
+    - _RimIntensity: 2
+    - _RimPower: 8.44
+    - _SSSAttenuation: 1
+    - _SSSDistortion: 0.531
+    - _SSSPower: 1.33
+    - _SSSScale: 2
     - _Saturation: 1
     - _ShadowLightBlend: 0.874
     - _ShadowLightIntensity: 1
@@ -71,10 +79,13 @@ Material:
     m_Colors:
     - _AdditionalLightColor: {r: 0, g: 0, b: 0, a: 0}
     - _AdditionalLightShadowColor: {r: 0, g: 0.009653568, b: 1, a: 1}
+    - _AdditionalShadowColor: {r: 0, g: 0.16732645, b: 1, a: 1}
     - _AmbientAdjustmentColor: {r: 0.7169812, g: 0.7169812, b: 0.7169812, a: 1}
     - _BottomTint: {r: 0.754717, g: 0.18867925, b: 0.18867925, a: 1}
     - _MainLightColorOverride: {r: 0.49056602, g: 0.49056602, b: 0.49056602, a: 1}
     - _MainLightShadowColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _RimColor: {r: 1, g: 0.44390854, b: 0.02352941, a: 1}
+    - _SSSColor: {r: 1, g: 0, b: 0.08064842, a: 1}
     - _ShadowColor: {r: 1, g: 0, b: 0, a: 1}
     - _ShadowLightColor: {r: 0.5660378, g: 0.54200786, b: 0.54200786, a: 1}
     - _ShadowLightInteractionColor: {r: 0.6603774, g: 0.6261125, b: 0.6261125, a: 1}

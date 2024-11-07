@@ -905,34 +905,26 @@ namespace Grass.Editor
                 _hitNormal = hit.normal;
             }
 
-            //base
-            // Color discColor;
             Color discColor2;
             switch (_selectedToolOption)
             {
                 case BrushOption.Add:
-                    // discColor = Color.green;
                     discColor2 = new Color(0, 0.5f, 0, 0.4f);
                     DrawBrushHeightHandles(_hitPos);
                     break;
                 case BrushOption.Remove:
-                    // discColor = Color.red;
                     discColor2 = new Color(0.5f, 0f, 0f, 0.4f);
                     break;
                 case BrushOption.Edit:
-                    // discColor = Color.yellow;
                     discColor2 = new Color(0.5f, 0.5f, 0f, 0.4f);
                     break;
                 case BrushOption.Reposition:
-                    // discColor = Color.cyan;
                     discColor2 = new Color(0, 0.5f, 0.5f, 0.4f);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
 
-            // Handles.color = discColor;
-            // Handles.DrawWireDisc(_hitPos, _hitNormal, toolSettings.BrushSize);
             Handles.color = discColor2;
             Handles.DrawSolidDisc(_hitPos, _hitNormal, toolSettings.BrushSize);
 
@@ -1603,7 +1595,7 @@ namespace Grass.Editor
             Undo.RegisterCompleteObjectUndo(_grassCompute, "Modified Color");
     
             // 기존 데이터의 깊은 복사본 생성 
-            var grassData = CollectionsPool.GetList(_grassCompute.GrassDataList);
+            var grassData = new List<GrassData>(_grassCompute.GrassDataList);
 
             for (var i = 0; i < grassData.Count; i++)
             {
@@ -1614,10 +1606,8 @@ namespace Grass.Editor
 
             // 수정된 데이터를 _grassCompute에 할당
             _grassCompute.GrassDataList = grassData;
-    
             // 변경사항 적용
             RebuildMesh();
-            CollectionsPool.ReturnList(grassData);
             // Scene을 더티 상태로 표시
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
@@ -1628,9 +1618,8 @@ namespace Grass.Editor
             Undo.RegisterCompleteObjectUndo(_grassCompute, "Modified Length/Width");
 
             // 기존 데이터의 깊은 복사본 생성
-            var grassData = CollectionsPool.GetList(_grassCompute.GrassDataList);
+            var grassData = new List<GrassData>(_grassCompute.GrassDataList);
 
-            // 각 데이터 수정
             for (var i = 0; i < grassData.Count; i++)
             {
                 var newData = grassData[i];
@@ -1643,8 +1632,6 @@ namespace Grass.Editor
 
             // 변경사항 적용
             RebuildMesh();
-            CollectionsPool.ReturnList(grassData);
-
             // Scene을 더티 상태로 표시
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
@@ -1695,11 +1682,10 @@ namespace Grass.Editor
                     _grassRemovePainter.RemoveGrass(_hitPos, toolSettings.BrushSize);
                     break;
                 case BrushOption.Edit:
-                    _grassEditPainter.EditGrass(_mousePointRay, toolSettings, _selectedEditOption);
+                    _grassEditPainter.EditGrass(_hitPos, toolSettings, _selectedEditOption);
                     break;
                 case BrushOption.Reposition:
-                    _grassRepositionPainter.RepositionGrass(_mousePointRay, toolSettings.PaintMask.value,
-                        toolSettings.BrushSize, toolSettings.RepositionOffset);
+                    _grassRepositionPainter.RepositionGrass(_hitPos, toolSettings);
                     break;
             }
         }

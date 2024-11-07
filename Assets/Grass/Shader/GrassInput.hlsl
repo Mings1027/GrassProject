@@ -30,12 +30,18 @@ float4 _BottomTint;
 // Additional Light
 float _AdditionalLightIntensity;
 float _AdditionalLightShadowStrength;
-float4 _AdditionalLightShadowColor;
+float4 _AdditionalShadowColor;
 
 // Tone Mapping
 float _Saturation;
 float _OverallIntensity;
 float _Exposure;
+
+half4 _RimColor;
+half _RimPower;
+half _RimIntensity;
+half _RimGradientStart;
+half _RimGradientEnd;
 
 // Blend
 float _BlendMult, _BlendOff;

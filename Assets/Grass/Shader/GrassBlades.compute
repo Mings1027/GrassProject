@@ -49,7 +49,7 @@ RWStructuredBuffer<IndirectArgs> _IndirectArgsBuffer; // Read-write buffer
 // Limited values since the buffer size needs to be specified in GrassCompute
 #define GRASS_BLADES 10 // Number of grass blades per vertex
 #define GRASS_SEGMENTS 3 // Number of segments per blade
-#define GRASS_NUM_VERTICES_PER_BLADE (GRASS_SEGMENTS * 2)+ 1 // Number of vertices per blade
+#define GRASS_NUM_VERTICES_PER_BLADE (GRASS_SEGMENTS * 2)+ 2 // Number of vertices per blade
 
 // ----------------------------------------
 
@@ -176,7 +176,8 @@ void Main(uint id : SV_DispatchThreadID)
     int numBladesPerVertex = min(GRASS_BLADES, max(1, _MaxBladesPerVertex)); // Set the number of blades per vertex
     int numSegmentsPerBlade = min(GRASS_SEGMENTS, max(1, _MaxSegmentsPerBlade)); // Set the number of segments per blade
     // -1 is because the top part of the grass only has 1 triangle
-    int numTrianglesPerBlade = (numSegmentsPerBlade - 1) * 2 + 1; // Triangles per blade
+    int numQuadsPerBlade = numSegmentsPerBlade;  // 이제는 quad 단위로 계산
+    int numTrianglesPerBlade = numQuadsPerBlade * 2;  // 각 quad는 2개의 삼각형
 
     // Set normals
     float3 faceNormal = sv.normalOS; // Normal in object space
@@ -277,22 +278,34 @@ void Main(uint id : SV_DispatchThreadID)
         }
         // Append Top Vertex
         float3 topPosOS = sv.positionWS + totalMovement + wind + faceNormal * _GrassHeight;
-        drawVertices[numSegmentsPerBlade * 2] = GrassVertex(topPosOS, 0, _GrassHeight, offset, _BladeForward,
-                                                            float2(0.5, 1), facingRotationMatrix);
-        
+        float t = 1 / (float)numSegmentsPerBlade;
+        float topWidth = _GrassWidth * (1 - t) * 0.5; // 마지막 세그먼트 너비의 절반
+        drawVertices[numSegmentsPerBlade * 2] = GrassVertex(topPosOS, topWidth, _GrassHeight, offset, _BladeForward,
+                                                            float2(0, 1), facingRotationMatrix);
+        drawVertices[numSegmentsPerBlade * 2 + 1] = GrassVertex(topPosOS, -topWidth, _GrassHeight, offset, _BladeForward,
+                                                            float2(1, 1), facingRotationMatrix);
         // Add to the drawbuffer to be read by the final shader
-        for (int k = 0; k < numTrianglesPerBlade; ++k)
+        for (int k = 0; k < numTrianglesPerBlade; k+=2)
         {
+            int quadIndex = k / 2;
             DrawTriangle tri = (DrawTriangle)0;
             tri.normalOS = faceNormal;
             tri.diffuseColor = sv.color;
             tri.extraBuffer = float4(cut, 0, 0, 0);
-            tri.vertices[0] = drawVertices[k];
-            tri.vertices[1] = drawVertices[k + 1];
-            tri.vertices[2] = drawVertices[k + 2];
+    
+            // 각 quad의 첫번째 삼각형
+            tri.vertices[0] = drawVertices[quadIndex * 2];
+            tri.vertices[1] = drawVertices[quadIndex * 2 + 1];
+            tri.vertices[2] = drawVertices[quadIndex * 2 + 2];
             _DrawTriangles.Append(tri);
 
-            localVertexCount += 3;
+            // 각 quad의 두번째 삼각형
+            tri.vertices[0] = drawVertices[quadIndex * 2 + 1];
+            tri.vertices[1] = drawVertices[quadIndex * 2 + 3];
+            tri.vertices[2] = drawVertices[quadIndex * 2 + 2];
+            _DrawTriangles.Append(tri);
+
+            localVertexCount += 6;
         }
     }
 

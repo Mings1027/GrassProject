@@ -32,7 +32,6 @@ namespace Grass.Editor
             sharedIndices.Clear();
             _indicesToRemove.Clear();
 
-            // SpatialGrid 검색 시간 측정
             spatialGrid.GetObjectsInRadius(hitPoint, radius, sharedIndices);
 
             if (sharedIndices.Count == 0) return;

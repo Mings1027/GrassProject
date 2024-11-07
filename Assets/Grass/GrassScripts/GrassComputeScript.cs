@@ -17,7 +17,7 @@ public class GrassComputeScript : MonoBehaviour
     private Camera _mainCamera; // main camera
     public GrassSettingSO currentPresets; // grass settings to send to the compute shader
     private List<GrassInteractor> _interactors;
-    [SerializeField, HideInInspector] private List<GrassData> grassData = new(); // base data lists
+    [SerializeField] private List<GrassData> grassData = new(); // base data lists
     private readonly List<int> _grassList = new();
     private List<int> _grassVisibleIDList = new(); // list of all visible grass ids, rest are culled
     // private bool _initialized; // A state variable to help keep track of whether compute buffers have been set up

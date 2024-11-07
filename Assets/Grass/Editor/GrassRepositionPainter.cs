@@ -13,24 +13,25 @@ namespace Grass.Editor
             _changedIndices = CollectionsPool.GetList<int>();
         }
 
-        public void RepositionGrass(Ray mousePointRay, LayerMask paintMask, float brushSize, float offset)
+        public void RepositionGrass(Vector3 hitPos, GrassToolSettingSo toolSettings)
         {
-            if (!Physics.Raycast(mousePointRay, out var hit, float.MaxValue, paintMask))
+            var startPos = hitPos + Vector3.up * toolSettings.BrushHeight;
+            if (!Physics.Raycast(startPos, Vector3.down, out var hit, float.MaxValue, toolSettings.PaintMask.value))
                 return;
 
             var hitPoint = hit.point;
-            var brushSizeSqr = brushSize * brushSize;
+            var brushSizeSqr = toolSettings.BrushSize * toolSettings.BrushSize;
 
             // SpatialGrid를 사용하여 브러시 영역 내의 잔디 인덱스들을 가져옴
             sharedIndices.Clear();
             _changedIndices.Clear();
-            spatialGrid.GetObjectsInRadius(hitPoint, brushSize, sharedIndices);
+            spatialGrid.GetObjectsInRadius(hitPoint, toolSettings.BrushSize, sharedIndices);
 
             var grassList = grassCompute.GrassDataList;
 
             // 배치 처리 적용
             ProcessInBatches(sharedIndices, (start, end) =>
-                ProcessGrassBatch(start, end, grassList, hitPoint, brushSizeSqr, paintMask, offset));
+                ProcessGrassBatch(start, end, grassList, hitPoint, brushSizeSqr, toolSettings));
 
             if (_changedIndices.Count > 0)
             {
@@ -53,7 +54,7 @@ namespace Grass.Editor
         }
 
         private void ProcessGrassBatch(int startIdx, int endIdx, List<GrassData> grassList,
-                                       Vector3 hitPoint, float brushSizeSqr, LayerMask paintMask, float offset)
+                                       Vector3 hitPoint, float brushSizeSqr, GrassToolSettingSo toolSettings)
         {
             for (var i = startIdx; i < endIdx; i++)
             {
@@ -63,13 +64,14 @@ namespace Grass.Editor
 
                 if (distanceSqr <= brushSizeSqr)
                 {
-                    var meshPoint = new Vector3(
+                    var origin = new Vector3(
                         grassData.position.x,
-                        grassData.position.y + offset,
+                        grassData.position.y + toolSettings.BrushHeight,
                         grassData.position.z
                     );
 
-                    if (Physics.Raycast(meshPoint, Vector3.down, out var hitInfo, float.MaxValue, paintMask))
+                    if (Physics.Raycast(origin, Vector3.down, out var hitInfo, float.MaxValue,
+                            toolSettings.PaintMask.value))
                     {
                         var newData = grassData;
                         newData.position = hitInfo.point;
