@@ -33,6 +33,7 @@ public class TestCutting : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+        if (!updateCuts) return;
         Gizmos.color = new Color(1, 0, 0);
         Gizmos.DrawWireSphere(transform.position, radius);
     }

@@ -23,7 +23,7 @@ namespace Grass.Editor
             if (distanceMoved >= brushSize * 0.5f)
             {
                 var grassAdded = false;
-                sharedIndices.Clear();
+                // sharedIndices.Clear();
                 for (var i = 0; i < density; i++)
                 {
                     var randomPoint = Random.insideUnitCircle * brushSize;
@@ -38,7 +38,7 @@ namespace Grass.Editor
                             hit.normal.y >= 1 - normalLimit)
                         {
                             // 주변 잔디 체크
-                            spatialGrid.GetObjectsInRadius(hit.point, MinGrassSpacing, sharedIndices);
+                            // spatialGrid.GetObjectsInRadius(hit.point, MinGrassSpacing, sharedIndices);
 
                             var newData = CreateGrassData(hit.point, hit.normal, toolSettings);
                             var newIndex = grassCompute.GrassDataList.Count;

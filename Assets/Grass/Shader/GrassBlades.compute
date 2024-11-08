@@ -49,7 +49,7 @@ RWStructuredBuffer<IndirectArgs> _IndirectArgsBuffer; // Read-write buffer
 // Limited values since the buffer size needs to be specified in GrassCompute
 #define GRASS_BLADES 10 // Number of grass blades per vertex
 #define GRASS_SEGMENTS 3 // Number of segments per blade
-#define GRASS_NUM_VERTICES_PER_BLADE (GRASS_SEGMENTS * 2)+ 2 // Number of vertices per blade
+#define GRASS_NUM_VERTICES_PER_BLADE (GRASS_SEGMENTS * 2)+ 1 // Number of vertices per blade
 
 // ----------------------------------------
 
@@ -83,15 +83,14 @@ float _MinWidth, _MaxWidth;
 float _MinFadeDist, _MaxFadeDist;
 
 // Uniforms
-uniform float4 _PositionsMoving[100]; // Positions of moving objects
 uniform float _InteractorsLength; // Length of the interactors
 uniform float3 _CameraPositionWS; // Camera position in world space
 /* ==============================
     Values passed from GrassCompute - End
 ===============================*/
 
-float _GrassHeight;
-float _GrassWidth;
+float grass_height;
+float grass_width;
 
 // ----------------------------------------
 // Helper Functions
@@ -128,25 +127,12 @@ float3x3 AngleAxis3x3(float angle, float3 axis)
 }
 
 DrawVertex GrassVertex(float3 positionWS, float width, float height,
-                       float offset, float curve, float2 uv, float3x3 rotation)
+                       float offset, float2 uv, float3x3 rotation)
 {
     DrawVertex output;
-    output.positionWS = positionWS + mul(rotation, float3(width, height, curve + offset));
+    output.positionWS = positionWS + mul(rotation, float3(width, height, offset));
     output.uv = uv;
     return output;
-}
-
-float3 WindCalculation(float3 positionWS)
-{
-    float timeWind = _Time.x * _WindSpeed; // Time value based on wind speed
-    float posX = positionWS.x; // X position of the vertex
-    float posZ = positionWS.z; // Z position of the vertex
-    float3 wind = float3(
-        sin(timeWind + posX) + sin(timeWind + posZ * 2) + sin(timeWind * 0.1 + posX),
-        0,
-        cos(timeWind + posX * 2) + cos(timeWind + posZ)); // Calculate wind vector
-    wind *= _WindStrength; // Apply wind strength
-    return wind;
 }
 
 // ----------------------------------------
@@ -171,141 +157,58 @@ void Main(uint id : SV_DispatchThreadID)
 
     // Do not draw if outside the fading range
     if (distanceFade < 0) return;
-
-    // Blades & Segments
-    int numBladesPerVertex = min(GRASS_BLADES, max(1, _MaxBladesPerVertex)); // Set the number of blades per vertex
-    int numSegmentsPerBlade = min(GRASS_SEGMENTS, max(1, _MaxSegmentsPerBlade)); // Set the number of segments per blade
-    // -1 is because the top part of the grass only has 1 triangle
-    int numQuadsPerBlade = numSegmentsPerBlade;  // 이제는 quad 단위로 계산
-    int numTrianglesPerBlade = numQuadsPerBlade * 2;  // 각 quad는 2개의 삼각형
-
+    
     // Set normals
     float3 faceNormal = sv.normalOS; // Normal in object space
-    
-    float cut = _CutBuffer[visibleID];
-    // if (cut != -1)
-    // {
-    //     sv.color = float3(0, 0, 0);
-    // }
-    
-    float3 wind = WindCalculation(sv.positionWS);
 
-    _GrassHeight = sv.uv.y;
-    _GrassWidth = sv.uv.x; // UV.x == width multiplier (set in GrassPainter.cs)
-    float randomisedPos = rand(sv.positionWS.xyz);
-    // Random height offsets
-    float randomOffset = RandomRange(sv.positionWS.xz, _GrassRandomHeightMin, _GrassRandomHeightMax);
-    _GrassHeight = clamp(_GrassHeight + randomOffset, _MinHeight, _MaxHeight);
-    _GrassWidth = clamp(_GrassWidth, _MinWidth, _MaxWidth);
-    _GrassWidth *= saturate(distanceFade);
-    _BladeForward *= _GrassHeight;
-
+    grass_width = sv.uv.x; 
+    grass_height = sv.uv.y;
+    
     // Use local variables to process each thread
     uint localVertexCount = 0;
 
     // Loop to create blade per vertex
-    for (int j = 0; j < numBladesPerVertex * distanceFade; j++)
+    for (int j = 0; j < _MaxBladesPerVertex * distanceFade; j++)
     {
         // Vertices arrays
         DrawVertex drawVertices[GRASS_NUM_VERTICES_PER_BLADE];
         // Set rotation and radius of the blades
-        float3x3 facingRotationMatrix = AngleAxis3x3(randomisedPos * TWO_PI + j, faceNormal);
+        float3x3 facingRotationMatrix = AngleAxis3x3(rand(sv.positionWS.xyz) * TWO_PI + j, faceNormal);
 
-        float bladeRadius = j / (float)numBladesPerVertex;
-        float offset = (1 - bladeRadius) * _BladeRadius;
+        float bladeRadius = j / _MaxBladesPerVertex;
 
-        float3 totalMovement = 0;
-
-        // Skip interaction for cut grass
-        if (cut < sv.positionWS.y + 0.5)
-        {
-            float3 offsetWorldPos = sv.positionWS + mul(facingRotationMatrix, float3(0, 0, offset));
-
-            for (int p = 0; p < _InteractorsLength; p++)
-            {
-                // Calculate the vector from the vertex to the interactor (interaction object)
-                float3 vertexToInteractor = offsetWorldPos - _PositionsMoving[p].xyz;
-
-                // Direction vertor from the vertex to the interactor
-                float3 directionToInteractor = normalize(vertexToInteractor);
-
-                // Calculate the distance between the interactor and the vertex
-                float distanceToInteractor = abs(length(vertexToInteractor)) + _PositionsMoving[p].w;
-
-                // Calculate the offset on the XZ plane
-                float3 xzOffset = float3(directionToInteractor.x, 0, directionToInteractor.z) * distanceToInteractor;
-
-                // Calculate the movement amount caused by the interactor
-                float3 interactorMovement = xzOffset * _InteractorStrength - float3(0, distanceToInteractor * 1, 0);
-
-                // Calculate the distance between the vertex and the interactor
-                float3 vertexDistance = distance(_PositionsMoving[p].xyz, offsetWorldPos);
-
-                // Interaction intensity within the interactor radius (restricted to the range of 0 to 1)
-                float3 interactionRadius = 1 - saturate(vertexDistance / _PositionsMoving[p].w);
-
-                // Adjust movement amount based on interaction radius
-                interactorMovement *= interactionRadius;
-
-                // Sum up the movement amounts from all interactors
-                totalMovement += interactorMovement;
-            }
-        }
         // create blade
-        for (int i = 0; i < numSegmentsPerBlade; i++)
+        for (int i = 0; i < _MaxSegmentsPerBlade; i++)
         {
             // taper width, increase height
-            float t = i / (float)numSegmentsPerBlade;
-            float segmentHeight = _GrassHeight * t;
-            float segmentWidth = _GrassWidth * (1 - t); // Width of the grass blade 
-
-            // The first (0) grass segment is thinner
-            segmentWidth = i == 0 ? _BottomWidth * segmentWidth : segmentWidth; // Adjust the width using the _BottomWidth value
-
-            float segmentForward = pow(abs(t), _BladeCurve) * _BladeForward;
-            // First grass (0) segment does not get displaced by interactor
-            // Adjust position in the normal direction
-            float3 newPos = i == 0
-                                ? sv.positionWS
-                                : sv.positionWS + totalMovement * t + wind * t + faceNormal * _GrassHeight * t;
+            float t = i / _MaxSegmentsPerBlade;
+            float segmentHeight = grass_height * t;
 
             // Append First Vertex        
-            drawVertices[i * 2] = GrassVertex(newPos, segmentWidth, segmentHeight, offset, segmentForward,
+            drawVertices[i * 2] = GrassVertex(sv.positionWS, grass_width, segmentHeight, bladeRadius,
                                               float2(0, t), facingRotationMatrix);
             // Append Second Vertex
-            drawVertices[i * 2 + 1] = GrassVertex(newPos, -segmentWidth, segmentHeight, offset, segmentForward,
+            drawVertices[i * 2 + 1] = GrassVertex(sv.positionWS, -grass_width, segmentHeight, bladeRadius,
                                                   float2(1, t), facingRotationMatrix);
         }
         // Append Top Vertex
-        float3 topPosOS = sv.positionWS + totalMovement + wind + faceNormal * _GrassHeight;
-        float t = 1 / (float)numSegmentsPerBlade;
-        float topWidth = _GrassWidth * (1 - t) * 0.5; // 마지막 세그먼트 너비의 절반
-        drawVertices[numSegmentsPerBlade * 2] = GrassVertex(topPosOS, topWidth, _GrassHeight, offset, _BladeForward,
-                                                            float2(0, 1), facingRotationMatrix);
-        drawVertices[numSegmentsPerBlade * 2 + 1] = GrassVertex(topPosOS, -topWidth, _GrassHeight, offset, _BladeForward,
-                                                            float2(1, 1), facingRotationMatrix);
-        // Add to the drawbuffer to be read by the final shader
-        for (int k = 0; k < numTrianglesPerBlade; k+=2)
+        float3 topPosOS = sv.positionWS + faceNormal * grass_height;
+        drawVertices[_MaxSegmentsPerBlade * 2] = GrassVertex(topPosOS, 0, grass_height, bladeRadius,
+                                                            float2(0.5, 1), facingRotationMatrix);
+
+        for (int k = 0; k < _MaxSegmentsPerBlade; ++k)
         {
-            int quadIndex = k / 2;
             DrawTriangle tri = (DrawTriangle)0;
             tri.normalOS = faceNormal;
             tri.diffuseColor = sv.color;
-            tri.extraBuffer = float4(cut, 0, 0, 0);
-    
-            // 각 quad의 첫번째 삼각형
-            tri.vertices[0] = drawVertices[quadIndex * 2];
-            tri.vertices[1] = drawVertices[quadIndex * 2 + 1];
-            tri.vertices[2] = drawVertices[quadIndex * 2 + 2];
+            tri.extraBuffer = float4(2, 0, 0, 0);
+
+            tri.vertices[0] = drawVertices[k];
+            tri.vertices[1] = drawVertices[k + 1];
+            tri.vertices[2] = drawVertices[k + 2];
             _DrawTriangles.Append(tri);
 
-            // 각 quad의 두번째 삼각형
-            tri.vertices[0] = drawVertices[quadIndex * 2 + 1];
-            tri.vertices[1] = drawVertices[quadIndex * 2 + 3];
-            tri.vertices[2] = drawVertices[quadIndex * 2 + 2];
-            _DrawTriangles.Append(tri);
-
-            localVertexCount += 6;
+            localVertexCount += 3;
         }
     }
 
