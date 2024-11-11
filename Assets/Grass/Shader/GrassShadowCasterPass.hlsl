@@ -1,7 +1,3 @@
-#include "Grass.hlsl"
-#include "GrassInput.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-
 float3 _LightDirection;
 
 FragmentData ShadowPassVertex(VertexData input)

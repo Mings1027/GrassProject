@@ -1,7 +1,3 @@
-#include "GrassInput.hlsl"
-#include "Grass.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-
 half4 SampleTerrainTexture(half3 worldPos)
 {
     half2 terrainUV = worldPos.xz - _OrthographicCamPosTerrain.xz;

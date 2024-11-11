@@ -4,6 +4,7 @@ using System.Linq;
 using Grass.GrassScripts;
 using PoolControl;
 using UnityEngine;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -34,7 +35,7 @@ public class GrassComputeScript : MonoBehaviour
 
     // The size of one entry in the various compute buffers, size comes from the float3/float2 entrees in the shader
     private const int SourceVertStride = sizeof(float) * (3 + 3 + 2 + 3);
-    private const int DrawStride = sizeof(float) * (3 + 3 + 4 + (3 + 2) * 3);
+    private const int DrawStride = sizeof(float) * (3 + 3 + 1 + (3 + 2) * 3);
 
     private Bounds _bounds; // bounds of the total grass 
     private ComputeBuffer _cutBuffer; // added for cutting
@@ -50,7 +51,6 @@ public class GrassComputeScript : MonoBehaviour
     };
 
     // culling tree data ----------------------------------------------------------------------
-    public CullingTree CullingTree => _cullingTree;
     private CullingTree _cullingTree;
     private readonly List<Bounds> _boundsListVis = new();
     private readonly List<CullingTree> _leaves = new();
@@ -94,23 +94,15 @@ public class GrassComputeScript : MonoBehaviour
         // When the window is destroyed, remove the delegate
         // so that it will no longer do any drawing.
         SceneView.duringSceneGui -= OnScene;
-        SceneView.duringSceneGui -= OnSceneGUI;
     }
-
-    private void OnSceneGUI(SceneView sceneView)
-    {
-        if (!Application.isPlaying)
-        {
-            EditorApplication.QueuePlayerLoopUpdate();
-            SceneView.RepaintAll();
-        }
-    }
-
+    
     private void OnScene(SceneView scene)
     {
         _view = scene;
         if (!Application.isPlaying)
         {
+            EditorApplication.QueuePlayerLoopUpdate();
+            SceneView.RepaintAll();
             if (_view.camera)
             {
                 _mainCamera = _view.camera;
@@ -277,8 +269,7 @@ public class GrassComputeScript : MonoBehaviour
 #if UNITY_EDITOR
         SceneView.duringSceneGui -= OnScene;
         SceneView.duringSceneGui += OnScene;
-        SceneView.duringSceneGui -= OnSceneGUI;
-        SceneView.duringSceneGui += OnSceneGUI;
+        
         if (!Application.isPlaying)
         {
             if (_view && _view.camera)
@@ -370,48 +361,62 @@ public class GrassComputeScript : MonoBehaviour
         SetShaderData();
 
         _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
-
-        if (full)
-        {
-            UpdateBounds();
-        }
-
+        
         SetupQuadTree(full);
     }
-
-    private void UpdateBounds()
-    {
-        _bounds = new Bounds();
-        for (var i = 0; i < grassData.Count; i++)
-        {
-            _bounds.Encapsulate(grassData[i].position);
-        }
-    }
-
+    
     private void SetupQuadTree(bool full)
     {
-        if (full)
+        if (full) // 초기 설정시
         {
+            // 1. 전체 bounds 계산 - 잔디가 있는 모든 영역 포함
+            _bounds = new Bounds();
+            foreach (var grass in grassData)
+            {
+                _bounds.Encapsulate(grass.position);
+            }
+        
+            // 2. bounds에 여유 공간 추가 (옵션)
+            var extents = _bounds.extents;
+            _bounds.extents = new Vector3(
+                extents.x * 1.1f, 
+                extents.y * 1.1f, 
+                extents.z * 1.1f
+            );
+
+            // 3. CullingTree 생성
             _cullingTree = new CullingTree(_bounds, currentPresets.cullingTreeDepth);
             _leaves.Clear();
             _cullingTree.RetrieveAllLeaves(_leaves);
-            //add the id of each grass point into the right cullingtree
-            for (var i = 0; i < grassData.Count; i++)
+
+            // 4. 각 잔디의 위치에 ID 할당
+            for (var i = 0; i < grassData.Count; i++) 
             {
                 _cullingTree.FindLeaf(grassData[i].position, i);
             }
 
-            _cullingTree.ClearEmpty();
-        }
-        else
-        {
-            // just make everything visible while editing grass
+            // 5. 최초 생성시에는 모든 잔디를 visible로 설정
             _grassVisibleIDList = new List<int>(grassData.Count);
             for (int i = 0; i < grassData.Count; i++)
             {
                 _grassVisibleIDList.Add(i);
             }
+            _visibleIDBuffer.SetData(_grassVisibleIDList);
 
+            // 6. bounds 목록도 모든 leaf node 포함하도록
+            _boundsListVis.Clear();
+            foreach (var leaf in _leaves)
+            {
+                _boundsListVis.Add(leaf.GetBounds()); // CullingTree에 GetBounds() 추가 필요
+            }
+        }
+        else // 편집 모드 등에서 임시 설정시
+        {
+            _grassVisibleIDList = new List<int>(grassData.Count);
+            for (int i = 0; i < grassData.Count; i++)
+            {
+                _grassVisibleIDList.Add(i);
+            }
             _visibleIDBuffer.SetData(_grassVisibleIDList);
         }
     }

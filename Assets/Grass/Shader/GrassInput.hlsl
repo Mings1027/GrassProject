@@ -1,5 +1,4 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-
 #ifndef UNIVERSAL_SIMPLE_LIT_INPUT_INCLUDED
 #define UNIVERSAL_SIMPLE_LIT_INPUT_INCLUDED
 

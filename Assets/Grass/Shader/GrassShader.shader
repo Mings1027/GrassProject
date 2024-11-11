@@ -58,6 +58,9 @@ Shader "Custom/TestGrass"
 			#pragma multi_compile _ _FORWARD_PLUS
 			#pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
 
+			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+			#include "GrassInput.hlsl"
+			#include "Grass.hlsl"
 			#include "GrassPass.hlsl"
 			ENDHLSL
 		}
@@ -74,6 +77,9 @@ Shader "Custom/TestGrass"
 			#pragma vertex ShadowPassVertex
 			#pragma fragment ShadowPassFragment
 
+			#include "GrassInput.hlsl"
+			#include "Grass.hlsl"
+			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "GrassShadowCasterPass.hlsl"
 			ENDHLSL
 		}

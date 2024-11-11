@@ -13,10 +13,9 @@ namespace Grass.Editor
             _changedIndices = CollectionsPool.GetList<int>();
         }
 
-        public void RepositionGrass(Vector3 hitPos, GrassToolSettingSo toolSettings)
+        public void RepositionGrass(Ray mousePointRay, GrassToolSettingSo toolSettings)
         {
-            var startPos = hitPos + Vector3.up * toolSettings.BrushHeight;
-            if (!Physics.Raycast(startPos, Vector3.down, out var hit, float.MaxValue, toolSettings.PaintMask.value))
+            if (!Physics.Raycast(mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
                 return;
 
             var hitPoint = hit.point;
@@ -29,9 +28,7 @@ namespace Grass.Editor
 
             var grassList = grassCompute.GrassDataList;
 
-            // 배치 처리 적용
-            ProcessInBatches(sharedIndices, (start, end) =>
-                ProcessGrassBatch(start, end, grassList, hitPoint, brushSizeSqr, toolSettings));
+            ProcessGrassBatch(grassList, hitPoint, brushSizeSqr, toolSettings);
 
             if (_changedIndices.Count > 0)
             {
@@ -53,10 +50,9 @@ namespace Grass.Editor
             return (minIndex, maxIndex - minIndex + 1);
         }
 
-        private void ProcessGrassBatch(int startIdx, int endIdx, List<GrassData> grassList,
-                                       Vector3 hitPoint, float brushSizeSqr, GrassToolSettingSo toolSettings)
+        private void ProcessGrassBatch(List<GrassData> grassList, Vector3 hitPoint, float brushSizeSqr, GrassToolSettingSo toolSettings)
         {
-            for (var i = startIdx; i < endIdx; i++)
+            for (var i = 0; i < sharedIndices.Count; i++)
             {
                 var index = sharedIndices[i];
                 var grassData = grassList[index];

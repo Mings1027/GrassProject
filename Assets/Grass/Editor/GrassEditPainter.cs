@@ -21,11 +21,9 @@ namespace Grass.Editor
             _processedIndices = CollectionsPool.GetHashSet<int>();
         }
 
-        public void EditGrass(Vector3 hitPos, GrassToolSettingSo toolSettings, EditOption editOption)
+        public void EditGrass(Ray mousePointRay, GrassToolSettingSo toolSettings, EditOption editOption)
         {
-            var startPos = hitPos + Vector3.up * toolSettings.BrushHeight;
-            if (!Physics.Raycast(startPos, Vector3.down, out var hit, float.MaxValue, toolSettings.PaintMask.value))
-                return;
+            if (!Physics.Raycast(mousePointRay, out var hit, 100)) return;
 
             sharedIndices.Clear();
             _processedIndices.Clear();
@@ -39,9 +37,7 @@ namespace Grass.Editor
             // 범위 내의 잔디 인덱스들 가져오기
             spatialGrid.GetObjectsInRadius(hit.point, toolSettings.BrushSize, sharedIndices);
 
-            // 배치 처리
-            ProcessInBatches(sharedIndices, (start, end) =>
-                ProcessGrassBatch(start, end, grassCompute.GrassDataList, toolSettings, editOption));
+            ProcessGrassBatch(grassCompute.GrassDataList, toolSettings, editOption);
 
             // 변경된 데이터가 있을 경우에만 업데이트
             if (_modifiedGrassData.Count > 0)
@@ -69,10 +65,10 @@ namespace Grass.Editor
             return (minIndex, maxIndex - minIndex + 1);
         }
 
-        private void ProcessGrassBatch(int startIdx, int endIdx, List<GrassData> grassDataList,
-                                       GrassToolSettingSo toolSettings, EditOption editOption)
+        private void ProcessGrassBatch(List<GrassData> grassDataList, GrassToolSettingSo toolSettings,
+                                       EditOption editOption)
         {
-            for (var i = startIdx; i < endIdx; i++)
+            for (var i = 0; i < sharedIndices.Count; i++)
             {
                 var index = sharedIndices[i];
 
@@ -84,16 +80,21 @@ namespace Grass.Editor
 
                 if (distanceSqr <= _currentBrushSizeSqr)
                 {
-                    var distanceFalloff = 1f - (distanceSqr / _currentBrushSizeSqr);
+                    var distanceFalloff = 1f - distanceSqr / _currentBrushSizeSqr;
+
+                    _cumulativeChanges.TryAdd(index, 0f);
+
+                    _cumulativeChanges[index] =
+                        Mathf.Clamp01(_cumulativeChanges[index] + _deltaTimeSpeed * distanceFalloff);
 
                     if (editOption is EditOption.EditColors or EditOption.Both)
                     {
-                        ProcessColorEdit(ref grassData, index, distanceFalloff, toolSettings);
+                        ProcessColorEdit(ref grassData, index, toolSettings);
                     }
 
                     if (editOption is EditOption.EditWidthHeight or EditOption.Both)
                     {
-                        ProcessWidthHeightEdit(ref grassData, index, distanceFalloff, toolSettings);
+                        ProcessWidthHeightEdit(ref grassData, index, toolSettings);
                     }
 
                     _modifiedGrassData[index] = grassData;
@@ -102,15 +103,8 @@ namespace Grass.Editor
             }
         }
 
-        private void ProcessColorEdit(ref GrassData grassData, int index, float distanceFalloff,
-                                      GrassToolSettingSo toolSettings)
+        private void ProcessColorEdit(ref GrassData grassData, int index, GrassToolSettingSo toolSettings)
         {
-            _cumulativeChanges.TryAdd(index, 0f);
-
-            _cumulativeChanges[index] = Mathf.Clamp01(
-                _cumulativeChanges[index] + _deltaTimeSpeed * distanceFalloff
-            );
-
             var targetColor = CalculateNewColor(
                 toolSettings.BrushColor,
                 toolSettings.RangeR,
@@ -121,15 +115,8 @@ namespace Grass.Editor
             grassData.color = Vector3.Lerp(grassData.color, targetColor, t);
         }
 
-        private void ProcessWidthHeightEdit(ref GrassData grassData, int index, float distanceFalloff,
-                                            GrassToolSettingSo toolSettings)
+        private void ProcessWidthHeightEdit(ref GrassData grassData, int index, GrassToolSettingSo toolSettings)
         {
-            _cumulativeChanges.TryAdd(index, 0f);
-
-            _cumulativeChanges[index] = Mathf.Clamp01(
-                _cumulativeChanges[index] + _deltaTimeSpeed * distanceFalloff
-            );
-
             var targetSize = new Vector2(
                 grassData.widthHeight.x + toolSettings.AdjustWidth,
                 grassData.widthHeight.y + toolSettings.AdjustHeight

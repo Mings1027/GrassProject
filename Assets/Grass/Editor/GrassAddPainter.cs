@@ -5,58 +5,51 @@ namespace Grass.Editor
     public sealed class GrassAddPainter : BasePainter
     {
         private Vector3 _lastPosition = Vector3.zero;
-        private const float MinGrassSpacing = 0.1f; // 최소 잔디 간격
 
         public GrassAddPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
             spatialGrid) { }
 
-        public void AddGrass(Vector3 hitPos, GrassToolSettingSo toolSettings)
+        public void AddGrass(Ray mousePointRay, GrassToolSettingSo toolSettings)
         {
             var paintMaskValue = toolSettings.PaintMask.value;
             var brushSize = toolSettings.BrushSize;
             var density = toolSettings.Density;
             var normalLimit = toolSettings.NormalLimit;
 
-            var startPos = hitPos + Vector3.up * 3f;
-            var distanceMoved = Vector3.Distance(_lastPosition, startPos);
-
-            if (distanceMoved >= brushSize * 0.5f)
+            if (Physics.Raycast(mousePointRay, out var hit, 100))
             {
-                var grassAdded = false;
-                // sharedIndices.Clear();
-                for (var i = 0; i < density; i++)
+                var distanceMoved = Vector3.Distance(_lastPosition, hit.point);
+                if (distanceMoved >= brushSize * 0.5f)
                 {
-                    var randomPoint = Random.insideUnitCircle * brushSize;
-                    var randomPos = new Vector3(startPos.x + randomPoint.x, startPos.y, startPos.z + randomPoint.y);
-
-                    if (Physics.Raycast(randomPos + Vector3.up * toolSettings.BrushHeight, Vector3.down, out var hit,
-                            float.MaxValue))
+                    var grassAdded = false;
+                    for (int i = 0; i < density; i++)
                     {
-                        var hitLayer = hit.collider.gameObject.layer;
-                        if (((1 << hitLayer) & paintMaskValue) != 0 &&
-                            hit.normal.y <= 1 + normalLimit &&
-                            hit.normal.y >= 1 - normalLimit)
+                        var randomPoint = Random.insideUnitCircle * brushSize;
+                        var randomRayOrigin = mousePointRay.origin;
+                        randomRayOrigin.x += randomPoint.x;
+                        randomRayOrigin.z += randomPoint.y;
+
+                        var ray = new Ray(randomRayOrigin, mousePointRay.direction);
+                        if (Physics.Raycast(ray, out var hit2, 100))
                         {
-                            // 주변 잔디 체크
-                            // spatialGrid.GetObjectsInRadius(hit.point, MinGrassSpacing, sharedIndices);
+                            var hitLayer = hit2.collider.gameObject.layer;
+                            if (((1 << hitLayer) & paintMaskValue) != 0 &&
+                                hit2.normal.y <= 1 + normalLimit &&
+                                hit2.normal.y >= 1 - normalLimit)
+                            {
+                                var newData = CreateGrassData(hit2.point, hit2.normal, toolSettings);
+                                var newIndex = grassCompute.GrassDataList.Count;
+                                grassCompute.GrassDataList.Add(newData);
+                                spatialGrid.AddObject(hit2.point, newIndex);
 
-                            var newData = CreateGrassData(hit.point, hit.normal, toolSettings);
-                            var newIndex = grassCompute.GrassDataList.Count;
-
-                            grassCompute.GrassDataList.Add(newData);
-                            spatialGrid.AddObject(hit.point, newIndex);
-
-                            grassAdded = true;
+                                grassAdded = true;
+                            }
                         }
                     }
-                }
 
-                if (grassAdded)
-                {
-                    grassCompute.ResetFaster();
+                    if (grassAdded) grassCompute.ResetFaster();
+                    _lastPosition = hit.point;
                 }
-
-                _lastPosition = startPos;
             }
         }
 

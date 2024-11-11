@@ -37,7 +37,7 @@ public class SpatialGrid
 
         if (!_grid.TryGetValue(key, out var cellSet))
         {
-            cellSet = CollectionsPool.GetHashSet<int>(10);
+            cellSet = CollectionsPool.GetHashSet<int>(1);
             _grid[key] = cellSet;
         }
 
@@ -113,5 +113,8 @@ public class SpatialGrid
 
         _grid.Clear();
         _tempCellKeys.Clear();
+
+        CollectionsPool.ReturnDictionary(_grid);
+        CollectionsPool.ReturnHashSet(_tempCellKeys);
     }
 }

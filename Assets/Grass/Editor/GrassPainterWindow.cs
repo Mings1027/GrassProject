@@ -1543,7 +1543,7 @@ namespace Grass.Editor
                 var result = results[index];
                 finalGrassToKeep.AddRange(result);
                 totalRemoved += removedCounts[index];
-        
+
                 await UpdateProgress(index, results.Length,
                     $"Removed grass: {totalRemoved:N0} / {totalRemoveGrassCount:N0}");
             }
@@ -1652,16 +1652,16 @@ namespace Grass.Editor
             switch (_selectedToolOption)
             {
                 case BrushOption.Add:
-                    _grassAddPainter.AddGrass(_hitPos, toolSettings);
+                    _grassAddPainter.AddGrass(_mousePointRay, toolSettings);
                     break;
                 case BrushOption.Remove:
                     _grassRemovePainter.RemoveGrass(_hitPos, toolSettings.BrushSize);
                     break;
                 case BrushOption.Edit:
-                    _grassEditPainter.EditGrass(_hitPos, toolSettings, _selectedEditOption);
+                    _grassEditPainter.EditGrass(_mousePointRay, toolSettings, _selectedEditOption);
                     break;
                 case BrushOption.Reposition:
-                    _grassRepositionPainter.RepositionGrass(_hitPos, toolSettings);
+                    _grassRepositionPainter.RepositionGrass(_mousePointRay, toolSettings);
                     break;
             }
         }
@@ -1686,6 +1686,8 @@ namespace Grass.Editor
                     _grassRepositionPainter.Clear();
                     break;
             }
+
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
 
         private void RebuildMesh()

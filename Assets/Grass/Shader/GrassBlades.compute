@@ -157,7 +157,8 @@ void Main(uint id : SV_DispatchThreadID)
 
     // Do not draw if outside the fading range
     if (distanceFade < 0) return;
-    
+
+    float cut = _CutBuffer[visibleID];
     // Set normals
     float3 faceNormal = sv.normalOS; // Normal in object space
 
@@ -201,7 +202,7 @@ void Main(uint id : SV_DispatchThreadID)
             DrawTriangle tri = (DrawTriangle)0;
             tri.normalOS = faceNormal;
             tri.diffuseColor = sv.color;
-            tri.extraBuffer = float4(2, 0, 0, 0);
+            tri.extraBuffer = float4(cut, 0, 0, 0);
 
             tri.vertices[0] = drawVertices[k];
             tri.vertices[1] = drawVertices[k + 1];
