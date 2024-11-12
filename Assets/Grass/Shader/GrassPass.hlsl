@@ -1,3 +1,7 @@
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+#include "GrassInput.hlsl"
+#include "Grass.hlsl"
+
 half4 SampleTerrainTexture(half3 worldPos)
 {
     half2 terrainUV = worldPos.xz - _OrthographicCamPosTerrain.xz;
@@ -50,47 +54,51 @@ half3 CalculateMainLight(half3 albedo, half3 normalWS, half3 worldPos)
     return ambient + diffuse;
 }
 
-float3 CalculateAdditionalLight(float3 worldPos, float3 worldNormal, float lightIntensity,
-                                float shadowStrength, float3 additionalShadowColor)
+half3 CalculateAdditionalLight(float3 worldPos, float3 worldNormal, half lightIntensity,
+                               half shadowStrength, half3 additionalShadowColor)
 {
     uint pixelLightCount = GetAdditionalLightsCount();
     InputData inputData;
-    float4 screenPos = ComputeScreenPos(TransformWorldToHClip(worldPos));
-    inputData.normalizedScreenSpaceUV = screenPos.xy / screenPos.w;
+
+    // shadowmask를 위해 아래 과정이 필요
+    float4 positionsCS = TransformWorldToHClip(worldPos); // 월드 좌표 -> 클립 공간 변환
+    float3 ndc = positionsCS.xyz / positionsCS.w; // 클립 공간에서 NDC로 변환
+    float2 screenUV = float2(ndc.x, ndc.y) * 0.5 + 0.5; // NDC를 [0,1] 범위의 스크린 UV로 변환
+
+    // DirectX/OpenGL 차이 보정
+    #if UNITY_UV_STARTS_AT_TOP
+    screenUV.y = 1.0 - screenUV.y;
+    #endif
+
+    inputData.normalizedScreenSpaceUV = screenUV;
     inputData.positionWS = worldPos;
 
-    float3 diffuseColor = 0;
+    half4 shadowMask = CalculateShadowMask(inputData);
+    half3 diffuseColor = 0;
 
     LIGHT_LOOP_BEGIN(pixelLightCount)
-        Light light;
-        #if _MAIN_LIGHT_SHADOWS_CASCADE || _MAIN_LIGHT_SHADOWS
-    half4 shadowMask = CalculateShadowMask(inputData);
-    light = GetAdditionalLight(lightIndex, worldPos, shadowMask);
-        #else
-        light = GetAdditionalLight(lightIndex, worldPos);
-        #endif
+        Light light = GetAdditionalLight(lightIndex, worldPos, shadowMask);
+
         #ifdef _LIGHT_LAYERS
-    if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
+        uint meshRenderingLayers = GetMeshRenderingLayer();
+        if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
         #endif
         {
-            /*===================================================================================================
-            *
-            *  이 아래 코드 잘되긴함 근데 왜 되는지 모르겠음 괘씸함
-            *
-             ===================================================================================================*/
-            float3 lightColor = light.color * light.distanceAttenuation * lightIntensity;
-            float3 lightContribution = LightingLambert(lightColor, light.direction, worldNormal);
+            // 기본 라이팅 계산
+            half3 lightColor = light.color * light.distanceAttenuation * lightIntensity;
+            half3 lighting = LightingLambert(lightColor, light.direction, worldNormal);
 
-            float shadowAttenuation = light.shadowAttenuation;
-            float calculatedShadowStrength = shadowStrength * (1 - shadowAttenuation);
+            // 그림자 계산
+            half shadowAtten = light.shadowAttenuation;
+            half calculatedShadowStrength = shadowStrength * (1 - shadowAtten);
 
-            float3 shadowedColor = lerp(lightContribution,
-                                        additionalShadowColor * dot(lightContribution, float3(0.299, 0.587, 0.114)),
-                                        calculatedShadowStrength);
+            half3 shadowedColor = lerp(lighting, additionalShadowColor * Luminance(lighting),
+                                       calculatedShadowStrength);
 
             diffuseColor += shadowedColor;
         }
     LIGHT_LOOP_END
+
     return diffuseColor;
 }
 

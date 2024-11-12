@@ -41,12 +41,11 @@ MonoBehaviour:
   paintBlockMask:
     serializedVersion: 2
     m_Bits: 64
-  brushSize: 10.4500065
+  brushSize: 2.6000001
   brushFalloffSize: 1
   brushTransitionSpeed: 0.304
-  density: 106
+  density: 315
   normalLimit: 1
-  brushHeight: 50
   grassAmountToGenerate: 100000
   generationDensity: 3
   grassModifierKey: 10

@@ -6,6 +6,7 @@ namespace Grass.Editor
     public sealed class GrassRepositionPainter : BasePainter
     {
         private readonly List<int> _changedIndices;
+        private const float MaxRayHeight = 10000f; // 충분히 높은 위치에서 레이를 쏘기 위한 상수
 
         public GrassRepositionPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
             spatialGrid)
@@ -62,7 +63,7 @@ namespace Grass.Editor
                 {
                     var origin = new Vector3(
                         grassData.position.x,
-                        grassData.position.y + toolSettings.BrushHeight,
+                        MaxRayHeight,
                         grassData.position.z
                     );
 

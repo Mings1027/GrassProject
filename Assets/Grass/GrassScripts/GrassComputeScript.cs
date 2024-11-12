@@ -143,11 +143,6 @@ public class GrassComputeScript : MonoBehaviour
         GrassFuncManager.AddEvent(GrassEvent.VisibleGrassCount, () => _grassVisibleIDList.Count);
 
         _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
-        // If initialized, call on disable to clean things up
-        // if (_initialized)
-        {
-            OnDisable();
-        }
 
         MainSetup(true);
     }

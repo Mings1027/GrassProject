@@ -1,4 +1,3 @@
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #ifndef UNIVERSAL_SIMPLE_LIT_INPUT_INCLUDED
 #define UNIVERSAL_SIMPLE_LIT_INPUT_INCLUDED
 
@@ -36,11 +35,10 @@ float _Saturation;
 float _OverallIntensity;
 float _Exposure;
 
+// Rim
 half4 _RimColor;
 half _RimPower;
 half _RimIntensity;
-half _RimGradientStart;
-half _RimGradientEnd;
 
 // Blend
 float _BlendMult, _BlendOff;

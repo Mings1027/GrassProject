@@ -48,7 +48,6 @@ public class GrassToolSettingSo : ScriptableObject
     [SerializeField] private float brushTransitionSpeed = 0.5f;
     [SerializeField] private int density = 1;
     [SerializeField] private float normalLimit = 1f;
-    [SerializeField] private float brushHeight = 1f;
 
     [Header("Generation Settings")] [SerializeField]
     private int grassAmountToGenerate = 100000;
@@ -182,11 +181,6 @@ public class GrassToolSettingSo : ScriptableObject
     {
         get => normalLimit;
         set => normalLimit = Mathf.Clamp(value, MinNormalLimit, MaxNormalLimit);
-    }
-    public float BrushHeight
-    {
-        get => brushHeight;
-        set => brushHeight = Mathf.Clamp(value, MinBrushHeight, MaxBrushHeight);
     }
     public int GrassAmountToGenerate
     {

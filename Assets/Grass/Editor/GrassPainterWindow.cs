@@ -424,11 +424,7 @@ namespace Grass.Editor
                 toolSettings.NormalLimit = DrawSliderWithTooltip("Normal Limit", toolSettings.NormalLimit,
                     toolSettings.MinNormalLimit, toolSettings.MaxNormalLimit,
                     "Higher values allow painting on steeper surfaces");
-
-                toolSettings.BrushHeight = DrawSliderWithTooltip("Brush Height", toolSettings.BrushHeight,
-                    toolSettings.MinBrushHeight, toolSettings.MaxBrushHeight,
-                    "The height from where grass painting begins checking for valid surfaces");
-
+                
                 toolSettings.Density = DrawIntSliderWithTooltip("Density", toolSettings.Density,
                     toolSettings.MinDensity, toolSettings.MaxDensity,
                     "Number of grass instances created per brush stroke");
@@ -889,7 +885,6 @@ namespace Grass.Editor
             {
                 case BrushOption.Add:
                     discColor2 = new Color(0, 0.5f, 0, 0.4f);
-                    DrawBrushHeightHandles(_hitPos);
                     break;
                 case BrushOption.Remove:
                     discColor2 = new Color(0.5f, 0f, 0f, 0.4f);
@@ -914,49 +909,7 @@ namespace Grass.Editor
             }
         }
 
-        private void DrawBrushHeightHandles(Vector3 basePosition)
-        {
-            var height = toolSettings.BrushHeight;
-            var radius = toolSettings.BrushSize;
-
-            Handles.color = Color.yellow;
-
-            // Always use Vector3.up instead of normal for the height direction
-            var topCenter = basePosition + Vector3.up * height;
-
-            // Draw top and bottom circles using Vector3.up as normal
-            Handles.DrawWireDisc(topCenter, Vector3.up, radius);
-            Handles.DrawWireDisc(basePosition, Vector3.up, radius);
-
-            // Use fixed directions for the connecting lines
-            var forward = Vector3.forward;
-            var right = Vector3.right;
-
-            // Calculate four points on bottom circle
-            var bottomPoints = new[]
-            {
-                basePosition + forward * radius,
-                basePosition - forward * radius,
-                basePosition + right * radius,
-                basePosition - right * radius
-            };
-
-            // Calculate corresponding points on top circle
-            var topPoints = new[]
-            {
-                topCenter + forward * radius,
-                topCenter - forward * radius,
-                topCenter + right * radius,
-                topCenter - right * radius
-            };
-
-            // Draw vertical lines connecting top and bottom circles
-            for (int i = 0; i < 4; i++)
-            {
-                Handles.DrawLine(bottomPoints[i], topPoints[i]);
-            }
-        }
-
+        
         private void DrawGridHandles()
         {
             if (_spatialGrid == null) return;
