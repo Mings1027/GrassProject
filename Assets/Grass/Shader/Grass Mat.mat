@@ -63,7 +63,7 @@ Material:
     - _RimGradientEnd: 0.256
     - _RimGradientStart: 0
     - _RimIntensity: 2
-    - _RimPower: 9
+    - _RimPower: 10
     - _SSSAttenuation: 1
     - _SSSDistortion: 0.531
     - _SSSPower: 1.33

@@ -6,7 +6,7 @@ namespace Grass.Editor
     public sealed class GrassRepositionPainter : BasePainter
     {
         private readonly List<int> _changedIndices;
-        private const float MaxRayHeight = 10000f; // 충분히 높은 위치에서 레이를 쏘기 위한 상수
+        private const float MaxRayHeight = 1000f; // 충분히 높은 위치에서 레이를 쏘기 위한 상수
 
         public GrassRepositionPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
             spatialGrid)
@@ -22,9 +22,9 @@ namespace Grass.Editor
             var hitPoint = hit.point;
             var brushSizeSqr = toolSettings.BrushSize * toolSettings.BrushSize;
 
-            // SpatialGrid를 사용하여 브러시 영역 내의 잔디 인덱스들을 가져옴
             sharedIndices.Clear();
             _changedIndices.Clear();
+
             spatialGrid.GetObjectsInRadius(hitPoint, toolSettings.BrushSize, sharedIndices);
 
             var grassList = grassCompute.GrassDataList;

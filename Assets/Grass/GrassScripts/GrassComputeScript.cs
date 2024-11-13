@@ -548,8 +548,8 @@ public class GrassComputeScript : MonoBehaviour
     {
         // Send things to compute shader that dont need to be set every frame
         _instComputeShader.SetFloat(Time, UnityEngine.Time.time);
-        _instComputeShader.SetFloat(GrassRandomHeightMin, currentPresets.randomHeightMin);
-        _instComputeShader.SetFloat(GrassRandomHeightMax, currentPresets.randomHeightMax);
+        // _instComputeShader.SetFloat(GrassRandomHeightMin, currentPresets.randomHeightMin);
+        // _instComputeShader.SetFloat(GrassRandomHeightMax, currentPresets.randomHeightMax);
         _instComputeShader.SetFloat(WindSpeed, currentPresets.windSpeed);
         _instComputeShader.SetFloat(WindStrength, currentPresets.windStrength);
 

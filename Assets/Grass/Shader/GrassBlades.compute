@@ -83,6 +83,7 @@ float _MinWidth, _MaxWidth;
 float _MinFadeDist, _MaxFadeDist;
 
 // Uniforms
+uniform float4 _PositionsMoving[100]; // Positions of moving objects
 uniform float _InteractorsLength; // Length of the interactors
 uniform float3 _CameraPositionWS; // Camera position in world space
 /* ==============================
@@ -125,6 +126,7 @@ float3x3 AngleAxis3x3(float angle, float3 axis)
         t * x * y + s * z, t * y * y + c, t * y * z - s * x,
         t * x * z - s * y, t * y * z + s * x, t * z * z + c);
 }
+
 float3x3 CreateTangentToWorld(float3 normal)
 {
     // 1. 노말과 수직인 tangent 벡터 생성
@@ -134,10 +136,10 @@ float3x3 CreateTangentToWorld(float3 normal)
     else
         tangent = float3(0, -normal.z, normal.y);
     tangent = normalize(tangent);
-    
+
     // 2. 노말과 tangent로부터 bitangent 생성
     float3 bitangent = normalize(cross(normal, tangent));
-    
+
     // 3. 노말 공간 기준의 변환 행렬 생성
     return float3x3(
         tangent.x, normal.x, bitangent.x,
@@ -148,41 +150,41 @@ float3x3 CreateTangentToWorld(float3 normal)
 
 // 4. 수정된 잔디 blade 생성 함수
 DrawVertex GrassVertex(float3 positionWS, float width, float height,
-                      float offset, float2 uv, float3 normal, float3x3 rotationMatrix)
+                       float offset, float2 uv, float curve, float3 normal, float3x3 rotationMatrix)
 {
     DrawVertex output;
-    
+
     // 1. 노말 기준 로컬 좌표계 생성
     float3x3 tangentToWorld = CreateTangentToWorld(normal);
-    
+
     // 2. blade의 로컬 오프셋 계산
-    float3 localOffset = float3(width, height, offset);
-    
+    float3 localOffset = float3(width, height, curve + offset);
+
     // 3. 로컬 좌표계에서 월드 좌표계로 변환하고 회전 적용
     float3 worldOffset = mul(tangentToWorld, localOffset);
     worldOffset = mul(rotationMatrix, worldOffset);
-    
+
     output.positionWS = positionWS + worldOffset;
     output.uv = uv;
     return output;
 }
-half3 WindCalculation(half3 positionWS, half3 normal)
+
+float3 WindCalculation(float3 positionWS)
 {
-    half timeWind = _Time.x * _WindSpeed;
-    half posX = positionWS.x;
-    half posZ = positionWS.z;
-    
-    // 기본 wind 방향 계산
-    half3 windDir = half3(
-        sin(timeWind + posX) + sin(timeWind + posZ * 2),
+    float timeWind = _Time.x * _WindSpeed; // Time value based on wind speed
+    float posX = positionWS.x; // X position of the vertex
+    float posZ = positionWS.z; // Z position of the vertex
+    float3 wind = float3(
+        sin(timeWind + posX) + sin(timeWind + posZ * 2) + sin(timeWind * 0.1 + posX),
         0,
-        cos(timeWind + posX * 2) + cos(timeWind + posZ)
-    );
+        cos(timeWind + posX * 2) + cos(timeWind + posZ)); // Calculate wind vector
+    wind *= _WindStrength; // Apply wind strength
+    return wind;
+}
+
+void CalculateInteractor()
+{
     
-    // wind를 노말 평면으로 투영
-    windDir = windDir - dot(windDir, normal) * normal;
-    
-    return normalize(windDir) * _WindStrength;
 }
 // ----------------------------------------
 
@@ -207,61 +209,79 @@ void Main(uint id : SV_DispatchThreadID)
     // Do not draw if outside the fading range
     if (distanceFade < 0) return;
 
-    float cut = _CutBuffer[visibleID];
+    half numBladesPerVertex = min(GRASS_BLADES, max(1, _MaxBladesPerVertex)); // Set the number of blades per vertex
+    half numSegmentsPerBlade = min(GRASS_SEGMENTS, max(1, _MaxSegmentsPerBlade));
+    // Set the number of segments per blade
+    half numTrianglesPerBlade = (numSegmentsPerBlade - 1) * 2 + 1; // Triangles per blade
+
     // Set normals
-    float3 faceNormal = normalize(sv.normalOS);
-    float3x3 normalToWorld = CreateTangentToWorld(faceNormal);
-  
-    _GrassWidth = sv.uv.x; 
+    half3 faceNormal = normalize(sv.normalOS);
+
+    _GrassWidth = sv.uv.x;
     _GrassHeight = sv.uv.y;
-    
+
     // Use local variables to process each thread
     uint localVertexCount = 0;
+    half cut = _CutBuffer[visibleID];
+    // Random height offsets
+    half randomOffset = RandomRange(sv.positionWS.xz, _GrassRandomHeightMin, _GrassRandomHeightMax);
+    _GrassHeight = clamp(_GrassHeight + randomOffset, _MinHeight, _MaxHeight);
+    _GrassWidth = clamp(_GrassWidth, _MinWidth, _MaxWidth);
+    _GrassWidth *= saturate(distanceFade);
+    _BladeForward *= _GrassHeight;
+
+    half3 wind = WindCalculation(sv.positionWS);
 
     // Loop to create blade per vertex
-    for (int j = 0; j < _MaxBladesPerVertex * distanceFade; j++)
+    for (int j = 0; j < numBladesPerVertex * distanceFade; j++)
     {
         // Vertices arrays
         DrawVertex drawVertices[GRASS_NUM_VERTICES_PER_BLADE];
         // Set rotation and radius of the blades
-        float3 rotationSeed = sv.positionWS.xyz + float3(j * 0.987, j * 1.423, j * 0.531);
-        float randomAngle = rand(rotationSeed) * TWO_PI;
-        float3x3 facingRotationMatrix = AngleAxis3x3(randomAngle, faceNormal);
+        half randomAngle = RandomRange(half2(sv.positionWS.x + j, sv.positionWS.z + j), 0, TWO_PI);
+        half3x3 facingRotationMatrix = AngleAxis3x3(randomAngle, faceNormal);
 
-        float bladeRadius = j / _MaxBladesPerVertex;
+        half bladeRadius = j / numBladesPerVertex;
+        half offset = (1 - bladeRadius) * _BladeRadius;
 
-        // create blade
-        for (int i = 0; i < _MaxSegmentsPerBlade; i++)
+        half3 totalMovement = 0;
+        if (cut < sv.positionWS.y + 0.5)
         {
-            half t = i / _MaxSegmentsPerBlade;
+
+        }
+        // create blade
+        for (int i = 0; i < numSegmentsPerBlade; i++)
+        {
+            half t = i / numSegmentsPerBlade;
             half segmentHeight = _GrassHeight * t;
             half segmentWidth = _GrassWidth * (1 - t);
-            
-            // 노말 기준 좌표계에서 계산
-            float3 localPos = float3(0, segmentHeight, 0);
-            float3 worldPos = sv.positionWS + mul(normalToWorld, localPos);
-            
-            // Wind 영향을 노말 평면에 투영
-            half3 windEffect = WindCalculation(worldPos, faceNormal);
-            worldPos += mul(normalToWorld, windEffect * t);
-            
+
+            segmentWidth = i == 0 ? _BottomWidth * segmentWidth : segmentWidth;
+
+            half3 newPos = i == 0
+                               ? sv.positionWS
+                               : sv.positionWS + totalMovement * t + wind * t + faceNormal * _GrassHeight * t;
+            half curveStrength = pow(abs(t), _BladeCurve) * _BladeForward;
+
             // vertices 생성
-            drawVertices[i * 2] = GrassVertex(worldPos, segmentWidth, segmentHeight, 
-                                           bladeRadius, half2(0, t), faceNormal, facingRotationMatrix);
-            drawVertices[i * 2 + 1] = GrassVertex(worldPos, -segmentWidth, segmentHeight, 
-                                                bladeRadius, half2(1, t), faceNormal, facingRotationMatrix);
+            drawVertices[i * 2] = GrassVertex(newPos, segmentWidth, segmentHeight,
+                                              offset, half2(0, t), curveStrength, faceNormal, facingRotationMatrix);
+            drawVertices[i * 2 + 1] = GrassVertex(newPos, -segmentWidth, segmentHeight,
+                                                  offset, half2(1, t), curveStrength, faceNormal,
+                                                  facingRotationMatrix);
         }
 
-        float3 topPosOS = sv.positionWS + faceNormal * _GrassHeight;
-        drawVertices[_MaxSegmentsPerBlade * 2] = GrassVertex(topPosOS, 0, _GrassHeight, bladeRadius,
-                                                            float2(0.5, 1), faceNormal, facingRotationMatrix);
+        half3 topPosOS = sv.positionWS + wind + faceNormal * _GrassHeight;
+        drawVertices[numSegmentsPerBlade * 2] = GrassVertex(topPosOS, 0, _GrassHeight, offset,
+                                                            half2(0.5, 1), _BladeForward, faceNormal,
+                                                            facingRotationMatrix);
 
-        for (int k = 0; k < _MaxSegmentsPerBlade; ++k)
+        for (int k = 0; k < numTrianglesPerBlade; ++k)
         {
             DrawTriangle tri = (DrawTriangle)0;
             tri.normalOS = faceNormal;
             tri.diffuseColor = sv.color;
-            tri.extraBuffer = float4(cut, 0, 0, 0);
+            tri.extraBuffer = half4(cut, 0, 0, 0);
 
             tri.vertices[0] = drawVertices[k];
             tri.vertices[1] = drawVertices[k + 1];

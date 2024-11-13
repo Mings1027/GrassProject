@@ -30,6 +30,15 @@ public class SpatialGrid
         return _grid.TryGetValue(key, out var cellSet) && cellSet.Count > 0;
     }
 
+    // 특정 셀의 모든 오브젝트 인덱스를 가져오는 메서드
+    public void GetObjectsInCell(long key, List<int> results)
+    {
+        if (_grid.TryGetValue(key, out var cellSet))
+        {
+            results.AddRange(cellSet);
+        }
+    }
+
     public void AddObject(Vector3 position, int index)
     {
         var cell = WorldToCell(position);

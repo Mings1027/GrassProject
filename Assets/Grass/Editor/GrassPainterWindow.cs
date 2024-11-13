@@ -414,17 +414,14 @@ namespace Grass.Editor
                 (BrushOption)GUILayout.Toolbar((int)_selectedToolOption, _toolbarStrings, GUILayout.Height(25));
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Brush Settings", EditorStyles.boldLabel);
-            EditorGUILayout.BeginHorizontal();
             toolSettings.BrushSize = EditorGUILayout.Slider("Brush Size", toolSettings.BrushSize,
                 toolSettings.MinBrushSize, toolSettings.MaxBrushSize);
-            EditorGUILayout.EndHorizontal();
-
+            toolSettings.NormalLimit = DrawSliderWithTooltip("Normal Limit", toolSettings.NormalLimit,
+                toolSettings.MinNormalLimit, toolSettings.MaxNormalLimit,
+                "Higher values allow painting on steeper surfaces");
+            
             if (_selectedToolOption == BrushOption.Add)
             {
-                toolSettings.NormalLimit = DrawSliderWithTooltip("Normal Limit", toolSettings.NormalLimit,
-                    toolSettings.MinNormalLimit, toolSettings.MaxNormalLimit,
-                    "Higher values allow painting on steeper surfaces");
-                
                 toolSettings.Density = DrawIntSliderWithTooltip("Density", toolSettings.Density,
                     toolSettings.MinDensity, toolSettings.MaxDensity,
                     "Number of grass instances created per brush stroke");
@@ -521,12 +518,14 @@ namespace Grass.Editor
 
             if (_selectedToolOption == BrushOption.Reposition)
             {
-                EditorGUILayout.Separator();
-                toolSettings.NormalLimit = EditorGUILayout.Slider("Normal Limit", toolSettings.NormalLimit,
-                    toolSettings.MinNormalLimit, toolSettings.MaxNormalLimit);
+                var style = new GUIStyle(EditorStyles.helpBox)
+                {
+                    fontSize = 13, // 글자 크기 조절
+                    fontStyle = FontStyle.Bold, // 볼드체 적용
+                    padding = new RectOffset(10, 10, 10, 10) // 여백 조절
+                };
 
-                toolSettings.RepositionOffset =
-                    EditorGUILayout.FloatField("Reposition Y Offset", toolSettings.RepositionOffset);
+                EditorGUILayout.LabelField("Increase brush size if grass is not being repositioned", style);
             }
 
             EditorGUILayout.Separator();
@@ -764,16 +763,16 @@ namespace Grass.Editor
             EditorGUILayout.Separator();
             EditorGUILayout.Separator();
 
-            EditorGUILayout.LabelField("Random Height Min/Max");
-            EditorGUILayout.MinMaxSlider(ref curPresets.randomHeightMin, ref curPresets.randomHeightMax,
-                curPresets.MinHeightLimit, curPresets.MaxHeightLimit);
-
-            EditorGUILayout.BeginHorizontal();
-
-            curPresets.randomHeightMin = EditorGUILayout.FloatField(curPresets.randomHeightMin);
-            curPresets.randomHeightMax = EditorGUILayout.FloatField(curPresets.randomHeightMax);
-
-            EditorGUILayout.EndHorizontal();
+            // EditorGUILayout.LabelField("Random Height Min/Max");
+            // EditorGUILayout.MinMaxSlider(ref curPresets.randomHeightMin, ref curPresets.randomHeightMax,
+            //     curPresets.MinHeightLimit, curPresets.MaxHeightLimit);
+            //
+            // EditorGUILayout.BeginHorizontal();
+            //
+            // curPresets.randomHeightMin = EditorGUILayout.FloatField(curPresets.randomHeightMin);
+            // curPresets.randomHeightMax = EditorGUILayout.FloatField(curPresets.randomHeightMax);
+            //
+            // EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.LabelField("Blade Shape Settings", EditorStyles.boldLabel);
             curPresets.bladeRadius = EditorGUILayout.Slider("Blade Radius",
@@ -909,7 +908,6 @@ namespace Grass.Editor
             }
         }
 
-        
         private void DrawGridHandles()
         {
             if (_spatialGrid == null) return;
@@ -928,8 +926,8 @@ namespace Grass.Editor
             var centerCell = _spatialGrid.WorldToCell(hitCellCenter);
 
             // 그리드 색상 설정
-            Handles.color = new Color(0.2f, 0.8f, 1f, 0.2f); // 기본 셀 색상
-            var activeCellColor = new Color(0.3f, 1f, 0.3f, 0.4f); // 활성 셀 색상 (풀이 있는 셀)
+            var notActiveCellColor = new Color(1f, 0f, 0f, 0.3f); // 기본 셀 색상
+            var activeCellColor = new Color(0f, 1f, 0f); // 활성 셀 색상 (풀이 있는 셀)
 
             // 브러시 범위 내의 셀들만 표시
             for (var x = -cellRadius; x <= cellRadius; x++)
@@ -943,7 +941,7 @@ namespace Grass.Editor
                 // 셀에 풀이 있는지 확인하고 색상 설정
                 var key = SpatialGrid.GetKey(checkCell.x, checkCell.y, checkCell.z);
                 var hasGrass = _spatialGrid.HasAnyObject(key);
-                Handles.color = hasGrass ? activeCellColor : new Color(0.2f, 0.8f, 1f, 0.1f);
+                Handles.color = hasGrass ? activeCellColor : notActiveCellColor;
 
                 // 셀 그리기
                 DrawCellCube(cellCenter, cellSize);

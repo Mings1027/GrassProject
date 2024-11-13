@@ -30,7 +30,6 @@ public class GrassToolSettingSo : ScriptableObject
     [SerializeField] private float adjustHeight = 0f;
     [SerializeField] private float adjustWidthMax = 2f;
     [SerializeField] private float adjustHeightMax = 2f;
-    [SerializeField] private float repositionOffset = 1f;
 
     [Header("Color Settings")] [SerializeField]
     private float rangeR;
@@ -126,11 +125,6 @@ public class GrassToolSettingSo : ScriptableObject
     {
         get => adjustHeightMax;
         set => adjustHeightMax = Mathf.Max(0.01f, value);
-    }
-    public float RepositionOffset
-    {
-        get => repositionOffset;
-        set => repositionOffset = value;
     }
     public float RangeR
     {
