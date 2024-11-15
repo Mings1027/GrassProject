@@ -267,15 +267,15 @@ namespace Grass.Editor
 
             if (_grassCompute.GrassSetting == null)
             {
-                _grassCompute.GrassSetting = CreateOrGetGrassSetting();
+                _grassCompute.SetGrassSetting(CreateOrGetGrassSetting());
             }
 
-            _grassCompute.GrassSetting = (GrassSettingSO)EditorGUILayout.ObjectField(
+            _grassCompute.SetGrassSetting((GrassSettingSO)EditorGUILayout.ObjectField(
                 "Grass Settings Object",
                 _grassCompute.GrassSetting,
                 typeof(GrassSettingSO),
                 false
-            );
+            ));
 
             _grassCompute.GrassSetting.materialToUse = (Material)EditorGUILayout.ObjectField(
                 "Grass Material",
@@ -1054,7 +1054,7 @@ namespace Grass.Editor
                 name = "Grass System - Holder"
             };
             _grassCompute = grassObject.AddComponent<GrassComputeScript>();
-            _grassCompute.GrassSetting = CreateOrGetGrassSetting();
+            _grassCompute.SetGrassSetting(CreateOrGetGrassSetting());
 
             InitSpatialGrid();
 
@@ -1116,79 +1116,82 @@ namespace Grass.Editor
             }
         }
 
-        private void DrawGridHandles()
+       private void DrawGridHandles()
+{
+    if (_spatialGrid == null) return;
+    var cellSize = _spatialGrid.CellSize;
+
+    if (!Physics.Raycast(_mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
+        return;
+
+    var hitCell = _spatialGrid.WorldToCell(hit.point);
+    var cellRadius = Mathf.CeilToInt(toolSettings.BrushSize / cellSize);
+    
+    // Debug point to verify ray hit
+    Handles.color = Color.yellow;
+    Handles.SphereHandleCap(0, hit.point, Quaternion.identity, 0.3f, EventType.Repaint);
+
+    var notActiveCellColor = new Color(1f, 0f, 0f, 0.3f);
+    var activeCellColor = new Color(0f, 1f, 0f, 0.3f);
+
+    // 브러시 범위 내 모든 셀 순회
+    for (var x = -cellRadius; x <= cellRadius; x++)
+    for (var z = -cellRadius; z <= cellRadius; z++)
+    {
+        // 원형 브러시 범위 체크
+        if (x * x + z * z > cellRadius * cellRadius)
+            continue;
+
+        // Y축은 히트 포인트 기준으로 고정
+        var checkCell = new Vector3Int(hitCell.x + x, hitCell.y, hitCell.z + z);
+        var cellWorldPos = _spatialGrid.CellToWorld(checkCell);
+        var cellCenter = cellWorldPos + Vector3.one * (cellSize * 0.5f);
+
+        // 실제 브러시 범위 내에 있는지 체크
+        if (Vector3.Distance(cellCenter, hit.point) <= toolSettings.BrushSize)
         {
-            if (_spatialGrid == null) return;
-            var cellSize = _spatialGrid.CellSize;
-
-            // 마우스 근처의 셀만 표시하기 위한 범위 계산
-            var hitCellCenter = Vector3.zero;
-            if (Physics.Raycast(_mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
-            {
-                var hitCell = _spatialGrid.WorldToCell(hit.point);
-                hitCellCenter = _spatialGrid.CellToWorld(hitCell);
-            }
-
-            // 브러시 크기를 기준으로 표시할 셀 범위 계산
-            var cellRadius = Mathf.CeilToInt(toolSettings.BrushSize / cellSize);
-            var centerCell = _spatialGrid.WorldToCell(hitCellCenter);
-
-            // 그리드 색상 설정
-            var notActiveCellColor = new Color(1f, 0f, 0f, 0.3f); // 기본 셀 색상
-            var activeCellColor = new Color(0f, 1f, 0f); // 활성 셀 색상 (풀이 있는 셀)
-
-            // 브러시 범위 내의 셀들만 표시
-            for (var x = -cellRadius; x <= cellRadius; x++)
-            for (var y = -cellRadius; y <= cellRadius; y++)
-            for (var z = -cellRadius; z <= cellRadius; z++)
-            {
-                var checkCell = new Vector3Int(centerCell.x + x, centerCell.y + y, centerCell.z + z);
-                var cellWorldPos = _spatialGrid.CellToWorld(checkCell);
-                var cellCenter = cellWorldPos + new Vector3(cellSize * 0.5f, cellSize * 0.5f, cellSize * 0.5f);
-
-                // 셀에 풀이 있는지 확인하고 색상 설정
-                var key = SpatialGrid.GetKey(checkCell.x, checkCell.y, checkCell.z);
-                var hasGrass = _spatialGrid.HasAnyObject(key);
-                Handles.color = hasGrass ? activeCellColor : notActiveCellColor;
-
-                // 셀 그리기
-                DrawCellCube(cellCenter, cellSize);
-            }
+            var key = SpatialGrid.GetKey(checkCell.x, checkCell.y, checkCell.z);
+            var hasGrass = _spatialGrid.HasAnyObject(key);
+            
+            Handles.color = hasGrass ? activeCellColor : notActiveCellColor;
+            DrawCellWireframe(cellCenter, cellSize);
         }
+    }
+}
 
-        private void DrawCellCube(Vector3 center, float size)
-        {
-            var halfSize = size * 0.5f;
-            var points = new[]
-            {
-                center + new Vector3(-halfSize, -halfSize, -halfSize),
-                center + new Vector3(halfSize, -halfSize, -halfSize),
-                center + new Vector3(halfSize, -halfSize, halfSize),
-                center + new Vector3(-halfSize, -halfSize, halfSize),
-                center + new Vector3(-halfSize, halfSize, -halfSize),
-                center + new Vector3(halfSize, halfSize, -halfSize),
-                center + new Vector3(halfSize, halfSize, halfSize),
-                center + new Vector3(-halfSize, halfSize, halfSize)
-            };
+private void DrawCellWireframe(Vector3 center, float size)
+{
+    var halfSize = size * 0.5f;
+    var points = new[]
+    {
+        center + new Vector3(-halfSize, -halfSize, -halfSize), // 0 bottom
+        center + new Vector3(halfSize, -halfSize, -halfSize),  // 1
+        center + new Vector3(halfSize, -halfSize, halfSize),   // 2
+        center + new Vector3(-halfSize, -halfSize, halfSize),  // 3
+        center + new Vector3(-halfSize, halfSize, -halfSize),  // 4 top
+        center + new Vector3(halfSize, halfSize, -halfSize),   // 5
+        center + new Vector3(halfSize, halfSize, halfSize),    // 6
+        center + new Vector3(-halfSize, halfSize, halfSize)    // 7
+    };
 
-            // 아래쪽 면
-            Handles.DrawLine(points[0], points[1]);
-            Handles.DrawLine(points[1], points[2]);
-            Handles.DrawLine(points[2], points[3]);
-            Handles.DrawLine(points[3], points[0]);
+    // Draw bottom square
+    Handles.DrawLine(points[0], points[1]);
+    Handles.DrawLine(points[1], points[2]);
+    Handles.DrawLine(points[2], points[3]);
+    Handles.DrawLine(points[3], points[0]);
 
-            // 위쪽 면
-            Handles.DrawLine(points[4], points[5]);
-            Handles.DrawLine(points[5], points[6]);
-            Handles.DrawLine(points[6], points[7]);
-            Handles.DrawLine(points[7], points[4]);
+    // Draw top square
+    Handles.DrawLine(points[4], points[5]);
+    Handles.DrawLine(points[5], points[6]);
+    Handles.DrawLine(points[6], points[7]);
+    Handles.DrawLine(points[7], points[4]);
 
-            // 수직선
-            Handles.DrawLine(points[0], points[4]);
-            Handles.DrawLine(points[1], points[5]);
-            Handles.DrawLine(points[2], points[6]);
-            Handles.DrawLine(points[3], points[7]);
-        }
+    // Draw vertical lines
+    Handles.DrawLine(points[0], points[4]);
+    Handles.DrawLine(points[1], points[5]);
+    Handles.DrawLine(points[2], points[6]);
+    Handles.DrawLine(points[3], points[7]);
+}
 
         private void OnScene(SceneView scene)
         {
