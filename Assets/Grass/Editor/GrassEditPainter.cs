@@ -23,7 +23,7 @@ namespace Grass.Editor
 
         public void EditGrass(Ray mousePointRay, GrassToolSettingSo toolSettings, EditOption editOption)
         {
-            if (!Physics.Raycast(mousePointRay, out var hit, 100)) return;
+            if (!Physics.Raycast(mousePointRay, out var hit, grassCompute.GrassSetting.maxFadeDistance)) return;
 
             sharedIndices.Clear();
             _processedIndices.Clear();

@@ -68,8 +68,6 @@ public class GrassToolSettingSo : ScriptableObject
     public int MinDensity => 1;
     public float MaxNormalLimit => 1f;
     public float MinNormalLimit => 0f;
-    public float MinBrushHeight => 0.1f;
-    public float MaxBrushHeight => 50f;
     public int MaxGrassAmountToGenerate => 100000;
     public int MinGrassAmountToGenerate => 0;
     public float MaxGenerationDensity => 10f;

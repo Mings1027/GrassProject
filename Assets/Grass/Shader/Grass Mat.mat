@@ -62,7 +62,7 @@ Material:
     - _OverallIntensity: 1
     - _RimGradientEnd: 0.256
     - _RimGradientStart: 0
-    - _RimIntensity: 2
+    - _RimIntensity: 0.527
     - _RimPower: 10
     - _SSSAttenuation: 1
     - _SSSDistortion: 0.531

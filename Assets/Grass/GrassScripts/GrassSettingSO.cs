@@ -9,7 +9,7 @@ public class GrassSettingSO : ScriptableObject
     public Material materialToUse;
 
     // Blade
-    
+
     public float bladeRadius = 0.3f;
     public float MinBladeRadius => 0f;
     public float MaxBladeRadius => 2f;
@@ -36,6 +36,8 @@ public class GrassSettingSO : ScriptableObject
     public float maxHeight = 3f;
     public float MaxHeightLimit => 3f;
 
+    public float randomHeightMin = 0.01f;
+    public float randomHeightMax = 3f;
     // Wind
     [Header("Wind")] public float windSpeed = 0.05f;
     public float MinWindSpeed => -10f;

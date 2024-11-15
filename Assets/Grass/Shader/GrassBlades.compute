@@ -103,10 +103,10 @@ float rand(float3 co)
 }
 
 // Function to generate a random value within a given range
-float RandomRange(float2 Seed, float Min, float Max)
+float RandomRange(float2 seed, float min, float max)
 {
-    float rand = frac(sin(dot(Seed, float2(12.9898, 78.233))) * 43758.5453);
-    return lerp(Min, Max, rand);
+    float rand = frac(sin(dot(seed, float2(12.9898, 78.233))) * 43758.5453);
+    return lerp(min, max, rand);
 }
 
 // Function to create a rotation matrix that rotates around a given axis by a specified angle
@@ -182,10 +182,34 @@ float3 WindCalculation(float3 positionWS)
     return wind;
 }
 
-void CalculateInteractor()
+half3 CalculateInteractor(float3 positionWS)
 {
-    
+    half3 totalForce = 0;
+    for (int i = 0; i < _InteractorsLength; i++)
+    {
+        float4 interactorData = _PositionsMoving[i];
+        float3 interactorPos = interactorData.xyz;
+        float interactorRadius = interactorData.w;
+
+        float3 offsetToInteractor = positionWS - interactorPos;
+        float distanceToInteractor = length(offsetToInteractor);
+
+        if (distanceToInteractor < interactorRadius)
+        {
+            float normalizedDistance = distanceToInteractor / interactorRadius;
+            float interactionStrength = (1 - normalizedDistance) * _InteractorStrength;
+
+            float3 direction = normalize(offsetToInteractor);
+            float3 horizontalForce = float3(direction.x, 0, direction.z) * interactionStrength;
+            float3 verticalForce = float3(0, -0.3, 0) * interactionStrength;
+
+            totalForce += horizontalForce + verticalForce;
+        }
+    }
+    float maxForce = 2.0;
+    return clamp(totalForce, -maxForce, maxForce);
 }
+
 // ----------------------------------------
 
 // The main kernel
@@ -247,7 +271,7 @@ void Main(uint id : SV_DispatchThreadID)
         half3 totalMovement = 0;
         if (cut < sv.positionWS.y + 0.5)
         {
-
+            totalMovement = CalculateInteractor(sv.positionWS);
         }
         // create blade
         for (int i = 0; i < numSegmentsPerBlade; i++)
@@ -271,7 +295,7 @@ void Main(uint id : SV_DispatchThreadID)
                                                   facingRotationMatrix);
         }
 
-        half3 topPosOS = sv.positionWS + wind + faceNormal * _GrassHeight;
+        half3 topPosOS = sv.positionWS + totalMovement + wind + faceNormal * _GrassHeight;
         drawVertices[numSegmentsPerBlade * 2] = GrassVertex(topPosOS, 0, _GrassHeight, offset,
                                                             half2(0.5, 1), _BladeForward, faceNormal,
                                                             facingRotationMatrix);

@@ -16,7 +16,8 @@ namespace Grass.Editor
 
         public void RepositionGrass(Ray mousePointRay, GrassToolSettingSo toolSettings)
         {
-            if (!Physics.Raycast(mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
+            if (!Physics.Raycast(mousePointRay, out var hit, grassCompute.GrassSetting.maxFadeDistance,
+                    toolSettings.PaintMask.value))
                 return;
 
             var hitPoint = hit.point;
@@ -51,7 +52,8 @@ namespace Grass.Editor
             return (minIndex, maxIndex - minIndex + 1);
         }
 
-        private void ProcessGrassBatch(List<GrassData> grassList, Vector3 hitPoint, float brushSizeSqr, GrassToolSettingSo toolSettings)
+        private void ProcessGrassBatch(List<GrassData> grassList, Vector3 hitPoint, float brushSizeSqr,
+                                       GrassToolSettingSo toolSettings)
         {
             for (var i = 0; i < sharedIndices.Count; i++)
             {
@@ -67,7 +69,8 @@ namespace Grass.Editor
                         grassData.position.z
                     );
 
-                    if (Physics.Raycast(origin, Vector3.down, out var hitInfo, float.MaxValue,
+                    if (Physics.Raycast(origin, Vector3.down, out var hitInfo,
+                            grassCompute.GrassSetting.maxFadeDistance,
                             toolSettings.PaintMask.value))
                     {
                         var newData = grassData;
