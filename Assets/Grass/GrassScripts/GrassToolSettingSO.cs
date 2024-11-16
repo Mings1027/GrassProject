@@ -52,8 +52,7 @@ public class GrassToolSettingSo : ScriptableObject
     private int grassAmountToGenerate = 100000;
     [SerializeField] private float generationDensity = 1f;
 
-    [Header("Input Settings")] public KeyBinding grassModifierKey;
-    public MouseButton grassMouseButton;
+    [Header("Input Settings")] public MouseButton grassMouseButton;
 
     // Constants
     public float MinSizeWidth => 0.01f;

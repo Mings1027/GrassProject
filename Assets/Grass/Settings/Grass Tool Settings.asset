@@ -13,15 +13,15 @@ MonoBehaviour:
   m_Name: Grass Tool Settings
   m_EditorClassIdentifier: 
   layerBlocking:
+  - 1
+  - 0.267
+  - 1
   - 0
   - 0
   - 0
   - 0
   - 0
-  - 0
-  - 0
-  - 0
-  layerFading: 0000000000000000
+  layerFading: 0101000000000000
   vertexColorSettings: 0
   vertexFade: 0
   grassWidth: 0.21
@@ -32,20 +32,19 @@ MonoBehaviour:
   adjustHeightMax: 0.01
   rangeR: 0.594
   rangeG: 0.299
-  rangeB: 0.152
-  brushColor: {r: 0.09803922, g: 0.81960785, b: 0.21212654, a: 1}
+  rangeB: 0.399
+  brushColor: {r: 0.09803922, g: 0.81960785, b: 0.13316126, a: 1}
   paintMask:
     serializedVersion: 2
     m_Bits: 8
   paintBlockMask:
     serializedVersion: 2
     m_Bits: 64
-  brushSize: 14.949998
+  brushSize: 8.050023
   brushFalloffSize: 1
   brushTransitionSpeed: 0.181
   density: 224
-  normalLimit: 1
-  grassAmountToGenerate: 100000
+  normalLimit: 0.115
+  grassAmountToGenerate: 25000
   generationDensity: 1
-  grassModifierKey: 130
   grassMouseButton: 0

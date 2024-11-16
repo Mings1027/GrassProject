@@ -169,7 +169,7 @@ DrawVertex GrassVertex(float3 positionWS, float width, float height,
     return output;
 }
 
-float3 WindCalculation(float3 positionWS)
+float3 WindCalculation(float3 positionWS, float grassHeight)
 {
     float timeWind = _Time.x * _WindSpeed; // Time value based on wind speed
     float posX = positionWS.x; // X position of the vertex
@@ -177,8 +177,8 @@ float3 WindCalculation(float3 positionWS)
     float3 wind = float3(
         sin(timeWind + posX) + sin(timeWind + posZ * 2) + sin(timeWind * 0.1 + posX),
         0,
-        cos(timeWind + posX * 2) + cos(timeWind + posZ)); // Calculate wind vector
-    wind *= _WindStrength; // Apply wind strength
+        cos(timeWind + posX * 2) + cos(timeWind + posZ * 2)); // Calculate wind vector
+    wind *= grassHeight * _WindStrength; // Apply wind strength
     return wind;
 }
 
@@ -254,7 +254,7 @@ void Main(uint id : SV_DispatchThreadID)
     _GrassWidth *= saturate(distanceFade);
     _BladeForward *= _GrassHeight;
 
-    half3 wind = WindCalculation(sv.positionWS);
+    half3 wind = WindCalculation(sv.positionWS, _GrassHeight);
 
     // Loop to create blade per vertex
     for (int j = 0; j < numBladesPerVertex * distanceFade; j++)

@@ -26,6 +26,13 @@ namespace Grass.Editor
         Both
     }
 
+    public enum GenerateTab
+    {
+        Basic,
+        TerrainLayers,
+        Advanced
+    }
+
     public abstract class GrassPainterHelper
     {
         public static Bounds? GetObjectBounds(GameObject obj)
@@ -65,28 +72,6 @@ namespace Grass.Editor
             return colors[index1] * barycentricCoord.x +
                    colors[index2] * barycentricCoord.y +
                    colors[index3] * barycentricCoord.z;
-        }
-
-        public static bool AreModifierKeysPressed(KeyBinding keyBindings)
-        {
-            if (keyBindings == KeyBinding.None) return true;
-
-            var isPressed = true;
-
-            if (keyBindings.HasFlag(KeyBinding.LeftControl) ||
-                keyBindings.HasFlag(KeyBinding.RightControl))
-                isPressed &= Event.current.control;
-            if (keyBindings.HasFlag(KeyBinding.LeftAlt) ||
-                keyBindings.HasFlag(KeyBinding.RightAlt))
-                isPressed &= Event.current.alt;
-            if (keyBindings.HasFlag(KeyBinding.LeftShift) ||
-                keyBindings.HasFlag(KeyBinding.RightShift))
-                isPressed &= Event.current.shift;
-            if (keyBindings.HasFlag(KeyBinding.LeftCommand) ||
-                keyBindings.HasFlag(KeyBinding.RightCommand))
-                isPressed &= Event.current.command;
-
-            return isPressed;
         }
 
         public static bool IsMouseButtonPressed(MouseButton button)

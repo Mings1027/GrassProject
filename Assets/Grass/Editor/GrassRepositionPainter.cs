@@ -39,6 +39,35 @@ namespace Grass.Editor
             }
         }
 
+        private void ProcessGrassBatch(List<GrassData> grassList, Vector3 hitPoint, float brushSizeSqr,
+                                       GrassToolSettingSo toolSettings)
+        {
+            for (var i = 0; i < sharedIndices.Count; i++)
+            {
+                var index = sharedIndices[i];
+                var grassData = grassList[index];
+                var start = new Vector3(
+                    grassData.position.x, MaxRayHeight, grassData.position.z);
+                var ray = new Ray(start, Vector3.down * MaxRayHeight);
+                if (Physics.Raycast(ray, out var hit, MaxRayHeight, toolSettings.PaintMask.value))
+                {
+                    var distanceSqr = GrassPainterHelper.SqrDistance(grassData.position, hitPoint);
+                    if (distanceSqr <= brushSizeSqr)
+                    {
+                        var newData = grassData;
+                        newData.position = hit.point;
+                        newData.normal = hit.normal;
+
+                        spatialGrid.RemoveObject(grassData.position, index);
+                        spatialGrid.AddObject(hit.point, index);
+
+                        grassList[index] = newData;
+                        _changedIndices.Add(index);
+                    }
+                }
+            }
+        }
+
         private (int startIndex, int count) GetModifiedRange()
         {
             if (_changedIndices.Count == 0)
@@ -50,42 +79,6 @@ namespace Grass.Editor
             int maxIndex = _changedIndices[_changedIndices.Count - 1];
 
             return (minIndex, maxIndex - minIndex + 1);
-        }
-
-        private void ProcessGrassBatch(List<GrassData> grassList, Vector3 hitPoint, float brushSizeSqr,
-                                       GrassToolSettingSo toolSettings)
-        {
-            for (var i = 0; i < sharedIndices.Count; i++)
-            {
-                var index = sharedIndices[i];
-                var grassData = grassList[index];
-                var distanceSqr = GrassPainterHelper.SqrDistance(grassData.position, hitPoint);
-
-                if (distanceSqr <= brushSizeSqr)
-                {
-                    var origin = new Vector3(
-                        grassData.position.x,
-                        MaxRayHeight,
-                        grassData.position.z
-                    );
-
-                    if (Physics.Raycast(origin, Vector3.down, out var hitInfo,
-                            grassCompute.GrassSetting.maxFadeDistance,
-                            toolSettings.PaintMask.value))
-                    {
-                        var newData = grassData;
-                        newData.position = hitInfo.point;
-                        newData.normal = hitInfo.normal;
-
-                        // SpatialGrid 업데이트
-                        spatialGrid.RemoveObject(grassData.position, index);
-                        spatialGrid.AddObject(hitInfo.point, index);
-
-                        grassList[index] = newData;
-                        _changedIndices.Add(index);
-                    }
-                }
-            }
         }
 
         public override void Clear()

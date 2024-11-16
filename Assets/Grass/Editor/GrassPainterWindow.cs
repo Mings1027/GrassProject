@@ -35,7 +35,7 @@ namespace Grass.Editor
         private readonly string[] _toolbarStrings = { "Add", "Remove", "Edit", "Reposition" };
         private readonly string[] _editOptionStrings = { "Edit Colors", "Edit Width/Height", "Both" };
         private readonly string[] _modifyOptionStrings = { "Width/Height", "Color", "Both" };
-
+        private readonly string[] _generateTabStrings = { "Basic", "Terrain Layers", "Advanced" };
         private Vector3 _hitPos;
         private Vector3 _hitNormal;
 
@@ -45,6 +45,7 @@ namespace Grass.Editor
         private BrushOption _selectedToolOption;
         private EditOption _selectedEditOption;
         private ModifyOption _selectedModifyOption;
+        private GenerateTab _selectedGenerateOption;
 
         private Ray _mousePointRay;
 
@@ -55,9 +56,7 @@ namespace Grass.Editor
         private GrassComputeScript _grassCompute;
 
         private Vector3 _cachedPos;
-
-        private bool _showLayers;
-
+        
         private Bounds _grassBounds;
 
         private bool _isInit;
@@ -397,11 +396,18 @@ namespace Grass.Editor
 
         private void DrawKeyBindingsUI()
         {
-            EditorGUILayout.LabelField("Hold Modifier key(s) + drag mouse button to paint grass",
-                EditorStyles.boldLabel);
+            var buttonName = toolSettings.grassMouseButton switch
+            {
+                MouseButton.LeftMouse => "Left",
+                MouseButton.RightMouse => "Right",
+                MouseButton.MiddleMouse => "Middle",
+                _ => "Unknown"
+            };
 
-            toolSettings.grassModifierKey = (KeyBinding)EditorGUILayout.MaskField("Modifier Key(s)",
-                (int)toolSettings.grassModifierKey, Enum.GetNames(typeof(KeyBinding)));
+            var style = new GUIStyle(EditorStyles.label) { richText = true };
+            EditorGUILayout.LabelField($"Hold and drag with <b>{buttonName}</b> mouse button to paint grass",
+                style);
+
             toolSettings.grassMouseButton =
                 (MouseButton)EditorGUILayout.EnumPopup("Mouse Button", toolSettings.grassMouseButton);
         }
@@ -451,6 +457,8 @@ namespace Grass.Editor
 
         private void DrawBrushToolbar()
         {
+            // HandlePaintPanelKeyboardInput();
+
             EditorGUILayout.Separator();
             _selectedToolOption = (BrushOption)GUILayout.Toolbar(
                 (int)_selectedToolOption,
@@ -458,6 +466,83 @@ namespace Grass.Editor
                 GUILayout.Height(25)
             );
             EditorGUILayout.Separator();
+        }
+
+        private void HandlePaintPanelKeyboardInput()
+        {
+            // 현재 이벤트를 가져옴
+            Event e = Event.current;
+
+            // 숫자 키 1, 2, 3, 4 입력 감지
+            if (e.type == EventType.KeyDown)
+            {
+                switch (e.keyCode)
+                {
+                    case KeyCode.Alpha1: // 숫자 1 키
+                        _selectedToolOption = BrushOption.Add;
+                        e.Use(); // 이벤트를 소비하여 기본 동작을 막음
+                        break;
+                    case KeyCode.Alpha2: // 숫자 2 키
+                        _selectedToolOption = BrushOption.Remove;
+                        e.Use();
+                        break;
+                    case KeyCode.Alpha3: // 숫자 3 키
+                        _selectedToolOption = BrushOption.Edit;
+                        e.Use();
+                        break;
+                    case KeyCode.Alpha4: // 숫자 4 키
+                        _selectedToolOption = BrushOption.Reposition;
+                        e.Use();
+                        break;
+                }
+            }
+        }
+
+        private void HandleModifyPanelKeyboardInput()
+        {
+            Event e = Event.current;
+
+            if (e.type == EventType.KeyDown)
+            {
+                switch (e.keyCode)
+                {
+                    case KeyCode.Alpha1: // 숫자 1 키
+                        _selectedModifyOption = ModifyOption.WidthHeight;
+                        e.Use(); // 이벤트를 소비하여 기본 동작을 막음
+                        break;
+                    case KeyCode.Alpha2: // 숫자 2 키
+                        _selectedModifyOption = ModifyOption.Color;
+                        e.Use();
+                        break;
+                    case KeyCode.Alpha3: // 숫자 3 키
+                        _selectedModifyOption = ModifyOption.Both;
+                        e.Use();
+                        break;
+                }
+            }
+        }
+
+        private void HandleGeneratePanelKeyboardInput()
+        {
+            var e = Event.current;
+            if (e.type == EventType.KeyDown)
+            {
+                switch (e.keyCode)
+                {
+                    case KeyCode.Alpha1:
+                        _selectedGenerateOption = GenerateTab.Basic;
+                        e.Use(); // 이벤트를 소비하여 기본 동작을 막음
+                        break;
+                    case KeyCode.Alpha2:
+                        _selectedGenerateOption = GenerateTab.TerrainLayers;
+                        e.Use(); // 이벤트를 소비하여 기본 동작을 막음
+                        break;
+                    case KeyCode.Alpha3:
+                        _selectedGenerateOption = GenerateTab.Advanced;
+                        e.Use(); // 이벤트를 소비하여 기본 동작을 막음
+                        break;
+                }
+            }
         }
 
         private void DrawCommonBrushSettings()
@@ -628,7 +713,8 @@ namespace Grass.Editor
 
         private void ShowModifyPanel()
         {
-            EditorGUILayout.LabelField("Modify Options", EditorStyles.boldLabel);
+            // HandleModifyPanelKeyboardInput();
+
             _selectedModifyOption = (ModifyOption)GUILayout.Toolbar((int)_selectedModifyOption, _modifyOptionStrings,
                 GUILayout.Height(25));
 
@@ -707,10 +793,32 @@ namespace Grass.Editor
 
         private void ShowGeneratePanel()
         {
+            // HandleGeneratePanelKeyboardInput();
+
+            _selectedGenerateOption = (GenerateTab)GUILayout.Toolbar((int)_selectedGenerateOption, _generateTabStrings,
+                GUILayout.Height(25));
+            EditorGUILayout.Separator();
+
             DrawGeneralSettings();
-            DrawMaskSettings();
-            DrawGrassAppearanceSettings();
-            DrawTerrainLayerSettings();
+
+            switch (_selectedGenerateOption)
+            {
+                case GenerateTab.Basic:
+                    DrawMaskSettings();
+                    DrawGrassAppearanceSettings();
+                    break;
+
+                case GenerateTab.TerrainLayers:
+                    DrawTerrainLayerSettings();
+                    break;
+
+                case GenerateTab.Advanced:
+                    // Reserved for future use
+                    EditorGUILayout.HelpBox("Advanced features coming soon!", MessageType.Info);
+                    break;
+            }
+
+            EditorGUILayout.Separator();
             DrawObjectOperations();
             DrawRemoveAllGrassButton();
         }
@@ -798,56 +906,54 @@ namespace Grass.Editor
             toolSettings.RangeB = EditorGUILayout.Slider("Blue", toolSettings.RangeB, 0f, 1f);
         }
 
-        private void DrawTerrainLayerSettings()
-        {
-            _showLayers = EditorGUILayout.Foldout(
-                _showLayers,
-                "Layer Settings(Cutoff Value, Fade Height Toggle",
-                true
-            );
-
-            if (!_showLayers) return;
-
-            DrawTerrainLayerHeader();
-            DrawTerrainLayerContent();
-        }
-
         private void DrawTerrainLayerHeader()
         {
             EditorGUILayout.HelpBox(
-                "각 레이어의 잔디 생성 설정:\n" +
-                "Cutoff: 이 값보다 큰 영역에는 잔디가 생성되지 않습니다 (0 = 항상 생성, 1 = 생성 안 함)\n" +
-                "Fade Toggle: 체크시 해당 레이어의 weight에 따라 잔디 높이가 조절됩니다",
+                "Layer Settings Guide:\n\n" +
+                "• Grass Density:\n" +
+                "  1 = Full grass growth\n" +
+                "  0 = No grass\n\n" +
+                "• Height Toggle:\n" +
+                "  ON = Variable grass height\n" +
+                "  OFF = Fixed grass height",
                 MessageType.Info
             );
         }
 
-        private void DrawTerrainLayerContent()
+        private void DrawTerrainLayerSettings()
         {
+            DrawTerrainLayerHeader();
+
             var terrain = FindAnyObjectByType<Terrain>();
             if (terrain == null)
             {
                 EditorGUILayout.HelpBox(
-                    "Terrain not found in scene. Add a terrain to configure layer settings.",
+                    "No terrain found in scene.\n" +
+                    "1. Create a terrain (3D Object > Terrain)\n" +
+                    "2. Add terrain layers in Paint Terrain tab",
                     MessageType.Warning
                 );
                 return;
             }
 
-            DrawTerrainLayerTable(terrain.terrainData.terrainLayers);
-        }
+            EditorGUILayout.Space(10);
 
-        private void DrawTerrainLayerTable(TerrainLayer[] terrainLayers)
-        {
-            // 열 제목 표시
+            // Column headers with tooltips
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Layer Name", GUILayout.Width(150));
-            EditorGUILayout.LabelField("Cutoff", GUILayout.Width(200));
-            EditorGUILayout.LabelField("Height Fade", GUILayout.Width(70));
+            EditorGUILayout.LabelField(new GUIContent("Layer",
+                    "Terrain layer name"),
+                GUILayout.Width(150));
+            EditorGUILayout.LabelField(new GUIContent("Grass Density",
+                    "Controls how much grass grows in this layer (0: Full grass, 1: No grass)"),
+                GUILayout.Width(200));
+            EditorGUILayout.LabelField(new GUIContent("Vary Height",
+                    "Adjust grass height based on layer strength"),
+                GUILayout.Width(70));
             EditorGUILayout.EndHorizontal();
 
             GrassPainterHelper.DrawHorizontalLine(Color.gray, 1, 2);
 
+            var terrainLayers = terrain.terrainData.terrainLayers;
             for (var i = 0; i < terrainLayers.Length; i++)
             {
                 DrawTerrainLayerRow(i, terrainLayers[i]);
@@ -858,17 +964,28 @@ namespace Grass.Editor
         {
             EditorGUILayout.BeginHorizontal();
 
+            // Layer name
             var layerName = layer != null ? layer.name : $"Layer {index}";
             EditorGUILayout.LabelField(layerName, GUILayout.Width(150));
 
+            // Density slider
+            var sliderContent = new GUIContent("",
+                $"Grass density control for {layerName}\n" +
+                "0: Full grass growth\n" +
+                "1: No grass growth");
             toolSettings.LayerBlocking[index] = EditorGUILayout.Slider(
+                sliderContent,
                 toolSettings.LayerBlocking[index],
                 0f,
                 1f,
                 GUILayout.Width(200)
             );
 
+            // Height variation toggle
+            var toggleContent = new GUIContent("",
+                $"Enable to vary grass height based on {layerName} strength");
             toolSettings.LayerFading[index] = EditorGUILayout.Toggle(
+                toggleContent,
                 toolSettings.LayerFading[index],
                 GUILayout.Width(30)
             );
@@ -1069,8 +1186,6 @@ namespace Grass.Editor
             {
                 if (_paintModeActive)
                 {
-                    DrawHandles();
-
                     if (_showSpatialGrid)
                     {
                         DrawGridHandles();
@@ -1079,119 +1194,83 @@ namespace Grass.Editor
             }
         }
 
-        private void DrawHandles()
+        private void DrawGridHandles()
         {
-            if (Physics.Raycast(_mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
-            {
-                _hitPos = hit.point;
-                _hitNormal = hit.normal;
-            }
+            if (_spatialGrid == null) return;
+            var cellSize = _spatialGrid.CellSize;
 
-            Color discColor2;
-            switch (_selectedToolOption)
-            {
-                case BrushOption.Add:
-                    discColor2 = new Color(0, 0.5f, 0, 0.4f);
-                    break;
-                case BrushOption.Remove:
-                    discColor2 = new Color(0.5f, 0f, 0f, 0.4f);
-                    break;
-                case BrushOption.Edit:
-                    discColor2 = new Color(0.5f, 0.5f, 0f, 0.4f);
-                    break;
-                case BrushOption.Reposition:
-                    discColor2 = new Color(0, 0.5f, 0.5f, 0.4f);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            if (!Physics.Raycast(_mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
+                return;
 
-            Handles.color = discColor2;
-            Handles.DrawSolidDisc(_hitPos, _hitNormal, toolSettings.BrushSize);
+            var hitCell = _spatialGrid.WorldToCell(hit.point);
+            var cellRadius = Mathf.CeilToInt(toolSettings.BrushSize / cellSize);
 
-            if (_hitPos != _cachedPos)
+            // Debug point to verify ray hit
+            Handles.color = Color.yellow;
+            Handles.SphereHandleCap(0, hit.point, Quaternion.identity, 0.3f, EventType.Repaint);
+
+            var notActiveCellColor = new Color(1f, 0f, 0f, 0.3f);
+            var activeCellColor = new Color(0f, 1f, 0f, 1f);
+
+            // 브러시 범위 내 모든 셀 순회
+            for (var x = -cellRadius; x <= cellRadius; x++)
+            for (var y = -cellRadius; y <= cellRadius; y++)
+            for (var z = -cellRadius; z <= cellRadius; z++)
             {
-                SceneView.RepaintAll();
-                _cachedPos = _hitPos;
+                // 원형 브러시 범위 체크
+                if (x * x + y * y + z * z > cellRadius * cellRadius)
+                    continue;
+
+                // Y축은 히트 포인트 기준으로 고정
+                var checkCell = new Vector3Int(hitCell.x + x, hitCell.y + y, hitCell.z + z);
+                var cellWorldPos = _spatialGrid.CellToWorld(checkCell);
+                var cellCenter = cellWorldPos + Vector3.one * (cellSize * 0.5f);
+
+                // 실제 브러시 범위 내에 있는지 체크
+                if (Vector3.Distance(cellCenter, hit.point) <= toolSettings.BrushSize)
+                {
+                    var key = SpatialGrid.GetKey(checkCell.x, checkCell.y, checkCell.z);
+                    var hasGrass = _spatialGrid.HasAnyObject(key);
+
+                    Handles.color = hasGrass ? activeCellColor : notActiveCellColor;
+                    DrawCellWireframe(cellCenter, cellSize);
+                }
             }
         }
 
-       private void DrawGridHandles()
-{
-    if (_spatialGrid == null) return;
-    var cellSize = _spatialGrid.CellSize;
-
-    if (!Physics.Raycast(_mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
-        return;
-
-    var hitCell = _spatialGrid.WorldToCell(hit.point);
-    var cellRadius = Mathf.CeilToInt(toolSettings.BrushSize / cellSize);
-    
-    // Debug point to verify ray hit
-    Handles.color = Color.yellow;
-    Handles.SphereHandleCap(0, hit.point, Quaternion.identity, 0.3f, EventType.Repaint);
-
-    var notActiveCellColor = new Color(1f, 0f, 0f, 0.3f);
-    var activeCellColor = new Color(0f, 1f, 0f, 0.3f);
-
-    // 브러시 범위 내 모든 셀 순회
-    for (var x = -cellRadius; x <= cellRadius; x++)
-    for (var z = -cellRadius; z <= cellRadius; z++)
-    {
-        // 원형 브러시 범위 체크
-        if (x * x + z * z > cellRadius * cellRadius)
-            continue;
-
-        // Y축은 히트 포인트 기준으로 고정
-        var checkCell = new Vector3Int(hitCell.x + x, hitCell.y, hitCell.z + z);
-        var cellWorldPos = _spatialGrid.CellToWorld(checkCell);
-        var cellCenter = cellWorldPos + Vector3.one * (cellSize * 0.5f);
-
-        // 실제 브러시 범위 내에 있는지 체크
-        if (Vector3.Distance(cellCenter, hit.point) <= toolSettings.BrushSize)
+        private void DrawCellWireframe(Vector3 center, float size)
         {
-            var key = SpatialGrid.GetKey(checkCell.x, checkCell.y, checkCell.z);
-            var hasGrass = _spatialGrid.HasAnyObject(key);
-            
-            Handles.color = hasGrass ? activeCellColor : notActiveCellColor;
-            DrawCellWireframe(cellCenter, cellSize);
+            var halfSize = size * 0.5f;
+            var points = new[]
+            {
+                center + new Vector3(-halfSize, -halfSize, -halfSize), // 0 bottom
+                center + new Vector3(halfSize, -halfSize, -halfSize), // 1
+                center + new Vector3(halfSize, -halfSize, halfSize), // 2
+                center + new Vector3(-halfSize, -halfSize, halfSize), // 3
+                center + new Vector3(-halfSize, halfSize, -halfSize), // 4 top
+                center + new Vector3(halfSize, halfSize, -halfSize), // 5
+                center + new Vector3(halfSize, halfSize, halfSize), // 6
+                center + new Vector3(-halfSize, halfSize, halfSize) // 7
+            };
+
+            // Draw bottom square
+            Handles.DrawLine(points[0], points[1]);
+            Handles.DrawLine(points[1], points[2]);
+            Handles.DrawLine(points[2], points[3]);
+            Handles.DrawLine(points[3], points[0]);
+
+            // Draw top square
+            Handles.DrawLine(points[4], points[5]);
+            Handles.DrawLine(points[5], points[6]);
+            Handles.DrawLine(points[6], points[7]);
+            Handles.DrawLine(points[7], points[4]);
+
+            // Draw vertical lines
+            Handles.DrawLine(points[0], points[4]);
+            Handles.DrawLine(points[1], points[5]);
+            Handles.DrawLine(points[2], points[6]);
+            Handles.DrawLine(points[3], points[7]);
         }
-    }
-}
-
-private void DrawCellWireframe(Vector3 center, float size)
-{
-    var halfSize = size * 0.5f;
-    var points = new[]
-    {
-        center + new Vector3(-halfSize, -halfSize, -halfSize), // 0 bottom
-        center + new Vector3(halfSize, -halfSize, -halfSize),  // 1
-        center + new Vector3(halfSize, -halfSize, halfSize),   // 2
-        center + new Vector3(-halfSize, -halfSize, halfSize),  // 3
-        center + new Vector3(-halfSize, halfSize, -halfSize),  // 4 top
-        center + new Vector3(halfSize, halfSize, -halfSize),   // 5
-        center + new Vector3(halfSize, halfSize, halfSize),    // 6
-        center + new Vector3(-halfSize, halfSize, halfSize)    // 7
-    };
-
-    // Draw bottom square
-    Handles.DrawLine(points[0], points[1]);
-    Handles.DrawLine(points[1], points[2]);
-    Handles.DrawLine(points[2], points[3]);
-    Handles.DrawLine(points[3], points[0]);
-
-    // Draw top square
-    Handles.DrawLine(points[4], points[5]);
-    Handles.DrawLine(points[5], points[6]);
-    Handles.DrawLine(points[6], points[7]);
-    Handles.DrawLine(points[7], points[4]);
-
-    // Draw vertical lines
-    Handles.DrawLine(points[0], points[4]);
-    Handles.DrawLine(points[1], points[5]);
-    Handles.DrawLine(points[2], points[6]);
-    Handles.DrawLine(points[3], points[7]);
-}
 
         private void OnScene(SceneView scene)
         {
@@ -1204,52 +1283,125 @@ private void DrawCellWireframe(Vector3 center, float size)
             _mousePos.x *= ppp;
             _mousePos.z = 0;
 
-            // ray for gizmo(disc)
             _mousePointRay = scene.camera.ScreenPointToRay(_mousePos);
 
-            var areModifierKeysPressed = GrassPainterHelper.AreModifierKeysPressed(toolSettings.grassModifierKey);
-            var isCorrectMouseButton = GrassPainterHelper.IsMouseButtonPressed(toolSettings.grassMouseButton);
+            // 현재 이벤트에서 modifier 키가 눌려있는지 체크
+            var hasModifier = e.alt || e.control || e.command;
 
-            if (e.type == EventType.ScrollWheel && areModifierKeysPressed)
+            // Shift + 스크롤은 브러시 크기 조절에 사용
+            if (e.type == EventType.ScrollWheel && e.shift)
             {
                 HandleScrollWheel(e);
+                e.Use();
                 return;
             }
+
+            var isCorrectMouseButton = GrassPainterHelper.IsMouseButtonPressed(toolSettings.grassMouseButton);
 
             switch (e.type)
             {
                 case EventType.MouseDown:
-                    if (isCorrectMouseButton && areModifierKeysPressed)
+                    if (isCorrectMouseButton && !hasModifier) // modifier 없을 때만 페인팅 시작
                     {
                         _isMousePressed = true;
                         StartPainting();
+                        e.Use();
                     }
 
                     break;
+
                 case EventType.MouseDrag:
-                    if (isCorrectMouseButton && areModifierKeysPressed)
+                    if (_isMousePressed && isCorrectMouseButton && !hasModifier)
                     {
                         ContinuePainting();
+                        e.Use();
                     }
 
                     break;
+
                 case EventType.MouseUp:
-                    if (isCorrectMouseButton)
+                    if (_isMousePressed && isCorrectMouseButton)
                     {
                         _isMousePressed = false;
                         EndPainting();
-                    }
-
-                    break;
-
-                case EventType.KeyUp:
-                    if (!areModifierKeysPressed)
-                    {
-                        EndPainting();
+                        e.Use();
                     }
 
                     break;
             }
+
+            // 브러시 미리보기
+            if (!hasModifier &&
+                Physics.Raycast(_mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
+            {
+                _hitPos = hit.point;
+                _hitNormal = hit.normal;
+                DrawGrassBrush(_hitPos, _hitNormal, toolSettings.BrushSize);
+            }
+        }
+
+        private void DrawGrassBrush(Vector3 center, Vector3 normal, float radius)
+        {
+            const float alpha = 0.3f;
+            var color = _selectedToolOption switch
+            {
+                BrushOption.Add => new Color(0f, 0.5f, 0f, alpha), // 연한 초록색
+                BrushOption.Remove => new Color(0.5f, 0f, 0f, alpha), // 연한 빨간색
+                BrushOption.Edit => new Color(0.5f, 0.5f, 0f, alpha), // 연한 노란색
+                BrushOption.Reposition => new Color(0f, 0.5f, 0.5f, alpha), // 연한 청록색
+                _ => new Color(0.9f, 0.9f, 0.9f, alpha) // 연한 흰색
+            };
+
+            Handles.color = color;
+            if (_selectedToolOption == BrushOption.Reposition)
+            {
+                // Reposition일 때 원기둥 그리기
+                DrawTransparentCylinder(center, radius); // 높이를 1로 설정
+            }
+            else
+            {
+                Handles.DrawSolidDisc(center + normal * 0.01f, normal, radius);
+            }
+        }
+
+        private void DrawTransparentCylinder(Vector3 center, float radius)
+        {
+            var topCenter = center + new Vector3(0, toolSettings.BrushSize);
+            var bottomCenter = center;
+
+            // 그리기 전에 현재 색상을 백업
+            var originalColor = Handles.color;
+
+            // 반투명 색상 적용
+            Handles.color = new Color(originalColor.r, originalColor.g, originalColor.b, originalColor.a);
+
+            // 원기둥의 상단과 하단 그리기
+            Handles.DrawSolidDisc(topCenter, Vector3.up, radius);
+            Handles.DrawSolidDisc(bottomCenter, Vector3.up, radius);
+
+            int segmentCount = 24;
+
+            // 측면 그리기
+            for (int i = 0; i < segmentCount; i++)
+            {
+                // 현재 세그먼트의 각도 계산
+                float angleA = (360f / segmentCount) * i;
+                float angleB = (360f / segmentCount) * (i + 1);
+
+                // 각도에 따른 두 점 계산 (하단)
+                Vector3 pointA = bottomCenter + Quaternion.Euler(0, angleA, 0) * Vector3.right * radius;
+                Vector3 pointB = bottomCenter + Quaternion.Euler(0, angleB, 0) * Vector3.right * radius;
+
+                // 각도에 따른 두 점 계산 (상단)
+                Vector3 pointC = topCenter + Quaternion.Euler(0, angleA, 0) * Vector3.right * radius;
+                Vector3 pointD = topCenter + Quaternion.Euler(0, angleB, 0) * Vector3.right * radius;
+
+                // 측면을 반투명하게 그리기
+                Handles.DrawAAConvexPolygon(pointA, pointB, pointD, pointC);
+            }
+
+            // 색상 복원
+            Handles.color = originalColor;
         }
 
         private void HandleUndo()
@@ -1281,10 +1433,11 @@ private void DrawCellWireframe(Vector3 center, float size)
 
         private async UniTask GenerateGrass(GameObject[] selections)
         {
-            var totalPoints = CalculateTotalPoints(selections);
-            var currentPoint = 0;
-            var newGrassData = CollectionsPool.GetList<GrassData>((int)(toolSettings.BrushSize + 1));
+            var totalPoints = 0;
+            var terrains = new List<(Terrain terrain, int points)>();
+            var meshes = new List<(MeshFilter mesh, int points)>();
 
+            // 먼저 각 오브젝트별 생성 가능한 포인트 수를 계산
             for (var index = 0; index < selections.Length; index++)
             {
                 var selection = selections[index];
@@ -1294,61 +1447,78 @@ private void DrawCellWireframe(Vector3 center, float size)
                     continue;
                 }
 
-                if (selection.TryGetComponent(out MeshFilter sourceMesh))
+                if (selection.TryGetComponent(out MeshFilter mesh))
                 {
-                    await GenerateGrassForMesh(sourceMesh, newGrassData, currentPoint, totalPoints);
+                    var points = CalculatePointsForMesh();
+                    meshes.Add((mesh, points));
+                    totalPoints += points;
                 }
                 else if (selection.TryGetComponent(out Terrain terrain))
                 {
-                    await GenerateGrassForTerrain(terrain, newGrassData, currentPoint, totalPoints);
+                    var points = CalculatePointsForTerrain(terrain);
+                    terrains.Add((terrain, points));
+                    totalPoints += points;
                 }
-
-                currentPoint += CalculatePointsForObject(selection);
             }
 
-            var grassData = _grassCompute.GrassDataList;
-            for (var i = 0; i < newGrassData.Count; i++)
+            var currentPoint = 0;
+            var newGrassData = CollectionsPool.GetList<GrassData>(totalPoints);
+
+            // Mesh 처리
+            foreach (var (mesh, points) in meshes)
             {
-                grassData.Add(newGrassData[i]);
+                await GenerateGrassForMesh(mesh, newGrassData, currentPoint, totalPoints);
+                currentPoint += points;
             }
+
+            // Terrain 처리
+            foreach (var (terrain, points) in terrains)
+            {
+                await GenerateGrassForTerrain(terrain, newGrassData, currentPoint, totalPoints);
+                currentPoint += points;
+            }
+
+            // 생성된 데이터를 grassData에 추가
+            var grassData = _grassCompute.GrassDataList;
+            grassData.AddRange(newGrassData);
 
             _grassCompute.Reset();
             CollectionsPool.ReturnList(newGrassData);
         }
 
-        private int CalculatePointsForObject(GameObject obj)
-        {
-            if (obj.TryGetComponent(out MeshFilter sourceMesh))
-            {
-                return CalculatePointsForMesh(sourceMesh);
-            }
-
-            if (obj.TryGetComponent(out Terrain terrain))
-            {
-                return CalculatePointsForTerrain(terrain);
-            }
-
-            return 0;
-        }
-
-        private int CalculateTotalPoints(GameObject[] selections)
-        {
-            var totalPoints = 0;
-            for (var index = 0; index < selections.Length; index++)
-            {
-                var selection = selections[index];
-                if (selection.TryGetComponent(out MeshFilter sourceMesh))
-                {
-                    totalPoints += CalculatePointsForMesh(sourceMesh);
-                }
-                else if (selection.TryGetComponent(out Terrain terrain))
-                {
-                    totalPoints += CalculatePointsForTerrain(terrain);
-                }
-            }
-
-            return totalPoints;
-        }
+        // private int CalculatePointsForObject(GameObject obj)
+        // {
+        //     if (obj.TryGetComponent(out MeshFilter _))
+        //     {
+        //         return CalculatePointsForMesh();
+        //     }
+        //
+        //     if (obj.TryGetComponent(out Terrain _))
+        //     {
+        //         return CalculatePointsForTerrain();
+        //     }
+        //
+        //     return 0;
+        // }
+        //
+        // private int CalculateTotalPoints(GameObject[] selections)
+        // {
+        //     var totalPoints = 0;
+        //     for (var index = 0; index < selections.Length; index++)
+        //     {
+        //         var selection = selections[index];
+        //         if (selection.TryGetComponent(out MeshFilter _))
+        //         {
+        //             totalPoints += CalculatePointsForMesh();
+        //         }
+        //         else if (selection.TryGetComponent(out Terrain _))
+        //         {
+        //             totalPoints += CalculatePointsForTerrain();
+        //         }
+        //     }
+        //
+        //     return totalPoints;
+        // }
 
         private void LogLayerMismatch(GameObject selection)
         {
@@ -1366,7 +1536,7 @@ private void DrawCellWireframe(Vector3 center, float size)
             var oColors = sharedMesh.colors;
             var oNormals = sharedMesh.normals;
 
-            var numPoints = CalculatePointsForMesh(sourceMesh);
+            var numPoints = CalculatePointsForMesh();
             for (var j = 0; j < numPoints; j++)
             {
                 await UpdateProgress(startPoint + j, totalPoints,
@@ -1381,13 +1551,9 @@ private void DrawCellWireframe(Vector3 center, float size)
             }
         }
 
-        private int CalculatePointsForMesh(MeshFilter sourceMesh)
+        private int CalculatePointsForMesh()
         {
-            var bounds = sourceMesh.sharedMesh.bounds;
-            var meshSize = Vector3.Scale(bounds.size, sourceMesh.transform.lossyScale) + Vector3.one;
-            var meshVolume = meshSize.x * meshSize.y * meshSize.z;
-            return Mathf.Max(Mathf.FloorToInt(meshVolume * toolSettings.GenerationDensity),
-                toolSettings.GrassAmountToGenerate);
+            return Mathf.FloorToInt(toolSettings.GrassAmountToGenerate * toolSettings.GenerationDensity);
         }
 
         private (bool success, GrassData grassData) GenerateGrassDataForMesh(
@@ -1444,15 +1610,27 @@ private void DrawCellWireframe(Vector3 center, float size)
                                                       int totalPoints)
         {
             var numPoints = CalculatePointsForTerrain(terrain);
-            for (var j = 0; j < numPoints; j++)
+            var successCount = 0;
+            var attemptCount = 0;
+
+            while (successCount < numPoints)
             {
-                await UpdateProgress(startPoint + j, totalPoints,
-                    $"Generating grass: {startPoint + j:N0}/{totalPoints:N0}");
+                await UpdateProgress(successCount, numPoints,
+                    $"Generating grass: {successCount:N0}/{numPoints:N0}");
 
                 var (success, grassData) = GenerateGrassDataForTerrain(terrain);
                 if (success)
                 {
                     newGrassData.Add(grassData);
+                    successCount++;
+                }
+        
+                attemptCount++;
+        
+                if (attemptCount > numPoints * 2)
+                {
+                    Debug.LogWarning($"Grass generation completed with {successCount}/{numPoints} instances after {attemptCount} attempts.");
+                    break;
                 }
             }
         }
@@ -1461,37 +1639,17 @@ private void DrawCellWireframe(Vector3 center, float size)
         {
             var terrainData = terrain.terrainData;
             var terrainSize = terrainData.size;
-            var terrainVolume = terrainSize.x * terrainSize.y * terrainSize.z;
-            return Mathf.Max(Mathf.FloorToInt(terrainVolume * toolSettings.GenerationDensity),
-                toolSettings.GrassAmountToGenerate);
-        }
+            var sampleCount = 100; // 샘플링 횟수
+            var validPoints = 0;
 
-        private (bool success, GrassData grassData) GenerateGrassDataForTerrain(Terrain terrain)
-        {
-            var terrainData = terrain.terrainData;
-            var terrainSize = terrainData.size;
-
-            var randomPoint = new Vector3(
-                Random.Range(0, terrainSize.x),
-                0,
-                Random.Range(0, terrainSize.z)
-            );
-
-            var worldPoint = terrain.transform.TransformPoint(randomPoint);
-            worldPoint.y = terrain.SampleHeight(worldPoint);
-
-            if (Physics.CheckSphere(worldPoint, 0.1f, toolSettings.PaintBlockMask))
+            for (var i = 0; i < sampleCount; i++)
             {
-                return (false, default);
-            }
+                var randomPoint = new Vector3(
+                    Random.Range(0, terrainSize.x),
+                    0,
+                    Random.Range(0, terrainSize.z)
+                );
 
-            var normal =
-                terrain.terrainData.GetInterpolatedNormal(
-                    randomPoint.x / terrainSize.x,
-                    randomPoint.z / terrainSize.z);
-
-            if (normal.y <= 1 + toolSettings.NormalLimit && normal.y >= 1 - toolSettings.NormalLimit)
-            {
                 var splatMapCoord = new Vector2(randomPoint.x / terrainSize.x, randomPoint.z / terrainSize.z);
                 var splatmapData = terrainData.GetAlphamaps(
                     Mathf.FloorToInt(splatMapCoord.x * (terrainData.alphamapWidth - 1)),
@@ -1499,30 +1657,97 @@ private void DrawCellWireframe(Vector3 center, float size)
                     1, 1
                 );
 
-                float getFadeMap = 0;
-                for (var i = 0; i < splatmapData.GetLength(2); i++)
+                float totalDensity = 0f;
+                float totalWeight = 0f;
+
+                for (var j = 0; j < splatmapData.GetLength(2); j++)
                 {
-                    getFadeMap += Convert.ToInt32(toolSettings.LayerFading[i]) * splatmapData[0, 0, i];
-                    if (splatmapData[0, 0, i] > toolSettings.LayerBlocking[i])
-                    {
-                        return (false, default);
-                    }
+                    var layerStrength = splatmapData[0, 0, j];
+                    totalDensity += toolSettings.LayerBlocking[j] * layerStrength;
+                    totalWeight += layerStrength;
                 }
 
-                var fade = Mathf.Clamp(getFadeMap, 0, 1f);
-                var grassData = new GrassData
+                var averageDensity = totalWeight > 0 ? totalDensity / totalWeight : 0;
+                if (Random.value <= averageDensity)
                 {
-                    position = worldPoint,
-                    normal = normal,
-                    color = GetRandomColor(),
-                    widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight * fade)
-                };
-
-                return (true, grassData);
+                    validPoints++;
+                }
             }
 
+            var validRatio = (float)validPoints / sampleCount;
+            var requestedPoints = Mathf.FloorToInt(toolSettings.GrassAmountToGenerate * toolSettings.GenerationDensity);
+            return Mathf.FloorToInt(requestedPoints * validRatio);
+        }
+
+        private (bool success, GrassData grassData) GenerateGrassDataForTerrain(Terrain terrain)
+{
+    var terrainData = terrain.terrainData;
+    var terrainSize = terrainData.size;
+
+    var randomPoint = new Vector3(
+        Random.Range(0, terrainSize.x),
+        0,
+        Random.Range(0, terrainSize.z)
+    );
+
+    var worldPoint = terrain.transform.TransformPoint(randomPoint);
+    worldPoint.y = terrain.SampleHeight(worldPoint);
+
+    if (Physics.CheckSphere(worldPoint, 0.1f, toolSettings.PaintBlockMask))
+    {
+        return (false, default);
+    }
+
+    var normal = terrain.terrainData.GetInterpolatedNormal(
+        randomPoint.x / terrainSize.x,
+        randomPoint.z / terrainSize.z);
+
+    if (normal.y <= 1 + toolSettings.NormalLimit && normal.y >= 1 - toolSettings.NormalLimit)
+    {
+        var splatMapCoord = new Vector2(randomPoint.x / terrainSize.x, randomPoint.z / terrainSize.z);
+        var splatmapData = terrainData.GetAlphamaps(
+            Mathf.FloorToInt(splatMapCoord.x * (terrainData.alphamapWidth - 1)),
+            Mathf.FloorToInt(splatMapCoord.y * (terrainData.alphamapHeight - 1)),
+            1, 1
+        );
+
+        float totalDensity = 0f;
+        float totalWeight = 0f;
+        float getFadeMap = 0f;
+
+        for (var i = 0; i < splatmapData.GetLength(2); i++)
+        {
+            var layerStrength = splatmapData[0, 0, i];
+            totalDensity += toolSettings.LayerBlocking[i] * layerStrength;
+            totalWeight += layerStrength;
+            
+            if (toolSettings.LayerFading[i])
+            {
+                getFadeMap += layerStrength;
+            }
+        }
+
+        var averageDensity = totalWeight > 0 ? totalDensity / totalWeight : 0;
+        
+        if (Random.value > averageDensity)
+        {
             return (false, default);
         }
+
+        var fade = Mathf.Clamp(getFadeMap, 0, 1f);
+        var grassData = new GrassData
+        {
+            position = worldPoint,
+            normal = normal,
+            color = GetRandomColor(),
+            widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight * fade)
+        };
+
+        return (true, grassData);
+    }
+
+    return (false, default);
+}
 
         private float CalculateWidthHeightFactor(Color vertexColor)
         {

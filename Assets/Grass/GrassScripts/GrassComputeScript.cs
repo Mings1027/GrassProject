@@ -71,7 +71,6 @@ public class GrassComputeScript : MonoBehaviour
     [SerializeField, HideInInspector] private List<GrassData> grassData = new(); // base data lists
     [SerializeField] private Material instantiatedMaterial;
     [SerializeField] private GrassSettingSO grassSetting;
-    ///-------------------------------------------------------------------------------------
 
     public List<GrassData> GrassDataList
     {
@@ -167,8 +166,8 @@ public class GrassComputeScript : MonoBehaviour
         //     // or just because there is not vertex being painted.
         //     return;
         // }
-        if (grassData.Count <= 0) return;
 #endif
+        if (grassData.Count <= 0) return;
         // get the data from the camera for culling
         GetFrustumData();
         // Update the shader with frame specific data
@@ -473,38 +472,30 @@ public class GrassComputeScript : MonoBehaviour
 
     private void SetGrassDataUpdate()
     {
-        // Variables sent to the shader every frame
         _instComputeShader.SetFloat(Time, UnityEngine.Time.time);
 
-        // Update interactors data if interactors exist
         if (_interactors.Count > 0)
         {
-            var interectors = _interactors.Count;
-            var positions = new Vector4[interectors];
-
-            for (var i = interectors - 1; i >= 0; i--)
-            {
-                var pos = _interactors[i].transform.position;
-                positions[i] = new Vector4(pos.x, pos.y, pos.z, _interactors[i].radius);
-            }
-
-            _instComputeShader.SetVectorArray(_shaderID, positions);
-            _instComputeShader.SetFloat(InteractorsLength, interectors);
+            UpdateInteractors();
         }
 
-        // Update camera position
         if (_mainCamera)
         {
             _instComputeShader.SetVector(CameraPositionWs, _mainCamera.transform.position);
         }
+    }
 
-#if UNITY_EDITOR
-        else if (_view && _view.camera)
+    private void UpdateInteractors()
+    {
+        var positions = new Vector4[_interactors.Count];
+        for (var i = _interactors.Count - 1; i >= 0; i--)
         {
-            _instComputeShader.SetVector(CameraPositionWs, _view.camera.transform.position);
+            var pos = _interactors[i].transform.position;
+            positions[i] = new Vector4(pos.x, pos.y, pos.z, _interactors[i].radius);
         }
 
-#endif
+        _instComputeShader.SetVectorArray(_shaderID, positions);
+        _instComputeShader.SetFloat(InteractorsLength, _interactors.Count);
     }
 
     public void UpdateCutBuffer(Vector3 hitPoint, float radius)

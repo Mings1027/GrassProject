@@ -33,7 +33,7 @@ MonoBehaviour:
   bottomTint: {r: 0.11690103, g: 0.23347847, b: 0.6698113, a: 1}
   drawBounds: 0
   minFadeDistance: 20
-  maxFadeDistance: 120
+  maxFadeDistance: 200
   cullingTreeDepth: 5
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}
   castShadow: 0
