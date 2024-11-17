@@ -457,8 +457,6 @@ namespace Grass.Editor
 
         private void DrawBrushToolbar()
         {
-            // HandlePaintPanelKeyboardInput();
-
             EditorGUILayout.Separator();
             _selectedToolOption = (BrushOption)GUILayout.Toolbar(
                 (int)_selectedToolOption,
@@ -468,86 +466,15 @@ namespace Grass.Editor
             EditorGUILayout.Separator();
         }
 
-        private void HandlePaintPanelKeyboardInput()
-        {
-            // 현재 이벤트를 가져옴
-            Event e = Event.current;
-
-            // 숫자 키 1, 2, 3, 4 입력 감지
-            if (e.type == EventType.KeyDown)
-            {
-                switch (e.keyCode)
-                {
-                    case KeyCode.Alpha1: // 숫자 1 키
-                        _selectedToolOption = BrushOption.Add;
-                        e.Use(); // 이벤트를 소비하여 기본 동작을 막음
-                        break;
-                    case KeyCode.Alpha2: // 숫자 2 키
-                        _selectedToolOption = BrushOption.Remove;
-                        e.Use();
-                        break;
-                    case KeyCode.Alpha3: // 숫자 3 키
-                        _selectedToolOption = BrushOption.Edit;
-                        e.Use();
-                        break;
-                    case KeyCode.Alpha4: // 숫자 4 키
-                        _selectedToolOption = BrushOption.Reposition;
-                        e.Use();
-                        break;
-                }
-            }
-        }
-
-        private void HandleModifyPanelKeyboardInput()
-        {
-            Event e = Event.current;
-
-            if (e.type == EventType.KeyDown)
-            {
-                switch (e.keyCode)
-                {
-                    case KeyCode.Alpha1: // 숫자 1 키
-                        _selectedModifyOption = ModifyOption.WidthHeight;
-                        e.Use(); // 이벤트를 소비하여 기본 동작을 막음
-                        break;
-                    case KeyCode.Alpha2: // 숫자 2 키
-                        _selectedModifyOption = ModifyOption.Color;
-                        e.Use();
-                        break;
-                    case KeyCode.Alpha3: // 숫자 3 키
-                        _selectedModifyOption = ModifyOption.Both;
-                        e.Use();
-                        break;
-                }
-            }
-        }
-
-        private void HandleGeneratePanelKeyboardInput()
-        {
-            var e = Event.current;
-            if (e.type == EventType.KeyDown)
-            {
-                switch (e.keyCode)
-                {
-                    case KeyCode.Alpha1:
-                        _selectedGenerateOption = GenerateTab.Basic;
-                        e.Use(); // 이벤트를 소비하여 기본 동작을 막음
-                        break;
-                    case KeyCode.Alpha2:
-                        _selectedGenerateOption = GenerateTab.TerrainLayers;
-                        e.Use(); // 이벤트를 소비하여 기본 동작을 막음
-                        break;
-                    case KeyCode.Alpha3:
-                        _selectedGenerateOption = GenerateTab.Advanced;
-                        e.Use(); // 이벤트를 소비하여 기본 동작을 막음
-                        break;
-                }
-            }
-        }
-
         private void DrawCommonBrushSettings()
         {
             EditorGUILayout.LabelField("Brush Settings", EditorStyles.boldLabel);
+
+            var style = new GUIStyle(EditorStyles.helpBox)
+            {
+                fontSize = 12
+            };
+            EditorGUILayout.LabelField("Hold Shift + Scroll to adjust Brush size", style);
 
             toolSettings.BrushSize = EditorGUILayout.Slider(
                 "Brush Size",
@@ -555,7 +482,7 @@ namespace Grass.Editor
                 toolSettings.MinBrushSize,
                 toolSettings.MaxBrushSize
             );
-
+            
             EditorGUILayout.BeginHorizontal();
             toolSettings.NormalLimit = GrassPainterHelper.FloatSlider(
                 "Normal Limit",
@@ -713,8 +640,6 @@ namespace Grass.Editor
 
         private void ShowModifyPanel()
         {
-            // HandleModifyPanelKeyboardInput();
-
             _selectedModifyOption = (ModifyOption)GUILayout.Toolbar((int)_selectedModifyOption, _modifyOptionStrings,
                 GUILayout.Height(25));
 
@@ -793,8 +718,6 @@ namespace Grass.Editor
 
         private void ShowGeneratePanel()
         {
-            // HandleGeneratePanelKeyboardInput();
-
             _selectedGenerateOption = (GenerateTab)GUILayout.Toolbar((int)_selectedGenerateOption, _generateTabStrings,
                 GUILayout.Height(25));
             EditorGUILayout.Separator();
@@ -1474,7 +1397,7 @@ namespace Grass.Editor
             // Terrain 처리
             foreach (var (terrain, points) in terrains)
             {
-                await GenerateGrassForTerrain(terrain, newGrassData, currentPoint, totalPoints);
+                await GenerateGrassForTerrain(terrain, newGrassData);
                 currentPoint += points;
             }
 
@@ -1606,8 +1529,7 @@ namespace Grass.Editor
             return (false, default);
         }
 
-        private async UniTask GenerateGrassForTerrain(Terrain terrain, List<GrassData> newGrassData, int startPoint,
-                                                      int totalPoints)
+        private async UniTask GenerateGrassForTerrain(Terrain terrain, List<GrassData> newGrassData)
         {
             var numPoints = CalculatePointsForTerrain(terrain);
             var successCount = 0;

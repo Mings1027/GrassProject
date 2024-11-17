@@ -25,7 +25,7 @@ MonoBehaviour:
   randomHeightMin: 0.01
   randomHeightMax: 0.2
   windSpeed: 2
-  windStrength: 0.12
+  windStrength: 0.1
   bladesPerVertex: 5
   segmentsPerBlade: 2
   interactorStrength: 1
