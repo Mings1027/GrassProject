@@ -3,6 +3,7 @@ Shader "Custom/LightingShader"
 	Properties
 	{
 		_Tint ("Tint", Color) = (1,1,1,1)
+		_Alpha("Alpha", Range(0, 1)) = 1
 		_MainTex ("Texture", 2D) = "white" {}
 	}
 	SubShader
@@ -10,13 +11,14 @@ Shader "Custom/LightingShader"
 		Pass
 		{
 			HLSLPROGRAM
-			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+			// #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
 			#pragma vertex Vertex
 			#pragma fragment Fragment
 
 			float4 _Tint;
+			float _Alpha;
 			Texture2D _MainTex;
 			SamplerState sampler_MainTex;
 
@@ -57,7 +59,7 @@ Shader "Custom/LightingShader"
 				float3 lambert = intensity * lightColor;
 
 				half3 finalColor = albedo.rgb * lambert;
-				return half4(finalColor, 1);
+				return half4(finalColor, _Alpha);
 			}
 			ENDHLSL
 		}

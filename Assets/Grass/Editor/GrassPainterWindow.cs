@@ -56,7 +56,7 @@ namespace Grass.Editor
         private GrassComputeScript _grassCompute;
 
         private Vector3 _cachedPos;
-        
+
         private Bounds _grassBounds;
 
         private bool _isInit;
@@ -266,15 +266,15 @@ namespace Grass.Editor
 
             if (_grassCompute.GrassSetting == null)
             {
-                _grassCompute.SetGrassSetting(CreateOrGetGrassSetting());
+                _grassCompute.GrassSetting = CreateOrGetGrassSetting();
             }
 
-            _grassCompute.SetGrassSetting((GrassSettingSO)EditorGUILayout.ObjectField(
+            _grassCompute.GrassSetting = (GrassSettingSO)EditorGUILayout.ObjectField(
                 "Grass Settings Object",
                 _grassCompute.GrassSetting,
                 typeof(GrassSettingSO),
                 false
-            ));
+            );
 
             _grassCompute.GrassSetting.materialToUse = (Material)EditorGUILayout.ObjectField(
                 "Grass Material",
@@ -476,13 +476,14 @@ namespace Grass.Editor
             };
             EditorGUILayout.LabelField("Hold Shift + Scroll to adjust Brush size", style);
 
-            toolSettings.BrushSize = EditorGUILayout.Slider(
+            toolSettings.BrushSize = GrassPainterHelper.FloatSlider(
                 "Brush Size",
+                "Adjust Brush Size",
                 toolSettings.BrushSize,
                 toolSettings.MinBrushSize,
                 toolSettings.MaxBrushSize
             );
-            
+
             EditorGUILayout.BeginHorizontal();
             toolSettings.NormalLimit = GrassPainterHelper.FloatSlider(
                 "Normal Limit",
@@ -687,7 +688,7 @@ namespace Grass.Editor
                             "Modify the width and height of all grass elements?",
                             "Yes", "No"))
                     {
-                        ModifyWidthAndHeight();
+                        ModifySize().Forget();
                     }
                 }
 
@@ -697,7 +698,7 @@ namespace Grass.Editor
                             "Modify the color of all grass elements?",
                             "Yes", "No"))
                     {
-                        ModifyColor();
+                        ModifyColor().Forget();
                     }
                 }
 
@@ -706,8 +707,7 @@ namespace Grass.Editor
                     if (EditorUtility.DisplayDialog("Modify Width Height and Color",
                             "Modify the width, height and color of all grass elements?", "Yes", "No"))
                     {
-                        ModifyWidthAndHeight();
-                        ModifyColor();
+                        ModifySizeAndColor().Forget();
                     }
                 }
             }
@@ -1094,7 +1094,7 @@ namespace Grass.Editor
                 name = "Grass System - Holder"
             };
             _grassCompute = grassObject.AddComponent<GrassComputeScript>();
-            _grassCompute.SetGrassSetting(CreateOrGetGrassSetting());
+            _grassCompute.GrassSetting = CreateOrGetGrassSetting();
 
             InitSpatialGrid();
 
@@ -1308,8 +1308,8 @@ namespace Grass.Editor
             for (int i = 0; i < segmentCount; i++)
             {
                 // 현재 세그먼트의 각도 계산
-                float angleA = (360f / segmentCount) * i;
-                float angleB = (360f / segmentCount) * (i + 1);
+                float angleA = 360f / segmentCount * i;
+                float angleB = 360f / segmentCount * (i + 1);
 
                 // 각도에 따른 두 점 계산 (하단)
                 Vector3 pointA = bottomCenter + Quaternion.Euler(0, angleA, 0) * Vector3.right * radius;
@@ -1356,92 +1356,72 @@ namespace Grass.Editor
 
         private async UniTask GenerateGrass(GameObject[] selections)
         {
-            var totalPoints = 0;
-            var terrains = new List<(Terrain terrain, int points)>();
-            var meshes = new List<(MeshFilter mesh, int points)>();
+            var newGrassData = CollectionsPool.GetList<GrassData>();
+            var allTempPoints = new List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>();
+            var totalRequestedPoints = 0;
 
-            // 먼저 각 오브젝트별 생성 가능한 포인트 수를 계산
-            for (var index = 0; index < selections.Length; index++)
+            // 먼저 총 요청된 포인트 수 계산
+            foreach (var selection in selections)
             {
-                var selection = selections[index];
+                if (((1 << selection.layer) & toolSettings.PaintMask.value) != 0)
+                {
+                    totalRequestedPoints +=
+                        Mathf.FloorToInt(toolSettings.GrassAmountToGenerate * toolSettings.GenerationDensity);
+                }
+            }
+
+            var currentPoint = 0;
+            // 모든 오브젝트에 대해 생성 가능한 잔디 위치를 계산
+            foreach (var selection in selections)
+            {
                 if (((1 << selection.layer) & toolSettings.PaintMask.value) == 0)
                 {
                     LogLayerMismatch(selection);
                     continue;
                 }
 
+                var numPoints = Mathf.FloorToInt(toolSettings.GrassAmountToGenerate * toolSettings.GenerationDensity);
+
                 if (selection.TryGetComponent(out MeshFilter mesh))
                 {
-                    var points = CalculatePointsForMesh();
-                    meshes.Add((mesh, points));
-                    totalPoints += points;
+                    var tempPoints =
+                        await CalculateValidPointsForMesh(mesh, numPoints, currentPoint, totalRequestedPoints);
+                    allTempPoints.AddRange(tempPoints);
+                    currentPoint += numPoints;
                 }
                 else if (selection.TryGetComponent(out Terrain terrain))
                 {
-                    var points = CalculatePointsForTerrain(terrain);
-                    terrains.Add((terrain, points));
-                    totalPoints += points;
+                    var tempPoints =
+                        await CalculateValidPointsForTerrain(terrain, numPoints, currentPoint, totalRequestedPoints);
+                    allTempPoints.AddRange(tempPoints);
+                    currentPoint += numPoints;
                 }
             }
 
-            var currentPoint = 0;
-            var newGrassData = CollectionsPool.GetList<GrassData>(totalPoints);
-
-            // Mesh 처리
-            foreach (var (mesh, points) in meshes)
+            // 실제 잔디 생성
+            for (var i = 0; i < allTempPoints.Count; i++)
             {
-                await GenerateGrassForMesh(mesh, newGrassData, currentPoint, totalPoints);
-                currentPoint += points;
+                await UpdateProgress(i + 1, allTempPoints.Count,
+                    $"Generating grass: {i + 1:N0}/{allTempPoints.Count:N0}");
+
+                var (worldPoint, worldNormal, widthHeight) = allTempPoints[i];
+                var grassData = new GrassData
+                {
+                    position = worldPoint,
+                    normal = worldNormal,
+                    color = GetRandomColor(),
+                    widthHeight = widthHeight
+                };
+
+                newGrassData.Add(grassData);
             }
 
-            // Terrain 처리
-            foreach (var (terrain, points) in terrains)
-            {
-                await GenerateGrassForTerrain(terrain, newGrassData);
-                currentPoint += points;
-            }
-
-            // 생성된 데이터를 grassData에 추가
-            var grassData = _grassCompute.GrassDataList;
-            grassData.AddRange(newGrassData);
+            var grassDataList = _grassCompute.GrassDataList;
+            grassDataList.AddRange(newGrassData);
 
             _grassCompute.Reset();
             CollectionsPool.ReturnList(newGrassData);
         }
-
-        // private int CalculatePointsForObject(GameObject obj)
-        // {
-        //     if (obj.TryGetComponent(out MeshFilter _))
-        //     {
-        //         return CalculatePointsForMesh();
-        //     }
-        //
-        //     if (obj.TryGetComponent(out Terrain _))
-        //     {
-        //         return CalculatePointsForTerrain();
-        //     }
-        //
-        //     return 0;
-        // }
-        //
-        // private int CalculateTotalPoints(GameObject[] selections)
-        // {
-        //     var totalPoints = 0;
-        //     for (var index = 0; index < selections.Length; index++)
-        //     {
-        //         var selection = selections[index];
-        //         if (selection.TryGetComponent(out MeshFilter _))
-        //         {
-        //             totalPoints += CalculatePointsForMesh();
-        //         }
-        //         else if (selection.TryGetComponent(out Terrain _))
-        //         {
-        //             totalPoints += CalculatePointsForTerrain();
-        //         }
-        //     }
-        //
-        //     return totalPoints;
-        // }
 
         private void LogLayerMismatch(GameObject selection)
         {
@@ -1450,256 +1430,159 @@ namespace Grass.Editor
                 $"'{selection.name}' layer mismatch. Expected: '{expectedLayers}', Current: {LayerMask.LayerToName(selection.layer)}");
         }
 
-        private async UniTask GenerateGrassForMesh(MeshFilter sourceMesh, List<GrassData> newGrassData,
-                                                   int startPoint, int totalPoints)
+        private async UniTask<List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>>
+            CalculateValidPointsForMesh(MeshFilter sourceMesh, int numPoints, int startPoint, int totalPoints)
         {
             var localToWorld = sourceMesh.transform.localToWorldMatrix;
             var sharedMesh = sourceMesh.sharedMesh;
             var oVertices = sharedMesh.vertices;
             var oColors = sharedMesh.colors;
             var oNormals = sharedMesh.normals;
+            var tempPoints = new List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>();
 
-            var numPoints = CalculatePointsForMesh();
-            for (var j = 0; j < numPoints; j++)
+            for (var i = 0; i < numPoints; i++)
             {
-                await UpdateProgress(startPoint + j, totalPoints,
-                    $"Generating grass: {startPoint + j:N0}/{totalPoints:N0}");
+                await UpdateProgress(startPoint + i + 1, totalPoints,
+                    $"Calculating grass positions: {(startPoint + i + 1) / (float)totalPoints * 100:F1}%");
 
-                var (success, grassData) = GenerateGrassDataForMesh(sourceMesh, localToWorld, sharedMesh, oVertices,
-                    oColors, oNormals);
-                if (success)
+                var randomTriIndex = Random.Range(0, sharedMesh.triangles.Length / 3);
+                var randomBarycentricCoord = GrassPainterHelper.GetRandomBarycentricCoord();
+                var vertexIndex1 = sharedMesh.triangles[randomTriIndex * 3];
+                var vertexIndex2 = sharedMesh.triangles[randomTriIndex * 3 + 1];
+                var vertexIndex3 = sharedMesh.triangles[randomTriIndex * 3 + 2];
+
+                var point = randomBarycentricCoord.x * oVertices[vertexIndex1] +
+                            randomBarycentricCoord.y * oVertices[vertexIndex2] +
+                            randomBarycentricCoord.z * oVertices[vertexIndex3];
+
+                var normal = randomBarycentricCoord.x * oNormals[vertexIndex1] +
+                             randomBarycentricCoord.y * oNormals[vertexIndex2] +
+                             randomBarycentricCoord.z * oNormals[vertexIndex3];
+
+                var worldPoint = localToWorld.MultiplyPoint3x4(point);
+                var worldNormal = sourceMesh.transform.TransformDirection(normal);
+
+                if (Physics.CheckSphere(worldPoint, 0.1f, toolSettings.PaintBlockMask))
                 {
-                    newGrassData.Add(grassData);
+                    continue;
+                }
+
+                var objectUp = sourceMesh.transform.up;
+                var normalDot = Mathf.Abs(Vector3.Dot(worldNormal, objectUp));
+
+                if (normalDot >= 1 - toolSettings.NormalLimit)
+                {
+                    var color = GrassPainterHelper.GetVertexColor(oColors, vertexIndex1, vertexIndex2, vertexIndex3,
+                        randomBarycentricCoord);
+                    var widthHeightFactor = CalculateWidthHeightFactor(color);
+                    var widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight) *
+                                      widthHeightFactor;
+
+                    tempPoints.Add((worldPoint, worldNormal, widthHeight));
                 }
             }
+
+            return tempPoints;
         }
 
-        private int CalculatePointsForMesh()
-        {
-            return Mathf.FloorToInt(toolSettings.GrassAmountToGenerate * toolSettings.GenerationDensity);
-        }
-
-        private (bool success, GrassData grassData) GenerateGrassDataForMesh(
-            MeshFilter sourceMesh, Matrix4x4 localToWorld, Mesh sharedMesh, Vector3[] oVertices, Color[] oColors,
-            Vector3[] oNormals)
-        {
-            var randomTriIndex = Random.Range(0, sharedMesh.triangles.Length / 3);
-            var randomBarycentricCoord = GrassPainterHelper.GetRandomBarycentricCoord();
-            var vertexIndex1 = sharedMesh.triangles[randomTriIndex * 3];
-            var vertexIndex2 = sharedMesh.triangles[randomTriIndex * 3 + 1];
-            var vertexIndex3 = sharedMesh.triangles[randomTriIndex * 3 + 2];
-
-            var point = randomBarycentricCoord.x * oVertices[vertexIndex1] +
-                        randomBarycentricCoord.y * oVertices[vertexIndex2] +
-                        randomBarycentricCoord.z * oVertices[vertexIndex3];
-
-            var normal = randomBarycentricCoord.x * oNormals[vertexIndex1] +
-                         randomBarycentricCoord.y * oNormals[vertexIndex2] +
-                         randomBarycentricCoord.z * oNormals[vertexIndex3];
-
-            var worldPoint = localToWorld.MultiplyPoint3x4(point);
-            var worldNormal = sourceMesh.transform.TransformDirection(normal);
-
-            if (Physics.CheckSphere(worldPoint, 0.1f, toolSettings.PaintBlockMask))
-            {
-                return (false, default);
-            }
-
-            // 오브젝트의 up 벡터를 기준으로 경사 체크
-            var objectUp = sourceMesh.transform.up;
-            var normalDot = Mathf.Abs(Vector3.Dot(worldNormal, objectUp));
-
-            if (normalDot >= 1 - toolSettings.NormalLimit)
-            {
-                var color = GrassPainterHelper.GetVertexColor(oColors, vertexIndex1, vertexIndex2, vertexIndex3,
-                    randomBarycentricCoord);
-                var widthHeightFactor = CalculateWidthHeightFactor(color);
-
-                var grassData = new GrassData
-                {
-                    position = worldPoint,
-                    normal = worldNormal,
-                    color = GetRandomColor(),
-                    widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight) * widthHeightFactor
-                };
-
-                return (true, grassData);
-            }
-
-            return (false, default);
-        }
-
-        private async UniTask GenerateGrassForTerrain(Terrain terrain, List<GrassData> newGrassData)
-        {
-            var numPoints = CalculatePointsForTerrain(terrain);
-            var successCount = 0;
-            var attemptCount = 0;
-
-            while (successCount < numPoints)
-            {
-                await UpdateProgress(successCount, numPoints,
-                    $"Generating grass: {successCount:N0}/{numPoints:N0}");
-
-                var (success, grassData) = GenerateGrassDataForTerrain(terrain);
-                if (success)
-                {
-                    newGrassData.Add(grassData);
-                    successCount++;
-                }
-        
-                attemptCount++;
-        
-                if (attemptCount > numPoints * 2)
-                {
-                    Debug.LogWarning($"Grass generation completed with {successCount}/{numPoints} instances after {attemptCount} attempts.");
-                    break;
-                }
-            }
-        }
-
-        private int CalculatePointsForTerrain(Terrain terrain)
+        private async UniTask<List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>>
+            CalculateValidPointsForTerrain(Terrain terrain, int numPoints, int startPoint, int totalPoints)
         {
             var terrainData = terrain.terrainData;
             var terrainSize = terrainData.size;
-            var sampleCount = 100; // 샘플링 횟수
-            var validPoints = 0;
+            var tempPoints = new List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>();
 
-            for (var i = 0; i < sampleCount; i++)
+            for (var i = 0; i < numPoints; i++)
             {
+                await UpdateProgress(startPoint + i + 1, totalPoints,
+                    $"Calculating grass positions: {(startPoint + i + 1) / (float)totalPoints * 100:F1}%");
+
                 var randomPoint = new Vector3(
                     Random.Range(0, terrainSize.x),
                     0,
                     Random.Range(0, terrainSize.z)
                 );
 
-                var splatMapCoord = new Vector2(randomPoint.x / terrainSize.x, randomPoint.z / terrainSize.z);
-                var splatmapData = terrainData.GetAlphamaps(
-                    Mathf.FloorToInt(splatMapCoord.x * (terrainData.alphamapWidth - 1)),
-                    Mathf.FloorToInt(splatMapCoord.y * (terrainData.alphamapHeight - 1)),
-                    1, 1
-                );
+                var worldPoint = terrain.transform.TransformPoint(randomPoint);
+                worldPoint.y = terrain.SampleHeight(worldPoint);
 
-                float totalDensity = 0f;
-                float totalWeight = 0f;
-
-                for (var j = 0; j < splatmapData.GetLength(2); j++)
+                if (Physics.CheckSphere(worldPoint, 0.1f, toolSettings.PaintBlockMask))
                 {
-                    var layerStrength = splatmapData[0, 0, j];
-                    totalDensity += toolSettings.LayerBlocking[j] * layerStrength;
-                    totalWeight += layerStrength;
+                    continue;
                 }
 
-                var averageDensity = totalWeight > 0 ? totalDensity / totalWeight : 0;
-                if (Random.value <= averageDensity)
+                var normal = terrain.terrainData.GetInterpolatedNormal(
+                    randomPoint.x / terrainSize.x,
+                    randomPoint.z / terrainSize.z);
+
+                if (normal.y <= 1 + toolSettings.NormalLimit && normal.y >= 1 - toolSettings.NormalLimit)
                 {
-                    validPoints++;
+                    var splatMapCoord = new Vector2(randomPoint.x / terrainSize.x, randomPoint.z / terrainSize.z);
+                    var splatmapData = terrainData.GetAlphamaps(
+                        Mathf.FloorToInt(splatMapCoord.x * (terrainData.alphamapWidth - 1)),
+                        Mathf.FloorToInt(splatMapCoord.y * (terrainData.alphamapHeight - 1)),
+                        1, 1
+                    );
+
+                    float totalDensity = 0f;
+                    float totalWeight = 0f;
+                    float getFadeMap = 0f;
+
+                    for (var j = 0; j < splatmapData.GetLength(2); j++)
+                    {
+                        var layerStrength = splatmapData[0, 0, j];
+                        totalDensity += toolSettings.LayerBlocking[j] * layerStrength;
+                        totalWeight += layerStrength;
+
+                        if (toolSettings.LayerFading[j])
+                        {
+                            getFadeMap += layerStrength;
+                        }
+                    }
+
+                    var averageDensity = totalWeight > 0 ? totalDensity / totalWeight : 0;
+
+                    if (Random.value <= averageDensity)
+                    {
+                        var fade = Mathf.Clamp(getFadeMap, 0, 1f);
+                        var widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight * fade);
+                        tempPoints.Add((worldPoint, normal, widthHeight));
+                    }
                 }
             }
 
-            var validRatio = (float)validPoints / sampleCount;
-            var requestedPoints = Mathf.FloorToInt(toolSettings.GrassAmountToGenerate * toolSettings.GenerationDensity);
-            return Mathf.FloorToInt(requestedPoints * validRatio);
+            return tempPoints;
         }
-
-        private (bool success, GrassData grassData) GenerateGrassDataForTerrain(Terrain terrain)
-{
-    var terrainData = terrain.terrainData;
-    var terrainSize = terrainData.size;
-
-    var randomPoint = new Vector3(
-        Random.Range(0, terrainSize.x),
-        0,
-        Random.Range(0, terrainSize.z)
-    );
-
-    var worldPoint = terrain.transform.TransformPoint(randomPoint);
-    worldPoint.y = terrain.SampleHeight(worldPoint);
-
-    if (Physics.CheckSphere(worldPoint, 0.1f, toolSettings.PaintBlockMask))
-    {
-        return (false, default);
-    }
-
-    var normal = terrain.terrainData.GetInterpolatedNormal(
-        randomPoint.x / terrainSize.x,
-        randomPoint.z / terrainSize.z);
-
-    if (normal.y <= 1 + toolSettings.NormalLimit && normal.y >= 1 - toolSettings.NormalLimit)
-    {
-        var splatMapCoord = new Vector2(randomPoint.x / terrainSize.x, randomPoint.z / terrainSize.z);
-        var splatmapData = terrainData.GetAlphamaps(
-            Mathf.FloorToInt(splatMapCoord.x * (terrainData.alphamapWidth - 1)),
-            Mathf.FloorToInt(splatMapCoord.y * (terrainData.alphamapHeight - 1)),
-            1, 1
-        );
-
-        float totalDensity = 0f;
-        float totalWeight = 0f;
-        float getFadeMap = 0f;
-
-        for (var i = 0; i < splatmapData.GetLength(2); i++)
-        {
-            var layerStrength = splatmapData[0, 0, i];
-            totalDensity += toolSettings.LayerBlocking[i] * layerStrength;
-            totalWeight += layerStrength;
-            
-            if (toolSettings.LayerFading[i])
-            {
-                getFadeMap += layerStrength;
-            }
-        }
-
-        var averageDensity = totalWeight > 0 ? totalDensity / totalWeight : 0;
-        
-        if (Random.value > averageDensity)
-        {
-            return (false, default);
-        }
-
-        var fade = Mathf.Clamp(getFadeMap, 0, 1f);
-        var grassData = new GrassData
-        {
-            position = worldPoint,
-            normal = normal,
-            color = GetRandomColor(),
-            widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight * fade)
-        };
-
-        return (true, grassData);
-    }
-
-    return (false, default);
-}
 
         private float CalculateWidthHeightFactor(Color vertexColor)
         {
-            switch (toolSettings.VertexColorSettings)
+            return toolSettings.VertexColorSettings switch
             {
-                case GrassToolSettingSo.VertexColorSetting.Red:
-                    return 1 - vertexColor.r;
-                case GrassToolSettingSo.VertexColorSetting.Green:
-                    return 1 - vertexColor.g;
-                case GrassToolSettingSo.VertexColorSetting.Blue:
-                    return 1 - vertexColor.b;
-                default:
-                    return 1f;
-            }
+                GrassToolSettingSo.VertexColorSetting.Red => 1 - vertexColor.r,
+                GrassToolSettingSo.VertexColorSetting.Green => 1 - vertexColor.g,
+                GrassToolSettingSo.VertexColorSetting.Blue => 1 - vertexColor.b,
+                _ => 1f
+            };
         }
-
-        private const int UpdateInterval = 10000;
-        private float _lastProgressUpdate;
 
         private async UniTask UpdateProgress(int currentPoint, int totalPoints, string progressMessage)
         {
-            var currentProgress = (float)currentPoint / totalPoints;
+            _objectProgress.progress = (float)currentPoint / totalPoints;
+            _objectProgress.progressMessage = progressMessage;
 
-            // 진행도가 1% 이상 변했을 때만 UI 업데이트
-            if (currentProgress - _lastProgressUpdate >= 0.01f || currentPoint % UpdateInterval == 0)
+            try
             {
-                _objectProgress.progress = currentProgress;
-                _objectProgress.progressMessage = progressMessage;
-                _lastProgressUpdate = currentProgress;
-                await UniTask.Yield(PlayerLoopTiming.Update, _cts.Token);
+                // totalPoints의 1%마다 UI 업데이트
+                if (currentPoint % Math.Max(1, totalPoints / 100) == 0)
+                {
+                    await UniTask.Yield(PlayerLoopTiming.Update, _cts.Token);
+                    Repaint();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.Log("Progress update was cancelled");
+                throw;
             }
         }
 
@@ -1912,51 +1795,77 @@ namespace Grass.Editor
             return new Vector3(newRandomCol.r, newRandomCol.g, newRandomCol.b);
         }
 
-        private void ModifyColor()
+        private async UniTask ModifyColor()
         {
-            // 현재 상태를 Undo 시스템에 등록
-            Undo.RegisterCompleteObjectUndo(_grassCompute, "Modified Color");
+            _isProcessing = true;
+            _cts = new CancellationTokenSource();
 
-            // 기존 데이터의 깊은 복사본 생성 
+            Undo.RegisterCompleteObjectUndo(_grassCompute, "Modified Color");
             var grassData = new List<GrassData>(_grassCompute.GrassDataList);
+            var totalCount = grassData.Count;
 
             for (var i = 0; i < grassData.Count; i++)
             {
                 var newData = grassData[i];
                 newData.color = GetRandomColor();
                 grassData[i] = newData;
+
+                await UpdateProgress(i + 1, totalCount, $"Modifying colors: {i + 1}/{totalCount}");
             }
 
-            // 수정된 데이터를 _grassCompute에 할당
             _grassCompute.GrassDataList = grassData;
-            // 변경사항 적용
             RebuildMesh();
-            // Scene을 더티 상태로 표시
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+            _isProcessing = false;
         }
 
-        private void ModifyWidthAndHeight()
+        private async UniTask ModifySize()
         {
-            // 현재 상태를 Undo 시스템에 등록
-            Undo.RegisterCompleteObjectUndo(_grassCompute, "Modified Length/Width");
+            _isProcessing = true;
+            _cts = new CancellationTokenSource();
 
-            // 기존 데이터의 깊은 복사본 생성
+            Undo.RegisterCompleteObjectUndo(_grassCompute, "Modified Size");
             var grassData = new List<GrassData>(_grassCompute.GrassDataList);
+            var totalCount = grassData.Count;
 
             for (var i = 0; i < grassData.Count; i++)
             {
                 var newData = grassData[i];
                 newData.widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight);
                 grassData[i] = newData;
+
+                await UpdateProgress(i + 1, totalCount, $"Modifying size: {i + 1}/{totalCount}");
             }
 
-            // 수정된 데이터를 _grassCompute에 할당
             _grassCompute.GrassDataList = grassData;
-
-            // 변경사항 적용
             RebuildMesh();
-            // Scene을 더티 상태로 표시
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+            _isProcessing = false;
+        }
+
+        private async UniTask ModifySizeAndColor()
+        {
+            _isProcessing = true;
+            _cts = new CancellationTokenSource();
+
+            Undo.RegisterCompleteObjectUndo(_grassCompute, "Modified Size and Color");
+            var grassData = new List<GrassData>(_grassCompute.GrassDataList);
+            var totalCount = grassData.Count;
+
+            for (int i = 0; i < totalCount; i++)
+            {
+                var newData = grassData[i];
+                newData.widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight);
+                newData.color = GetRandomColor();
+                grassData[i] = newData;
+
+                await UpdateProgress(i + 1, totalCount, $"Modifying size and color: {i + 1}/{totalCount}");
+            }
+
+            _grassCompute.GrassDataList = grassData;
+            RebuildMesh();
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+            _isProcessing = false;
         }
 
         private void HandleScrollWheel(Event e)

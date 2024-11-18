@@ -48,11 +48,12 @@ namespace Grass.Editor
                 var grassData = grassList[index];
                 var start = new Vector3(
                     grassData.position.x, MaxRayHeight, grassData.position.z);
-                var ray = new Ray(start, Vector3.down * MaxRayHeight);
-                if (Physics.Raycast(ray, out var hit, MaxRayHeight, toolSettings.PaintMask.value))
+
+                var distanceSqr = GrassPainterHelper.SqrDistance(grassData.position, hitPoint);
+                if (distanceSqr <= brushSizeSqr)
                 {
-                    var distanceSqr = GrassPainterHelper.SqrDistance(grassData.position, hitPoint);
-                    if (distanceSqr <= brushSizeSqr)
+                    var ray = new Ray(start, Vector3.down * MaxRayHeight);
+                    if (Physics.Raycast(ray, out var hit, MaxRayHeight, toolSettings.PaintMask.value))
                     {
                         var newData = grassData;
                         newData.position = hit.point;

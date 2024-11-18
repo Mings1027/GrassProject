@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shaderToUse: {fileID: 7200000, guid: 11036af5f2d1499c8845585fb5fadb4c, type: 3}
   materialToUse: {fileID: 2100000, guid: 7725493650b5a4b4d9c0d612493ca34d, type: 2}
-  bladeRadius: 0.727
+  bladeRadius: 0.364
   bladeForward: 1.43
   bladeCurve: 2
   bottomWidth: 0.32
@@ -25,7 +25,7 @@ MonoBehaviour:
   randomHeightMin: 0.01
   randomHeightMax: 0.2
   windSpeed: 2
-  windStrength: 0.1
+  windStrength: 0.2
   bladesPerVertex: 5
   segmentsPerBlade: 2
   interactorStrength: 1
@@ -33,7 +33,7 @@ MonoBehaviour:
   bottomTint: {r: 0.11690103, g: 0.23347847, b: 0.6698113, a: 1}
   drawBounds: 0
   minFadeDistance: 20
-  maxFadeDistance: 200
+  maxFadeDistance: 150
   cullingTreeDepth: 5
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}
   castShadow: 0

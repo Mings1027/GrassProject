@@ -20,7 +20,6 @@ public class GrassComputeScript : MonoBehaviour
     private List<GrassInteractor> _interactors;
     private readonly List<int> _grassList = new();
     private List<int> _grassVisibleIDList = new(); // list of all visible grass ids, rest are culled
-    // private bool _initialized; // A state variable to help keep track of whether compute buffers have been set up
 
     private ComputeBuffer _sourceVertBuffer; // A compute buffer to hold vertex data of the source mesh
     private ComputeBuffer _drawBuffer; // A compute buffer to hold vertex data of the generated mesh
@@ -77,9 +76,12 @@ public class GrassComputeScript : MonoBehaviour
         get => grassData;
         set => grassData = value;
     }
-    public GrassSettingSO GrassSetting => grassSetting; // grass settings to send to the compute shader
-    public void SetGrassSetting(GrassSettingSO setting) => grassSetting = setting;
 #if UNITY_EDITOR
+    public GrassSettingSO GrassSetting
+    {
+        get => grassSetting;
+        set => grassSetting = value;
+    }
     private SceneView _view;
 
     public void Reset()
@@ -91,8 +93,6 @@ public class GrassComputeScript : MonoBehaviour
 
     private void OnDestroy()
     {
-        // When the window is destroyed, remove the delegate
-        // so that it will no longer do any drawing.
         SceneView.duringSceneGui -= OnScene;
     }
 
@@ -159,13 +159,6 @@ public class GrassComputeScript : MonoBehaviour
             OnEnable();
         }
 
-        // If not initialized, do nothing (creating zero-length buffer will crash)
-        // if (!_initialized)
-        // {
-        //     // Initialization is not done, please check if there are null components
-        //     // or just because there is not vertex being painted.
-        //     return;
-        // }
 #endif
         if (grassData.Count <= 0) return;
         // get the data from the camera for culling
@@ -208,38 +201,31 @@ public class GrassComputeScript : MonoBehaviour
         GrassFuncManager.RemoveEvent(GrassEvent.VisibleGrassCount, () => _grassVisibleIDList.Count);
 
         _interactors.Clear();
-        // Dispose of buffers and copied shaders here
-        // if (_initialized)
-        {
-            // If the application is not in play mode, we have to call DestroyImmediate
-            if (Application.isPlaying)
-            {
-                Destroy(_instComputeShader);
-                Destroy(instantiatedMaterial);
-            }
-            else
-            {
-                DestroyImmediate(_instComputeShader);
-                DestroyImmediate(instantiatedMaterial);
-            }
 
-            // Release each buffer
-            _sourceVertBuffer?.Release();
-            _drawBuffer?.Release();
-            _argsBuffer?.Release();
-            _visibleIDBuffer?.Release();
-            // added for cutting
-            _cutBuffer?.Release();
+        if (Application.isPlaying)
+        {
+            Destroy(_instComputeShader);
+            Destroy(instantiatedMaterial);
+        }
+        else
+        {
+            DestroyImmediate(_instComputeShader);
+            DestroyImmediate(instantiatedMaterial);
         }
 
-        // _initialized = false;
+        // Release each buffer
+        _sourceVertBuffer?.Release();
+        _drawBuffer?.Release();
+        _argsBuffer?.Release();
+        _visibleIDBuffer?.Release();
+        // added for cutting
+        _cutBuffer?.Release();
     }
 
 #if UNITY_EDITOR
     // draw the bounds gizmos
     private void OnDrawGizmos()
     {
-        if (!enabled) return;
         if (grassSetting)
         {
             if (grassSetting.drawBounds)
@@ -294,8 +280,6 @@ public class GrassComputeScript : MonoBehaviour
             Debug.LogWarning("Missing Cut Particles in grass Settings", this);
         }
 
-        // _initialized = true;
-
         // Instantiate the shaders so they can point to their own buffers
         _instComputeShader = Instantiate(grassSetting.shaderToUse);
         instantiatedMaterial = Instantiate(grassSetting.materialToUse);
@@ -315,7 +299,7 @@ public class GrassComputeScript : MonoBehaviour
             _argsBufferReset.Length * sizeof(uint));
 
         //uint only, per visible grass
-        _visibleIDBuffer = new ComputeBuffer(grassData.Count, sizeof(int), ComputeBufferType.Structured);
+        _visibleIDBuffer = new ComputeBuffer(grassData.Count, sizeof(uint), ComputeBufferType.Structured);
 
         // added for cutting
         //uint only, per visible grass
@@ -359,6 +343,9 @@ public class GrassComputeScript : MonoBehaviour
         _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
 
         SetupQuadTree(full);
+        _cachedCamPos = Vector3.zero;
+        _cachedCamRot = Quaternion.identity;
+        GetFrustumData();
     }
 
     private void SetupQuadTree(bool full)
@@ -648,15 +635,7 @@ public class GrassComputeScript : MonoBehaviour
         _boundsListVis.Clear();
         _leaves.Clear();
 
-        _bounds = new Bounds();
         _cullingTree = null;
-        _cutIDs = new float[grassData.Count];
-
-        for (var i = 0; i < _cutIDs.Length; i++)
-        {
-            _cutIDs[i] = -1;
-        }
-
         _cutBuffer?.SetData(_cutIDs);
 
         _drawBuffer.SetCounterValue(0);

@@ -7,7 +7,6 @@ struct VertexData
     float3 normalOS : NORMAL;
     float2 uv : TEXCOORD0;
     uint vertexID : SV_VertexID;
-    UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
 struct FragmentData

@@ -1,6 +1,8 @@
+using System;
 using Grass.GrassScripts;
 using UnityEditor;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Grass.Editor
 {
@@ -33,7 +35,7 @@ namespace Grass.Editor
         Advanced
     }
 
-    public abstract class GrassPainterHelper
+    public static class GrassPainterHelper
     {
         public static Bounds? GetObjectBounds(GameObject obj)
         {
