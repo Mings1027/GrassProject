@@ -1109,6 +1109,14 @@ namespace Grass.Editor
             {
                 if (_paintModeActive)
                 {
+                    // 브러시 미리보기
+                    if (Physics.Raycast(_mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
+                    {
+                        _hitPos = hit.point;
+                        _hitNormal = hit.normal;
+                        DrawGrassBrush(_hitPos, _hitNormal, toolSettings.BrushSize);
+                    }
+
                     if (_showSpatialGrid)
                     {
                         DrawGridHandles();
@@ -1251,15 +1259,6 @@ namespace Grass.Editor
                     }
 
                     break;
-            }
-
-            // 브러시 미리보기
-            if (!hasModifier &&
-                Physics.Raycast(_mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
-            {
-                _hitPos = hit.point;
-                _hitNormal = hit.normal;
-                DrawGrassBrush(_hitPos, _hitNormal, toolSettings.BrushSize);
             }
         }
 
@@ -1913,7 +1912,7 @@ namespace Grass.Editor
                     _grassAddPainter.AddGrass(_mousePointRay, toolSettings);
                     break;
                 case BrushOption.Remove:
-                    _grassRemovePainter.RemoveGrass(_hitPos, toolSettings.BrushSize);
+                    _grassRemovePainter.RemoveGrass(_mousePointRay, toolSettings.BrushSize);
                     break;
                 case BrushOption.Edit:
                     _grassEditPainter.EditGrass(_mousePointRay, toolSettings, _selectedEditOption);

@@ -18,11 +18,15 @@ namespace Grass.Editor
             _grassList = grassCompute.GrassDataList;
         }
 
-        public void RemoveGrass(Vector3 hitPoint, float radius)
+        public void RemoveGrass(Ray mousePointRay, float radius)
         {
             if (_grassList == null || _grassList.Count == 0)
                 return;
 
+            if (!Physics.Raycast(mousePointRay, out var hit, grassCompute.GrassSetting.maxFadeDistance)) 
+                return;
+            
+            var hitPoint = hit.point;
             _currentBrushRadiusSqr = radius * radius;
             var minMoveSqr = _currentBrushRadiusSqr * MinRemoveDistanceFactor;
 

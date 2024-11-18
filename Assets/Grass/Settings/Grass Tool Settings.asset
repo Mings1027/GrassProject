@@ -40,7 +40,7 @@ MonoBehaviour:
   paintBlockMask:
     serializedVersion: 2
     m_Bits: 64
-  brushSize: 8.8
+  brushSize: 6.300004
   brushFalloffSize: 1
   brushTransitionSpeed: 0.079
   density: 91
