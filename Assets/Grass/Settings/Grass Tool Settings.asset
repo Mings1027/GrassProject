@@ -14,18 +14,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   layerBlocking:
   - 0.5
+  - 0.14
   - 0.5
-  - 0.5
+  - 0.1
+  - 0.3
   - 0
   - 0
   - 0
+  heightFading:
+  - 1
+  - 0.12
+  - 0
+  - 0.1
+  - 1
   - 0
   - 0
-  layerFading: 0100010000000000
+  - 0
+  layerEnabled: 0100010101000000
   vertexColorSettings: 0
   vertexFade: 0
   grassWidth: 0.25
-  grassHeight: 0.45
+  grassHeight: 0.5
   adjustWidth: 0.1
   adjustHeight: 0.1
   adjustWidthMax: 0.3
@@ -33,18 +42,18 @@ MonoBehaviour:
   rangeR: 0.594
   rangeG: 0.299
   rangeB: 0.399
-  brushColor: {r: 0.37833437, g: 0.09803922, b: 0.81960785, a: 1}
+  brushColor: {r: 0.09803922, g: 0.81960785, b: 0.12056604, a: 1}
   paintMask:
     serializedVersion: 2
     m_Bits: 8
   paintBlockMask:
     serializedVersion: 2
     m_Bits: 64
-  brushSize: 6.300004
+  brushSize: 10.349986
   brushFalloffSize: 1
   brushTransitionSpeed: 0.079
-  density: 91
+  density: 42
   normalLimit: 1
   grassAmountToGenerate: 100000
-  generationDensity: 1
+  generationDensity: 2
   grassMouseButton: 0

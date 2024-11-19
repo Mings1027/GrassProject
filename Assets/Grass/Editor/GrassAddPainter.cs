@@ -24,12 +24,13 @@ namespace Grass.Editor
                     var grassAdded = false;
                     for (int i = 0; i < density; i++)
                     {
-                        var randomPoint = Random.insideUnitCircle * brushSize;
+                        var randomPoint = Random.insideUnitSphere * brushSize;
                         var randomRayOrigin = mousePointRay.origin;
                         randomRayOrigin.x += randomPoint.x;
-                        randomRayOrigin.z += randomPoint.y;
+                        randomRayOrigin.z += randomPoint.z;
 
                         var ray = new Ray(randomRayOrigin, mousePointRay.direction);
+
                         if (Physics.Raycast(ray, out var hit2, grassCompute.GrassSetting.maxFadeDistance))
                         {
                             var hitLayer = hit2.collider.gameObject.layer;
@@ -45,7 +46,7 @@ namespace Grass.Editor
                                     var newIndex = grassCompute.GrassDataList.Count;
                                     grassCompute.GrassDataList.Add(newData);
                                     spatialGrid.AddObject(hit2.point, newIndex);
-
+                            
                                     grassAdded = true;
                                 }
                             }

@@ -53,7 +53,6 @@ public class GrassComputeScript : MonoBehaviour
     private readonly List<Bounds> _boundsListVis = new();
     private readonly List<CullingTree> _leaves = new();
     private readonly Plane[] _cameraFrustumPlanes = new Plane[6];
-    private float _cameraOriginalFarPlane;
 
     // list of -1 to overwrite the grassvisible buffer with
     // private List<int> _empty = new();
@@ -401,7 +400,7 @@ public class GrassComputeScript : MonoBehaviour
             _boundsListVis.Clear();
             foreach (var leaf in _leaves)
             {
-                _boundsListVis.Add(leaf.GetBounds()); // CullingTree에 GetBounds() 추가 필요
+                _boundsListVis.Add(leaf.GetBounds());
             }
         }
         else // 편집 모드 등에서 임시 설정시
@@ -440,13 +439,11 @@ public class GrassComputeScript : MonoBehaviour
         if (!_fastMode)
         {
             // Perform full frustum culling
-            _cameraOriginalFarPlane = _mainCamera.farClipPlane;
             _mainCamera.farClipPlane = grassSetting.maxFadeDistance;
             _boundsListVis.Clear();
             _grassVisibleIDList.Clear();
             _cullingTree.RetrieveLeaves(_cameraFrustumPlanes, _boundsListVis, _grassVisibleIDList);
             _visibleIDBuffer.SetData(_grassVisibleIDList);
-            _mainCamera.farClipPlane = _cameraOriginalFarPlane;
         }
     }
 

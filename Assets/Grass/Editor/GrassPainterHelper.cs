@@ -32,7 +32,6 @@ namespace Grass.Editor
     {
         Basic,
         TerrainLayers,
-        Advanced
     }
 
     public static class GrassPainterHelper
