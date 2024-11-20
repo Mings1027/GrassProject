@@ -20,17 +20,13 @@ namespace Grass.Editor
 
     public class GrassPainterWindow : EditorWindow
     {
-        // main tabs
-        private readonly string[] _mainTabBarStrings =
-            { "Paint/Edit", "Modify", "Generate", "General Settings" };
-
-        private int _mainTabCurrent;
         private Vector2 _scrollPos;
 
         private bool _paintModeActive;
         private bool _enableGrass;
         private bool _showSpatialGrid;
 
+        private readonly string[] _mainTabBarStrings = { "Paint/Edit", "Modify", "Generate", "General Settings" };
         private readonly string[] _toolbarStrings = { "Add", "Remove", "Edit", "Reposition" };
         private readonly string[] _editOptionStrings = { "Edit Colors", "Edit Width/Height", "Both" };
         private readonly string[] _modifyOptionStrings = { "Width/Height", "Color", "Both" };
@@ -41,6 +37,7 @@ namespace Grass.Editor
         [SerializeField] private GrassToolSettingSo toolSettings;
 
         // options
+        private GrassEditorTab _grassEditorTab;
         private BrushOption _selectedToolOption;
         private EditOption _selectedEditOption;
         private ModifyOption _selectedModifyOption;
@@ -189,6 +186,7 @@ namespace Grass.Editor
             {
                 _isProcessing = false;
                 _cts.Cancel();
+                Debug.LogWarning("Progress update was cancelled");
             }
 
             // 프로그레스 바 배치
@@ -353,32 +351,30 @@ namespace Grass.Editor
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Total Grass Amount: " + _grassCompute.GrassDataList.Count, EditorStyles.label);
 
-            EditorGUILayout.BeginHorizontal();
-            _mainTabCurrent = GUILayout.Toolbar(
-                _mainTabCurrent,
+            _grassEditorTab = (GrassEditorTab)GUILayout.Toolbar(
+                (int)_grassEditorTab,
                 _mainTabBarStrings,
                 GUILayout.MinWidth(300),
                 GUILayout.Height(30)
             );
-            EditorGUILayout.EndHorizontal();
         }
 
         private void DrawControlPanels()
         {
             EditorGUILayout.Separator();
 
-            switch (_mainTabCurrent)
+            switch (_grassEditorTab)
             {
-                case 0:
+                case GrassEditorTab.PaintEdit:
                     ShowPaintPanel();
                     break;
-                case 1:
+                case GrassEditorTab.Modify:
                     ShowModifyPanel();
                     break;
-                case 2:
+                case GrassEditorTab.Generate:
                     ShowGeneratePanel();
                     break;
-                case 3:
+                case GrassEditorTab.GeneralSettings:
                     ShowMainSettingsPanel();
                     break;
             }
@@ -413,8 +409,8 @@ namespace Grass.Editor
 
         private void ShowPaintPanel()
         {
-            DrawHitSettings();
             DrawBrushToolbar();
+            DrawHitSettings();
             DrawCommonBrushSettings();
 
             switch (_selectedToolOption)
@@ -432,6 +428,16 @@ namespace Grass.Editor
                     break;
             }
 
+            EditorGUILayout.Separator();
+        }
+
+        private void DrawBrushToolbar()
+        {
+            _selectedToolOption = (BrushOption)GUILayout.Toolbar(
+                (int)_selectedToolOption,
+                _toolbarStrings,
+                GUILayout.Height(25)
+            );
             EditorGUILayout.Separator();
         }
 
@@ -454,19 +460,9 @@ namespace Grass.Editor
             toolSettings.PaintBlockMask = InternalEditorUtility.ConcatenatedLayersMaskToLayerMask(paintBlockMask);
         }
 
-        private void DrawBrushToolbar()
-        {
-            EditorGUILayout.Separator();
-            _selectedToolOption = (BrushOption)GUILayout.Toolbar(
-                (int)_selectedToolOption,
-                _toolbarStrings,
-                GUILayout.Height(25)
-            );
-            EditorGUILayout.Separator();
-        }
-
         private void DrawCommonBrushSettings()
         {
+            EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Brush Settings", EditorStyles.boldLabel);
 
             var style = new GUIStyle(EditorStyles.helpBox)
@@ -1044,111 +1040,87 @@ namespace Grass.Editor
             EditorGUILayout.LabelField("Blade Min/Max Settings", EditorStyles.boldLabel);
             var curPresets = _grassCompute.GrassSetting;
 
-            {
-                EditorGUILayout.MinMaxSlider("Blade Width Min/Max", ref curPresets.minWidth,
-                    ref curPresets.maxWidth, curPresets.MinWidthLimit, curPresets.MaxWidthLimit);
+            DrawMinMaxSection("Blade Width", ref curPresets.minWidth, ref curPresets.maxWidth,
+                curPresets.MinWidthLimit, curPresets.MaxWidthLimit);
+            DrawMinMaxSection("Blade Height", ref curPresets.minHeight, ref curPresets.maxHeight,
+                curPresets.MinHeightLimit, curPresets.MaxHeightLimit);
+            DrawMinMaxSection("Random Height", ref curPresets.randomHeightMin, ref curPresets.randomHeightMax, 0, 1);
 
-                EditorGUILayout.BeginHorizontal();
-                curPresets.minWidth = EditorGUILayout.FloatField(curPresets.minWidth);
-                curPresets.maxWidth = EditorGUILayout.FloatField(curPresets.maxWidth);
-                EditorGUILayout.EndHorizontal();
-            }
-
-            EditorGUILayout.Separator();
-
-            {
-                EditorGUILayout.MinMaxSlider("Blade Height Min/Max", ref curPresets.minHeight,
-                    ref curPresets.maxHeight, curPresets.MinHeightLimit, curPresets.MaxHeightLimit);
-
-                EditorGUILayout.BeginHorizontal();
-                curPresets.minHeight = EditorGUILayout.FloatField(curPresets.minHeight);
-                curPresets.maxHeight = EditorGUILayout.FloatField(curPresets.maxHeight);
-                EditorGUILayout.EndHorizontal();
-            }
-
-            EditorGUILayout.Separator();
-            EditorGUILayout.Separator();
-
-            EditorGUILayout.MinMaxSlider("Random Height Min/Max", ref curPresets.randomHeightMin,
-                ref curPresets.randomHeightMax, 0, 1);
-
-            EditorGUILayout.BeginHorizontal();
-
-            curPresets.randomHeightMin = EditorGUILayout.FloatField(curPresets.randomHeightMin);
-            curPresets.randomHeightMax = EditorGUILayout.FloatField(curPresets.randomHeightMax);
-
-            EditorGUILayout.EndHorizontal();
-
+            EditorGUILayout.Space();
             EditorGUILayout.LabelField("Blade Shape Settings", EditorStyles.boldLabel);
-            curPresets.bladeRadius = EditorGUILayout.Slider("Blade Radius",
-                curPresets.bladeRadius, curPresets.MinBladeRadius, curPresets.MaxBladeRadius);
-            curPresets.bladeForward = EditorGUILayout.Slider("Blade Forward",
-                curPresets.bladeForward, curPresets.MinBladeForward, curPresets.MaxBladeForward);
-            curPresets.bladeCurve = EditorGUILayout.Slider("Blade Curve",
-                curPresets.bladeCurve, curPresets.MinBladeCurve, curPresets.MaxBladeCurve);
-            curPresets.bottomWidth = EditorGUILayout.Slider("Bottom Width",
-                curPresets.bottomWidth, curPresets.MinBottomWidth, curPresets.MaxBottomWidth);
+            DrawSliderRow("Blade Radius", ref curPresets.bladeRadius, curPresets.MinBladeRadius,
+                curPresets.MaxBladeRadius);
+            DrawSliderRow("Blade Forward", ref curPresets.bladeForward, curPresets.MinBladeForward,
+                curPresets.MaxBladeForward);
+            DrawSliderRow("Blade Curve", ref curPresets.bladeCurve, curPresets.MinBladeCurve, curPresets.MaxBladeCurve);
+            DrawSliderRow("Bottom Width", ref curPresets.bottomWidth, curPresets.MinBottomWidth,
+                curPresets.MaxBottomWidth);
 
-            EditorGUILayout.Separator();
-
+            EditorGUILayout.Space();
             EditorGUILayout.LabelField("Blade Amount Settings", EditorStyles.boldLabel);
-            curPresets.bladesPerVertex = EditorGUILayout.IntSlider(
-                "Blades Per Vertex", curPresets.bladesPerVertex, curPresets.MinBladesPerVertex,
-                curPresets.MaxBladesPerVertex);
-            curPresets.segmentsPerBlade = EditorGUILayout.IntSlider(
-                "Segments Per Blade", curPresets.segmentsPerBlade, curPresets.MinSegmentsPerBlade,
-                curPresets.MaxSegmentsPerBlade);
+            curPresets.bladesPerVertex = EditorGUILayout.IntSlider("Blades Per Vertex",
+                curPresets.bladesPerVertex, curPresets.MinBladesPerVertex, curPresets.MaxBladesPerVertex);
+            curPresets.segmentsPerBlade = EditorGUILayout.IntSlider("Segments Per Blade",
+                curPresets.segmentsPerBlade, curPresets.MinSegmentsPerBlade, curPresets.MaxSegmentsPerBlade);
 
-            EditorGUILayout.Separator();
-
+            EditorGUILayout.Space();
             EditorGUILayout.LabelField("Wind Settings", EditorStyles.boldLabel);
-            curPresets.windSpeed =
-                EditorGUILayout.Slider("Wind Speed", curPresets.windSpeed, curPresets.MinWindSpeed,
-                    curPresets.MaxWindSpeed);
+            curPresets.windSpeed = EditorGUILayout.Slider("Wind Speed",
+                curPresets.windSpeed, curPresets.MinWindSpeed, curPresets.MaxWindSpeed);
             curPresets.windStrength = EditorGUILayout.Slider("Wind Strength",
                 curPresets.windStrength, curPresets.MinWindStrength, curPresets.MaxWindStrength);
 
-            EditorGUILayout.Separator();
+            EditorGUILayout.Space();
             EditorGUILayout.LabelField("Tinting Settings", EditorStyles.boldLabel);
-            curPresets.topTint =
-                EditorGUILayout.ColorField("Top Tint", curPresets.topTint);
-            curPresets.bottomTint =
-                EditorGUILayout.ColorField("Bottom Tint", curPresets.bottomTint);
+            curPresets.topTint = EditorGUILayout.ColorField("Top Tint", curPresets.topTint);
+            curPresets.bottomTint = EditorGUILayout.ColorField("Bottom Tint", curPresets.bottomTint);
 
-            EditorGUILayout.Separator();
+            EditorGUILayout.Space();
             EditorGUILayout.LabelField("LOD/Culling Settings", EditorStyles.boldLabel);
+
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Show Culling Bounds:", EditorStyles.boldLabel);
-            curPresets.drawBounds =
-                EditorGUILayout.Toggle(curPresets.drawBounds);
+            curPresets.drawBounds = EditorGUILayout.Toggle(curPresets.drawBounds);
             EditorGUILayout.EndHorizontal();
 
-            // Min Fade Distance 슬라이더
-            GUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Min Fade Distance", GUILayout.Width(120)); // 레이블 표시
-            curPresets.minFadeDistance =
-                EditorGUILayout.Slider(curPresets.minFadeDistance, 0, curPresets.maxFadeDistance); // 슬라이더
-            GUILayout.Label($"0 / {curPresets.maxFadeDistance}", GUILayout.Width(80)); // 최소값과 최대값 텍스트로 표시
-            GUILayout.EndHorizontal();
+            DrawFadeDistanceSlider("Min Fade Distance", ref curPresets.minFadeDistance, 0, curPresets.maxFadeDistance);
+            DrawFadeDistanceSlider("Max Fade Distance", ref curPresets.maxFadeDistance, curPresets.minFadeDistance,
+                300);
 
-            // Max Fade Distance 슬라이더
-            GUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Max Fade Distance", GUILayout.Width(120)); // 레이블 표시
-            curPresets.maxFadeDistance =
-                EditorGUILayout.Slider(curPresets.maxFadeDistance, curPresets.minFadeDistance, 300); // 슬라이더
-            GUILayout.Label($"{curPresets.minFadeDistance} / 300", GUILayout.Width(80)); // 최소값과 최대값 텍스트로 표시
-            GUILayout.EndHorizontal();
+            curPresets.cullingTreeDepth = EditorGUILayout.IntField("Culling Tree Depth", curPresets.cullingTreeDepth);
 
-            curPresets.cullingTreeDepth = EditorGUILayout.IntField("Culling Tree Depth",
-                curPresets.cullingTreeDepth);
-
-            EditorGUILayout.Separator();
+            EditorGUILayout.Space();
             EditorGUILayout.LabelField("Other Settings", EditorStyles.boldLabel);
-            curPresets.interactorStrength = EditorGUILayout.FloatField("Interactor Strength",
-                curPresets.interactorStrength);
-            curPresets.castShadow =
-                (UnityEngine.Rendering.ShadowCastingMode)EditorGUILayout.EnumPopup("Shadow Settings",
-                    curPresets.castShadow);
+            curPresets.interactorStrength =
+                EditorGUILayout.FloatField("Interactor Strength", curPresets.interactorStrength);
+            curPresets.castShadow = (UnityEngine.Rendering.ShadowCastingMode)EditorGUILayout.EnumPopup(
+                "Shadow Settings", curPresets.castShadow);
+        }
+
+        private void DrawMinMaxSection(string label, ref float min, ref float max, float minLimit, float maxLimit)
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.MinMaxSlider(label, ref min, ref max, minLimit, maxLimit);
+            min = EditorGUILayout.FloatField(min, GUILayout.Width(50));
+            max = EditorGUILayout.FloatField(max, GUILayout.Width(50));
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private void DrawSliderRow(string label, ref float value, float min, float max)
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField(label, GUILayout.Width(100));
+            value = EditorGUILayout.Slider(value, min, max);
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private void DrawFadeDistanceSlider(string label, ref float value, float min, float max)
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField(label, GUILayout.Width(120));
+            value = EditorGUILayout.Slider(value, min, max);
+            GUILayout.Label($"{min} / {max}", GUILayout.Width(80));
+            EditorGUILayout.EndHorizontal();
         }
 
         private void CreateNewGrassObject()
@@ -1429,9 +1401,8 @@ namespace Grass.Editor
             // 실제 잔디 생성
             for (var i = 0; i < allTempPoints.Count; i++)
             {
-                var percentage = (float)(i + 1) / allTempPoints.Count * 100f;
                 await UpdateProgress(i + 1, allTempPoints.Count,
-                    $"Generating grass: {i + 1:N0}/{allTempPoints.Count:N0} ({percentage:F1}%)");
+                    $"Generating grass: ({i + 1:N0}/{allTempPoints.Count:N0})");
 
                 var (worldPoint, worldNormal, widthHeight) = allTempPoints[i];
                 var grassData = new GrassData
@@ -1535,7 +1506,7 @@ namespace Grass.Editor
                 });
 
                 await UpdateProgress(startPoint + start, totalPoints,
-                    $"Calculating grass positions {(startPoint + start) / (float)totalPoints * 100:F1}%");
+                    "Calculating grass positions");
             }
 
             var batchResults = await UniTask.WhenAll(tasks);
@@ -1565,7 +1536,7 @@ namespace Grass.Editor
             for (var i = 0; i < numPoints; i++)
             {
                 await UpdateProgress(startPoint + i + 1, totalPoints,
-                    $"Calculating grass positions {(startPoint + i + 1) / (float)totalPoints * 100:F1}%");
+                    "Calculating grass positions");
 
                 var randomPoint = new Vector3(
                     Random.Range(0, terrainSize.x),
@@ -1647,21 +1618,12 @@ namespace Grass.Editor
         private async UniTask UpdateProgress(int currentPoint, int totalPoints, string progressMessage)
         {
             _objectProgress.progress = (float)currentPoint / totalPoints;
-            _objectProgress.progressMessage = progressMessage;
+            _objectProgress.progressMessage = $"{progressMessage} {currentPoint / (float)totalPoints * 100:F1}%";
 
-            try
+            if (currentPoint % Math.Max(1, totalPoints / 100) == 0)
             {
-                // totalPoints의 1%마다 UI 업데이트
-                if (currentPoint % Math.Max(1, totalPoints / 100) == 0)
-                {
-                    await UniTask.Yield(PlayerLoopTiming.Update, _cts.Token);
-                    Repaint();
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                Debug.Log("Progress update was cancelled");
-                throw;
+                await UniTask.Yield(PlayerLoopTiming.Update, _cts.Token);
+                Repaint();
             }
         }
 
@@ -1760,7 +1722,7 @@ namespace Grass.Editor
                 tempIndices.Clear();
 
                 await UpdateProgress(currentObjectIndex, totalObjects,
-                    $"Checking object {currentObjectIndex + 1:N0} / {totalObjects:N0}");
+                    "Checking object");
 
                 currentObjectIndex++;
             }
@@ -1769,8 +1731,9 @@ namespace Grass.Editor
             return positionsToRemove;
         }
 
-        private async UniTask HandleMeshFilter(MeshFilter meshFilter, List<int> indices, List<GrassData> grassData,
-                                               HashSet<Vector3> positionsToRemove)
+        private static async UniTask HandleMeshFilter(MeshFilter meshFilter, List<int> indices,
+                                                      List<GrassData> grassData,
+                                                      HashSet<Vector3> positionsToRemove)
         {
             var localBounds = meshFilter.sharedMesh.bounds;
             const int batchSize = 10000;
@@ -1793,6 +1756,7 @@ namespace Grass.Editor
                         positions[i] = worldToLocalMatrix.MultiplyPoint3x4(grassData[index].position);
                     }
                 }
+
                 return positions;
             });
 
@@ -1803,9 +1767,6 @@ namespace Grass.Editor
                 var start = batchIndex * batchSize;
                 var end = Mathf.Min(start + batchSize, indices.Count);
                 var localBatchIndex = batchIndex;
-
-                await UpdateProgress(batchIndex, totalBatches,
-                    $"Processing batch {batchIndex + 1}/{totalBatches} ({(float)(batchIndex + 1) / totalBatches * 100:F1}%)");
 
                 tasks[batchIndex] = UniTask.RunOnThreadPool(() =>
                 {
@@ -1850,8 +1811,8 @@ namespace Grass.Editor
             }
         }
 
-        private void HandleTerrain(Terrain terrain, List<int> indices, List<GrassData> grassData,
-                                   HashSet<Vector3> positionsToRemove)
+        private static void HandleTerrain(Terrain terrain, List<int> indices, List<GrassData> grassData,
+                                          HashSet<Vector3> positionsToRemove)
         {
             var terrainPos = terrain.transform.position;
             var terrainSize = terrain.terrainData.size;
@@ -1916,9 +1877,8 @@ namespace Grass.Editor
                 finalGrassToKeep.AddRange(result.localGrassToKeep);
                 totalRemoved += result.localRemovedCount;
 
-                var batchProgress = (float)(batchIndex + 1) / totalBatches * 100f;
                 await UpdateProgress(batchIndex + 1, totalBatches,
-                    $"Removing Grass {batchProgress:F1}%");
+                    $"Removing Grass");
             }
 
             _grassCompute.GrassDataList = finalGrassToKeep;
@@ -1952,7 +1912,7 @@ namespace Grass.Editor
                 newData.color = GetRandomColor();
                 grassData[i] = newData;
 
-                await UpdateProgress(i + 1, totalCount, $"Modifying colors: {i + 1}/{totalCount}");
+                await UpdateProgress(i + 1, totalCount, "Modifying colors");
             }
 
             _grassCompute.GrassDataList = grassData;
@@ -1975,7 +1935,7 @@ namespace Grass.Editor
                 newData.widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight);
                 grassData[i] = newData;
 
-                await UpdateProgress(i + 1, totalCount, $"Modifying size: {i + 1}/{totalCount}");
+                await UpdateProgress(i + 1, totalCount, "Modifying size");
             }
 
             _grassCompute.GrassDataList = grassData;
@@ -1999,7 +1959,7 @@ namespace Grass.Editor
                 newData.color = GetRandomColor();
                 grassData[i] = newData;
 
-                await UpdateProgress(i + 1, totalCount, $"Modifying size and color: {i + 1}/{totalCount}");
+                await UpdateProgress(i + 1, totalCount, "Modifying size and color");
             }
 
             _grassCompute.GrassDataList = grassData;

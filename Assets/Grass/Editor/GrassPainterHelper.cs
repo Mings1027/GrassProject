@@ -1,4 +1,3 @@
-using System;
 using Grass.GrassScripts;
 using UnityEditor;
 using UnityEngine;
@@ -6,6 +5,14 @@ using Random = UnityEngine.Random;
 
 namespace Grass.Editor
 {
+    public enum GrassEditorTab
+    {
+        PaintEdit,
+        Modify,
+        Generate,
+        GeneralSettings,
+    }
+
     public enum BrushOption
     {
         Add,
@@ -177,7 +184,7 @@ namespace Grass.Editor
         {
             EditorGUILayout.LabelField($"{value * 90f:F1}°", GUILayout.Width(50));
         }
-        
+
         public static void DrawCellWireframe(Vector3 center, float size)
         {
             var halfSize = size * 0.5f;
@@ -211,6 +218,5 @@ namespace Grass.Editor
             Handles.DrawLine(points[2], points[6]);
             Handles.DrawLine(points[3], points[7]);
         }
-
     }
 }
