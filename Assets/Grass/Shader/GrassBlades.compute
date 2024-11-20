@@ -97,7 +97,7 @@ float _GrassWidth;
 // Helper Functions
 
 // Random generation function
-float rand(float3 co)
+float random(float3 co)
 {
     return frac(sin(dot(co.xyz, float3(12.9898, 78.233, 53.539))) * 43758.5453);
 }
@@ -105,7 +105,7 @@ float rand(float3 co)
 // Function to generate a random value within a given range
 float RandomRange(float2 seed, float min, float max)
 {
-    float rand = frac(sin(dot(seed, float2(12.9898, 78.233))) * 43758.5453);
+    float rand = random(float3(seed, seed.x));
     return lerp(min, max, rand);
 }
 
@@ -233,8 +233,8 @@ void Main(uint id : SV_DispatchThreadID)
     // Do not draw if outside the fading range
     if (distanceFade < 0) return;
 
-    half numBladesPerVertex = min(GRASS_BLADES, max(1, _MaxBladesPerVertex)); // Set the number of blades per vertex
-    half numSegmentsPerBlade = min(GRASS_SEGMENTS, max(1, _MaxSegmentsPerBlade));
+    half numBladesPerVertex = min(GRASS_BLADES, _MaxBladesPerVertex); // Set the number of blades per vertex
+    half numSegmentsPerBlade = min(GRASS_SEGMENTS, _MaxSegmentsPerBlade);
     // Set the number of segments per blade
     half numTrianglesPerBlade = (numSegmentsPerBlade - 1) * 2 + 1; // Triangles per blade
 

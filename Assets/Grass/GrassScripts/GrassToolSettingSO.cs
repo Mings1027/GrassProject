@@ -50,7 +50,7 @@ public class GrassToolSettingSo : ScriptableObject
     [SerializeField] private float normalLimit = 1f;
 
     [Header("Generation Settings")] [SerializeField]
-    private int grassAmountToGenerate = 100000;
+    private int generateGrassCount = 100000;
     [SerializeField] private float generationDensity = 1f;
 
     [Header("Input Settings")] public MouseButton grassMouseButton;
@@ -68,10 +68,8 @@ public class GrassToolSettingSo : ScriptableObject
     public int MinDensity => 1;
     public float MaxNormalLimit => 1f;
     public float MinNormalLimit => 0f;
-    public int MaxGrassAmountToGenerate => 100000;
+    public int MaxGrassAmountToGenerate => 1000000;
     public int MinGrassAmountToGenerate => 0;
-    public float MaxGenerationDensity => 10f;
-    public float MinGenerationDensity => 0.01f;
 
     // Properties
     public float[] LayerBlocking
@@ -179,15 +177,10 @@ public class GrassToolSettingSo : ScriptableObject
         get => normalLimit;
         set => normalLimit = Mathf.Clamp(value, MinNormalLimit, MaxNormalLimit);
     }
-    public int GrassAmountToGenerate
+    public int GenerateGrassCount
     {
-        get => grassAmountToGenerate;
-        set => grassAmountToGenerate = Mathf.Clamp(value, MinGrassAmountToGenerate, MaxGrassAmountToGenerate);
-    }
-    public float GenerationDensity
-    {
-        get => generationDensity;
-        set => generationDensity = Mathf.Clamp(value, MinGenerationDensity, MaxGenerationDensity);
+        get => generateGrassCount;
+        set => generateGrassCount = Mathf.Clamp(value, MinGrassAmountToGenerate, MaxGrassAmountToGenerate);
     }
 
     public List<string> GetPaintMaskLayerNames()
@@ -218,8 +211,7 @@ public class GrassToolSettingSo : ScriptableObject
         BrushTransitionSpeed = brushTransitionSpeed;
         Density = density;
         NormalLimit = normalLimit;
-        GrassAmountToGenerate = grassAmountToGenerate;
-        GenerationDensity = generationDensity;
+        GenerateGrassCount = generateGrassCount;
         RangeR = rangeR;
         RangeG = rangeG;
         RangeB = rangeB;
@@ -231,7 +223,7 @@ public class GrassToolSettingSo : ScriptableObject
         layerBlocking = new float[8];
         heightFading = new float[8];
         layerEnabled = new bool[8];
-        
+
         for (int i = 0; i < layerBlocking.Length; i++)
         {
             layerBlocking[i] = 1;

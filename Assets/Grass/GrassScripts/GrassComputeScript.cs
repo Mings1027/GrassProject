@@ -12,9 +12,6 @@ using UnityEditor;
 [ExecuteInEditMode]
 public class GrassComputeScript : MonoBehaviour
 {
-#if UNITY_EDITOR
-    [HideInInspector] public bool autoUpdate; // very slow, but will update always
-#endif
     private Camera _mainCamera; // main camera
 
     private List<GrassInteractor> _interactors;
@@ -82,6 +79,7 @@ public class GrassComputeScript : MonoBehaviour
         set => grassSetting = value;
     }
     private SceneView _view;
+    [HideInInspector] public bool autoUpdate; // very slow, but will update always
 
     public void Reset()
     {
@@ -149,8 +147,6 @@ public class GrassComputeScript : MonoBehaviour
     // LateUpdate is called after all Update calls
     private void Update()
     {
-        // If in edit mode, we need to update the shaders each Update to make sure settings changes are applied
-        // Don't worry, in edit mode, Update isn't called each frame
 #if UNITY_EDITOR
         if (!Application.isPlaying && autoUpdate && !_fastMode)
         {
@@ -160,9 +156,7 @@ public class GrassComputeScript : MonoBehaviour
 
 #endif
         if (grassData.Count <= 0) return;
-        // get the data from the camera for culling
         GetFrustumData();
-        // Update the shader with frame specific data
         SetGrassDataUpdate();
         // Clear the draw and indirect args buffers of last frame's data
         _drawBuffer.SetCounterValue(0);
@@ -322,9 +316,9 @@ public class GrassComputeScript : MonoBehaviour
         _instComputeShader.SetBuffer(_idGrassKernel, DrawTriangles, _drawBuffer);
         _instComputeShader.SetBuffer(_idGrassKernel, IndirectArgsBuffer, _argsBuffer);
         _instComputeShader.SetBuffer(_idGrassKernel, VisibleIDBuffer, _visibleIDBuffer);
+        instantiatedMaterial.SetBuffer(DrawTriangles, _drawBuffer);
         // added for cutting
         _instComputeShader.SetBuffer(_idGrassKernel, CutBuffer, _cutBuffer);
-        instantiatedMaterial.SetBuffer(DrawTriangles, _drawBuffer);
         // Set vertex data
         _instComputeShader.SetInt(NumSourceVertices, numSourceVertices);
         // cache shader property to int id for interactivity;
@@ -421,6 +415,7 @@ public class GrassComputeScript : MonoBehaviour
         }
     }
 
+    // Get the data from the camera for culling
     private void GetFrustumData()
     {
         if (!_mainCamera) return;
@@ -454,6 +449,7 @@ public class GrassComputeScript : MonoBehaviour
         MainSetup(false);
     }
 
+    // Update the shader with frame specific data
     private void SetGrassDataUpdate()
     {
         _instComputeShader.SetFloat(Time, UnityEngine.Time.time);
@@ -621,6 +617,7 @@ public class GrassComputeScript : MonoBehaviour
         _drawBuffer.SetCounterValue(0);
         _argsBuffer.SetData(_argsBufferReset);
 
+        // _dispatchSize = Mathf.CeilToInt((int)(grassData.Count / _threadGroupSize));
         _dispatchSize = (_grassVisibleIDList.Count + (int)_threadGroupSize - 1) >> (int)Math.Log(_threadGroupSize, 2);
     }
 

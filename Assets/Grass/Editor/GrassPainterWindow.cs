@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Grass.GrassScripts;
@@ -746,18 +745,11 @@ namespace Grass.Editor
 
         private void DrawGeneralSettings()
         {
-            toolSettings.GrassAmountToGenerate = EditorGUILayout.IntSlider(
-                "Grass Place Max Amount",
-                toolSettings.GrassAmountToGenerate,
+            toolSettings.GenerateGrassCount = EditorGUILayout.IntSlider(
+                "Generate Grass Count",
+                toolSettings.GenerateGrassCount,
                 toolSettings.MinGrassAmountToGenerate,
                 toolSettings.MaxGrassAmountToGenerate
-            );
-
-            toolSettings.GenerationDensity = EditorGUILayout.Slider(
-                "Grass Place Density",
-                toolSettings.GenerationDensity,
-                toolSettings.MinGenerationDensity,
-                toolSettings.MaxGenerationDensity
             );
 
             EditorGUILayout.BeginHorizontal();
@@ -877,15 +869,15 @@ namespace Grass.Editor
                 };
 
                 EditorGUILayout.LabelField(
-                    "<b>• Grass Density Control:</b>\n" +
-                    "  Controls how much grass grows in each terrain layer.\n" +
-                    "  0 = Maximum grass density\n" +
-                    "  1 = No grass\n\n" +
-                    "<b>• Height Scale Control:</b>\n" +
-                    "  Adjusts grass height per terrain layer as percentage.\n" +
-                    "  1 = 100% of set grass height\n" +
-                    "  0.5 = 50% of set grass height\n" +
-                    "  0 = 0% of set grass height\n\n",
+                    "<b>• Grass Density:</b>\n" +
+                    "  Controls grass placement in each terrain layer.\n" +
+                    "  1 = Maximum grass\n" +
+                    "  0 = No grass\n\n" +
+                    $"<b>• Height Scale:</b>\n" +
+                    $"  Controls grass height based on current 'Grass Height' setting.\n" +
+                    $"  1 = Current Grass Height\n" +
+                    $"  0.5 = 50% of Grass Height\n" +
+                    $"  0 = No grass\n\n",
                     helpBoxStyle
                 );
                 EditorGUILayout.EndVertical();
@@ -907,20 +899,42 @@ namespace Grass.Editor
 
             EditorGUILayout.Space(10);
 
-            // Column headers with tooltips
+            // 최소 너비 설정
+            const float minLayerNameWidth = 100f; // 레이어 이름 최소 너비
+            const float statusWidth = 40f; // 상태 표시 (고정)
+            const float minSliderWidth = 100f; // 슬라이더 최소 너비
+
+            // Column headers
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField(new GUIContent("Terrain Layer",
-                    "Terrain layer name"),
-                GUILayout.Width(100), GUILayout.ExpandWidth(true));
-            EditorGUILayout.LabelField(new GUIContent("Status",
-                    "Layer will be skipped (Density = 0% or Height = 0%) or painted with grass"),
-                GUILayout.Width(50));
-            EditorGUILayout.LabelField(new GUIContent("Grass Density",
-                    "Controls how much grass grows in this layer (0: Full grass, 1: No grass)"),
-                GUILayout.Width(150));
-            EditorGUILayout.LabelField(new GUIContent("Height Fading",
-                    "Adjust grass height based on layer strength"),
-                GUILayout.Width(150));
+
+            // 레이어 이름 (늘어남)
+            EditorGUILayout.LabelField(
+                new GUIContent("Terrain Layer", "Terrain layer name"),
+                GUILayout.MinWidth(minLayerNameWidth),
+                GUILayout.ExpandWidth(true)
+            );
+
+            // 상태 (고정)
+            EditorGUILayout.LabelField(
+                new GUIContent("Status", "Layer will be skipped or painted with grass"),
+                GUILayout.MinWidth(statusWidth),
+                GUILayout.ExpandWidth(true)
+            );
+
+            // 밀도 슬라이더 (늘어남)
+            EditorGUILayout.LabelField(
+                new GUIContent("Density", "0: Full grass, 1: No grass"),
+                GUILayout.MinWidth(minSliderWidth),
+                GUILayout.ExpandWidth(true)
+            );
+
+            // 높이 슬라이더 (늘어남)
+            EditorGUILayout.LabelField(
+                new GUIContent("Height", "0-100% of grass height"),
+                GUILayout.MinWidth(minSliderWidth),
+                GUILayout.ExpandWidth(true)
+            );
+
             EditorGUILayout.EndHorizontal();
 
             GrassPainterHelper.DrawHorizontalLine(Color.gray, 1, 2);
@@ -928,55 +942,51 @@ namespace Grass.Editor
             var terrainLayers = terrain.terrainData.terrainLayers;
             for (var i = 0; i < terrainLayers.Length; i++)
             {
-                DrawTerrainLayerRow(i, terrainLayers[i]);
+                DrawTerrainLayerRow(i, terrainLayers[i], minLayerNameWidth, statusWidth, minSliderWidth);
             }
         }
 
-        private void DrawTerrainLayerRow(int index, TerrainLayer layer)
+        private void DrawTerrainLayerRow(int index, TerrainLayer layer, float minNameWidth, float statusWidth,
+                                         float minSliderWidth)
         {
             EditorGUILayout.BeginHorizontal();
 
-            // Layer name
             var layerName = layer != null ? layer.name : $"Layer {index}";
-            EditorGUILayout.LabelField(layerName, GUILayout.MinWidth(100), GUILayout.ExpandWidth(true));
+            EditorGUILayout.LabelField(layerName, GUILayout.MinWidth(minNameWidth), GUILayout.ExpandWidth(true));
 
-            // Skip indicator based on density and height values
+            EditorGUILayout.BeginHorizontal(GUILayout.MinWidth(statusWidth), GUILayout.ExpandWidth(true));
             bool isSkipped = toolSettings.LayerBlocking[index] <= 0f || toolSettings.HeightFading[index] <= 0f;
-            var skipContent = new GUIContent("",
-                isSkipped ? "Layer will be skipped (Density = 0% or Height = 0%)" : "Layer will be painted");
+            var statusStyle = new GUIStyle(EditorStyles.label)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontStyle = FontStyle.Bold,
+                fontSize = 12,
+                normal = new GUIStyleState
+                {
+                    textColor = isSkipped ? new Color(0.9f, 0.2f, 0.3f) : new Color(0.1f, 0.7f, 0.1f)
+                }
+            };
 
-            EditorGUI.BeginDisabledGroup(true);
-            EditorGUILayout.Toggle(skipContent, !isSkipped, GUILayout.Width(20));
-            EditorGUI.EndDisabledGroup();
-
-            EditorGUILayout.LabelField(skipContent, GUILayout.Width(20));
-
-            // Density slider
-            var sliderContent = new GUIContent("",
-                $"Grass density control for {layerName}\n" +
-                "0: Full grass growth\n" +
-                "1: No grass growth");
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.LabelField("●", statusStyle, GUILayout.Width(10));
+            EditorGUILayout.LabelField(isSkipped ? "Skip" : "Paint", statusStyle, GUILayout.Width(30));
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
 
             toolSettings.LayerBlocking[index] = EditorGUILayout.Slider(
-                sliderContent,
                 toolSettings.LayerBlocking[index],
                 0f,
                 1f,
-                GUILayout.Width(150)
+                GUILayout.MinWidth(minSliderWidth),
+                GUILayout.ExpandWidth(true)
             );
 
-            EditorGUILayout.Space(5);
-
-            // Height variation slider
-            var heightContent = new GUIContent("",
-                $"Height scale for grass on {layerName}");
-
             toolSettings.HeightFading[index] = EditorGUILayout.Slider(
-                heightContent,
                 toolSettings.HeightFading[index],
                 0f,
                 1f,
-                GUILayout.Width(150)
+                GUILayout.MinWidth(minSliderWidth),
+                GUILayout.ExpandWidth(true)
             );
 
             EditorGUILayout.EndHorizontal();
@@ -1218,43 +1228,9 @@ namespace Grass.Editor
                     var hasGrass = _spatialGrid.HasAnyObject(key);
 
                     Handles.color = hasGrass ? activeCellColor : notActiveCellColor;
-                    DrawCellWireframe(cellCenter, cellSize);
+                    GrassPainterHelper.DrawCellWireframe(cellCenter, cellSize);
                 }
             }
-        }
-
-        private void DrawCellWireframe(Vector3 center, float size)
-        {
-            var halfSize = size * 0.5f;
-            var points = new[]
-            {
-                center + new Vector3(-halfSize, -halfSize, -halfSize), // 0 bottom
-                center + new Vector3(halfSize, -halfSize, -halfSize), // 1
-                center + new Vector3(halfSize, -halfSize, halfSize), // 2
-                center + new Vector3(-halfSize, -halfSize, halfSize), // 3
-                center + new Vector3(-halfSize, halfSize, -halfSize), // 4 top
-                center + new Vector3(halfSize, halfSize, -halfSize), // 5
-                center + new Vector3(halfSize, halfSize, halfSize), // 6
-                center + new Vector3(-halfSize, halfSize, halfSize) // 7
-            };
-
-            // Draw bottom square
-            Handles.DrawLine(points[0], points[1]);
-            Handles.DrawLine(points[1], points[2]);
-            Handles.DrawLine(points[2], points[3]);
-            Handles.DrawLine(points[3], points[0]);
-
-            // Draw top square
-            Handles.DrawLine(points[4], points[5]);
-            Handles.DrawLine(points[5], points[6]);
-            Handles.DrawLine(points[6], points[7]);
-            Handles.DrawLine(points[7], points[4]);
-
-            // Draw vertical lines
-            Handles.DrawLine(points[0], points[4]);
-            Handles.DrawLine(points[1], points[5]);
-            Handles.DrawLine(points[2], points[6]);
-            Handles.DrawLine(points[3], points[7]);
         }
 
         private void OnScene(SceneView scene)
@@ -1418,8 +1394,7 @@ namespace Grass.Editor
             {
                 if (((1 << selection.layer) & toolSettings.PaintMask.value) != 0)
                 {
-                    totalRequestedPoints +=
-                        Mathf.FloorToInt(toolSettings.GrassAmountToGenerate * toolSettings.GenerationDensity);
+                    totalRequestedPoints += toolSettings.GenerateGrassCount;
                 }
             }
 
@@ -1433,7 +1408,7 @@ namespace Grass.Editor
                     continue;
                 }
 
-                var numPoints = Mathf.FloorToInt(toolSettings.GrassAmountToGenerate * toolSettings.GenerationDensity);
+                var numPoints = toolSettings.GenerateGrassCount;
 
                 if (selection.TryGetComponent(out MeshFilter mesh))
                 {
@@ -1454,8 +1429,9 @@ namespace Grass.Editor
             // 실제 잔디 생성
             for (var i = 0; i < allTempPoints.Count; i++)
             {
+                var percentage = (float)(i + 1) / allTempPoints.Count * 100f;
                 await UpdateProgress(i + 1, allTempPoints.Count,
-                    $"Generating grass: {i + 1:N0}/{allTempPoints.Count:N0}");
+                    $"Generating grass: {i + 1:N0}/{allTempPoints.Count:N0} ({percentage:F1}%)");
 
                 var (worldPoint, worldNormal, widthHeight) = allTempPoints[i];
                 var grassData = new GrassData
@@ -1486,62 +1462,93 @@ namespace Grass.Editor
         private async UniTask<List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>>
             CalculateValidPointsForMesh(MeshFilter sourceMesh, int numPoints, int startPoint, int totalPoints)
         {
+            // 메인 스레드에서 필요한 데이터 미리 준비
             var localToWorld = sourceMesh.transform.localToWorldMatrix;
+            var objectUp = sourceMesh.transform.up;
             var sharedMesh = sourceMesh.sharedMesh;
             var oVertices = sharedMesh.vertices;
             var oColors = sharedMesh.colors;
             var oNormals = sharedMesh.normals;
+            var triangles = sharedMesh.triangles;
             var tempPoints = new List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>();
 
-            // numPoints만큼 반복하며 유효한 포인트를 찾음
-            for (var i = 0; i < numPoints; i++)
+            const int batchSize = 1000;
+            var totalBatches = (numPoints + batchSize - 1) / batchSize;
+            var tasks =
+                new UniTask<
+                        List<(Vector3 worldPoint, Vector3 worldNormal, Vector2 widthHeight, bool needsPhysicsCheck)>>
+                    [totalBatches];
+
+            for (var batchIndex = 0; batchIndex < totalBatches; batchIndex++)
             {
-                await UpdateProgress(startPoint + i + 1, totalPoints,
-                    $"Calculating grass positions: {(startPoint + i + 1) / (float)totalPoints * 100:F1}%");
+                var start = batchIndex * batchSize;
+                var end = Mathf.Min(start + batchSize, numPoints);
+                var localBatchIndex = batchIndex;
 
-                // 1. 무작위 삼각형 선택
-                var randomTriIndex = Random.Range(0, sharedMesh.triangles.Length / 3);
-                var randomBarycentricCoord = GrassPainterHelper.GetRandomBarycentricCoord();
-                var vertexIndex1 = sharedMesh.triangles[randomTriIndex * 3];
-                var vertexIndex2 = sharedMesh.triangles[randomTriIndex * 3 + 1];
-                var vertexIndex3 = sharedMesh.triangles[randomTriIndex * 3 + 2];
-
-                // 2. 삼각형 내의 랜덤한 점 계산
-                var point = randomBarycentricCoord.x * oVertices[vertexIndex1] +
-                            randomBarycentricCoord.y * oVertices[vertexIndex2] +
-                            randomBarycentricCoord.z * oVertices[vertexIndex3];
-
-                // 3. 해당 점의 법선 벡터 계산
-                var normal = randomBarycentricCoord.x * oNormals[vertexIndex1] +
-                             randomBarycentricCoord.y * oNormals[vertexIndex2] +
-                             randomBarycentricCoord.z * oNormals[vertexIndex3];
-
-                // 4. 로컬 좌표를 월드 좌표로 변환
-                var worldPoint = localToWorld.MultiplyPoint3x4(point);
-                var worldNormal = sourceMesh.transform.TransformDirection(normal);
-
-                // 5. 장애물 체크
-                if (Physics.CheckSphere(worldPoint, 0.1f, toolSettings.PaintBlockMask))
+                tasks[batchIndex] = UniTask.RunOnThreadPool(() =>
                 {
-                    continue;
-                }
+                    var localResults =
+                        new List<(Vector3 worldPoint, Vector3 worldNormal, Vector2 widthHeight, bool needsPhysicsCheck
+                            )>();
+                    var localRandom = new System.Random(Environment.TickCount + localBatchIndex);
 
-                // 6. 경사도 체크
-                var objectUp = sourceMesh.transform.up;
-                var normalDot = Mathf.Abs(Vector3.Dot(worldNormal, objectUp));
+                    for (var i = start; i < end; i++)
+                    {
+                        // 1. 무작위 삼각형 선택
+                        var randomTriIndex = localRandom.Next(0, triangles.Length / 3);
+                        var randomBarycentricCoord = GrassPainterHelper.GetRandomBarycentricCoordWithSeed(localRandom);
+                        var vertexIndex1 = triangles[randomTriIndex * 3];
+                        var vertexIndex2 = triangles[randomTriIndex * 3 + 1];
+                        var vertexIndex3 = triangles[randomTriIndex * 3 + 2];
 
-                // 경사도가 허용 범위 내인 경우
-                if (normalDot >= 1 - toolSettings.NormalLimit)
+                        // 2. 삼각형 내의 랜덤한 점 계산
+                        var point = randomBarycentricCoord.x * oVertices[vertexIndex1] +
+                                    randomBarycentricCoord.y * oVertices[vertexIndex2] +
+                                    randomBarycentricCoord.z * oVertices[vertexIndex3];
+
+                        // 3. 해당 점의 법선 벡터 계산
+                        var normal = randomBarycentricCoord.x * oNormals[vertexIndex1] +
+                                     randomBarycentricCoord.y * oNormals[vertexIndex2] +
+                                     randomBarycentricCoord.z * oNormals[vertexIndex3];
+
+                        // 4. 로컬 좌표를 월드 좌표로 변환 (미리 저장한 매트릭스 사용)
+                        var worldPoint = localToWorld.MultiplyPoint3x4(point);
+                        var worldNormal = localToWorld.MultiplyVector(normal).normalized;
+
+                        // 5. 경사도 체크
+                        var normalDot = Mathf.Abs(Vector3.Dot(worldNormal, objectUp));
+                        if (normalDot >= 1 - toolSettings.NormalLimit)
+                        {
+                            // 6. 버텍스 컬러 기반 크기 계산
+                            var color = GrassPainterHelper.GetVertexColor(oColors, vertexIndex1, vertexIndex2,
+                                vertexIndex3,
+                                randomBarycentricCoord);
+                            var widthHeightFactor = CalculateWidthHeightFactor(color);
+                            var widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight) *
+                                              widthHeightFactor;
+
+                            localResults.Add((worldPoint, worldNormal, widthHeight, true));
+                        }
+                    }
+
+                    return localResults;
+                });
+
+                await UpdateProgress(startPoint + start, totalPoints,
+                    $"Calculating grass positions {(startPoint + start) / (float)totalPoints * 100:F1}%");
+            }
+
+            var batchResults = await UniTask.WhenAll(tasks);
+
+            // 메인 스레드에서 물리 검사 수행
+            foreach (var batchResult in batchResults)
+            {
+                foreach (var (worldPoint, worldNormal, widthHeight, needsPhysicsCheck) in batchResult)
                 {
-                    // 7. 버텍스 컬러 기반 크기 계산
-                    var color = GrassPainterHelper.GetVertexColor(oColors, vertexIndex1, vertexIndex2, vertexIndex3,
-                        randomBarycentricCoord);
-                    var widthHeightFactor = CalculateWidthHeightFactor(color);
-                    var widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight) *
-                                      widthHeightFactor;
-
-                    // 8. 유효한 포인트 추가
-                    tempPoints.Add((worldPoint, worldNormal, widthHeight));
+                    if (needsPhysicsCheck && !Physics.CheckSphere(worldPoint, 0.1f, toolSettings.PaintBlockMask))
+                    {
+                        tempPoints.Add((worldPoint, worldNormal, widthHeight));
+                    }
                 }
             }
 
@@ -1558,7 +1565,7 @@ namespace Grass.Editor
             for (var i = 0; i < numPoints; i++)
             {
                 await UpdateProgress(startPoint + i + 1, totalPoints,
-                    $"Calculating grass positions: {(startPoint + i + 1) / (float)totalPoints * 100:F1}%");
+                    $"Calculating grass positions {(startPoint + i + 1) / (float)totalPoints * 100:F1}%");
 
                 var randomPoint = new Vector3(
                     Random.Range(0, terrainSize.x),
@@ -1738,23 +1745,20 @@ namespace Grass.Editor
                 var center = bound.Value.center;
                 var radius = bound.Value.extents.magnitude;
 
-                _spatialGrid.GetObjectsInRadius(center, radius, tempIndices);
-
+                await _spatialGrid.GetObjectsInRadiusAsync(center, radius, tempIndices);
                 var grassData = _grassCompute.GrassDataList;
-                foreach (var index in tempIndices)
-                {
-                    if (index >= grassData.Count) continue;
 
-                    var grassPosition = grassData[index].position;
-                    if (IsPositionInObject(grassPosition, obj))
-                    {
-                        positionsToRemove.Add(grassPosition);
-                    }
+                if (obj.TryGetComponent(out MeshFilter meshFilter))
+                {
+                    await HandleMeshFilter(meshFilter, tempIndices, grassData, positionsToRemove);
+                }
+                else if (obj.TryGetComponent(out Terrain terrain))
+                {
+                    HandleTerrain(terrain, tempIndices, grassData, positionsToRemove);
                 }
 
                 tempIndices.Clear();
 
-                // 진행 상황 업데이트
                 await UpdateProgress(currentObjectIndex, totalObjects,
                     $"Checking object {currentObjectIndex + 1:N0} / {totalObjects:N0}");
 
@@ -1765,64 +1769,137 @@ namespace Grass.Editor
             return positionsToRemove;
         }
 
-        private bool IsPositionInObject(Vector3 worldPosition, GameObject obj)
+        private async UniTask HandleMeshFilter(MeshFilter meshFilter, List<int> indices, List<GrassData> grassData,
+                                               HashSet<Vector3> positionsToRemove)
         {
-            if (obj.TryGetComponent(out MeshFilter meshFilter))
-            {
-                // 월드 좌표를 오브젝트의 로컬 좌표로 변환
-                var localPosition = obj.transform.InverseTransformPoint(worldPosition);
-                var localBounds = meshFilter.sharedMesh.bounds;
+            var localBounds = meshFilter.sharedMesh.bounds;
+            const int batchSize = 10000;
+            var totalBatches = (indices.Count + batchSize - 1) / batchSize;
+            var batchResults = new List<Vector3>[totalBatches];
 
-                // 로컬 공간에서 bounds 체크 (약간의 여유 추가)
-                const float epsilon = 0.001f;
-                return localPosition.x >= localBounds.min.x - epsilon &&
-                       localPosition.x <= localBounds.max.x + epsilon &&
-                       localPosition.y >= localBounds.min.y - epsilon &&
-                       localPosition.y <= localBounds.max.y + epsilon &&
-                       localPosition.z >= localBounds.min.z - epsilon && localPosition.z <= localBounds.max.z + epsilon;
+            // 메인 스레드에서 필요한 데이터만 미리 캐시
+            var worldToLocalMatrix = meshFilter.transform.worldToLocalMatrix;
+
+            // 변환 작업을 스레드풀에서 수행
+            var localPositions = await UniTask.RunOnThreadPool(() =>
+            {
+                var positions = new Vector3[indices.Count];
+
+                for (var i = 0; i < indices.Count; i++)
+                {
+                    var index = indices[i];
+                    if (index < grassData.Count)
+                    {
+                        positions[i] = worldToLocalMatrix.MultiplyPoint3x4(grassData[index].position);
+                    }
+                }
+                return positions;
+            });
+
+            // 각 배치를 병렬로 처리
+            var tasks = new UniTask[totalBatches];
+            for (var batchIndex = 0; batchIndex < totalBatches; batchIndex++)
+            {
+                var start = batchIndex * batchSize;
+                var end = Mathf.Min(start + batchSize, indices.Count);
+                var localBatchIndex = batchIndex;
+
+                await UpdateProgress(batchIndex, totalBatches,
+                    $"Processing batch {batchIndex + 1}/{totalBatches} ({(float)(batchIndex + 1) / totalBatches * 100:F1}%)");
+
+                tasks[batchIndex] = UniTask.RunOnThreadPool(() =>
+                {
+                    var localPositionsToRemove = new List<Vector3>();
+                    for (var i = start; i < end; i++)
+                    {
+                        var index = indices[i];
+                        if (index >= grassData.Count) continue;
+
+                        var localPosition = localPositions[i];
+                        var grassPosition = grassData[index].position;
+
+                        const float epsilon = 0.001f;
+                        if (localPosition.x >= localBounds.min.x - epsilon &&
+                            localPosition.x <= localBounds.max.x + epsilon &&
+                            localPosition.y >= localBounds.min.y - epsilon &&
+                            localPosition.y <= localBounds.max.y + epsilon &&
+                            localPosition.z >= localBounds.min.z - epsilon &&
+                            localPosition.z <= localBounds.max.z + epsilon)
+                        {
+                            localPositionsToRemove.Add(grassPosition);
+                        }
+                    }
+
+                    // 결과를 배열에 저장
+                    batchResults[localBatchIndex] = localPositionsToRemove;
+                    return UniTask.CompletedTask;
+                });
             }
 
-            if (obj.TryGetComponent(out Terrain terrain))
+            // 모든 배치가 완료될 때까지 대기
+            await UniTask.WhenAll(tasks);
+
+            // 메인 스레드에서 한 번에 결과 합치기
+            foreach (var batchResult in batchResults)
             {
-                // 지형의 경우는 회전이 없으므로 월드 공간에서 직접 체크
-                var terrainPos = terrain.transform.position;
-                var terrainSize = terrain.terrainData.size;
-
-                const float epsilon = 0.001f;
-                return worldPosition.x >= terrainPos.x - epsilon &&
-                       worldPosition.x <= terrainPos.x + terrainSize.x + epsilon &&
-                       worldPosition.y >= terrainPos.y - epsilon &&
-                       worldPosition.y <= terrainPos.y + terrainSize.y + epsilon &&
-                       worldPosition.z >= terrainPos.z - epsilon &&
-                       worldPosition.z <= terrainPos.z + terrainSize.z + epsilon;
+                if (batchResult == null) continue;
+                foreach (var pos in batchResult)
+                {
+                    positionsToRemove.Add(pos);
+                }
             }
+        }
 
-            return false;
+        private void HandleTerrain(Terrain terrain, List<int> indices, List<GrassData> grassData,
+                                   HashSet<Vector3> positionsToRemove)
+        {
+            var terrainPos = terrain.transform.position;
+            var terrainSize = terrain.terrainData.size;
+            foreach (var index in indices)
+            {
+                if (index >= grassData.Count) continue;
+
+                var grassPosition = grassData[index].position;
+                const float epsilon = 0.001f;
+                if (grassPosition.x >= terrainPos.x - epsilon &&
+                    grassPosition.x <= terrainPos.x + terrainSize.x + epsilon &&
+                    grassPosition.y >= terrainPos.y - epsilon &&
+                    grassPosition.y <= terrainPos.y + terrainSize.y + epsilon &&
+                    grassPosition.z >= terrainPos.z - epsilon &&
+                    grassPosition.z <= terrainPos.z + terrainSize.z + epsilon)
+                {
+                    positionsToRemove.Add(grassPosition);
+                }
+            }
         }
 
         private async UniTask RemoveGrassAtPositions(HashSet<Vector3> positionsToRemove)
         {
+            if (positionsToRemove.Count == 0)
+            {
+                Debug.Log("No grass to remove");
+                return;
+            }
+
             const int batchSize = 10000;
             var grassData = _grassCompute.GrassDataList;
             var totalBatches = (grassData.Count + batchSize - 1) / batchSize;
-            var tasks = new UniTask<List<GrassData>>[totalBatches];
-            var removedCounts = new int[totalBatches];
-            var totalRemoveGrassCount = positionsToRemove.Count;
+            var finalGrassToKeep = new List<GrassData>();
+            var totalRemoved = 0;
 
-            for (var index = 0; index < totalBatches; index++)
+            // 배치별로 순차 처리
+            for (var batchIndex = 0; batchIndex < totalBatches; batchIndex++)
             {
-                var start = index * batchSize;
+                var start = batchIndex * batchSize;
                 var end = Mathf.Min(start + batchSize, grassData.Count);
-                var localBatchIndex = index;
 
-                tasks[index] = UniTask.RunOnThreadPool(() =>
+                var result = await UniTask.RunOnThreadPool(() =>
                 {
                     var localGrassToKeep = new List<GrassData>();
                     var localRemovedCount = 0;
 
                     for (var i = start; i < end; i++)
                     {
-                        // 거리 비교 대신 HashSet을 통한 빠른 확인
                         if (!positionsToRemove.Contains(grassData[i].position))
                         {
                             localGrassToKeep.Add(grassData[i]);
@@ -1833,21 +1910,15 @@ namespace Grass.Editor
                         }
                     }
 
-                    removedCounts[localBatchIndex] = localRemovedCount;
-                    return localGrassToKeep;
+                    return (localGrassToKeep, localRemovedCount);
                 });
-            }
 
-            var results = await UniTask.WhenAll(tasks);
-            var finalGrassToKeep = new List<GrassData>();
-            var totalRemoved = 0;
+                finalGrassToKeep.AddRange(result.localGrassToKeep);
+                totalRemoved += result.localRemovedCount;
 
-            for (var index = 0; index < results.Length; index++)
-            {
-                finalGrassToKeep.AddRange(results[index]);
-                totalRemoved += removedCounts[index];
-                await UpdateProgress(index, results.Length,
-                    $"Removed grass: {totalRemoved:N0} / {totalRemoveGrassCount:N0}");
+                var batchProgress = (float)(batchIndex + 1) / totalBatches * 100f;
+                await UpdateProgress(batchIndex + 1, totalBatches,
+                    $"Removing Grass {batchProgress:F1}%");
             }
 
             _grassCompute.GrassDataList = finalGrassToKeep;

@@ -67,6 +67,13 @@ namespace Grass.Editor
             return new Vector3(1 - r1, r1 * (1 - r2), r2 * r1);
         }
 
+        public static Vector3 GetRandomBarycentricCoordWithSeed(System.Random random)
+        {
+            var r1 = Mathf.Sqrt((float)random.NextDouble());
+            var r2 = (float)random.NextDouble();
+            return new Vector3(1 - r1, r1 * (1 - r2), r2 * r1);
+        }
+
         public static Color GetVertexColor(Color[] colors, int index1, int index2, int index3, Vector3 barycentricCoord)
         {
             if (colors == null || colors.Length == 0) return Color.white;
@@ -170,5 +177,40 @@ namespace Grass.Editor
         {
             EditorGUILayout.LabelField($"{value * 90f:F1}°", GUILayout.Width(50));
         }
+        
+        public static void DrawCellWireframe(Vector3 center, float size)
+        {
+            var halfSize = size * 0.5f;
+            var points = new[]
+            {
+                center + new Vector3(-halfSize, -halfSize, -halfSize), // 0 bottom
+                center + new Vector3(halfSize, -halfSize, -halfSize), // 1
+                center + new Vector3(halfSize, -halfSize, halfSize), // 2
+                center + new Vector3(-halfSize, -halfSize, halfSize), // 3
+                center + new Vector3(-halfSize, halfSize, -halfSize), // 4 top
+                center + new Vector3(halfSize, halfSize, -halfSize), // 5
+                center + new Vector3(halfSize, halfSize, halfSize), // 6
+                center + new Vector3(-halfSize, halfSize, halfSize) // 7
+            };
+
+            // Draw bottom square
+            Handles.DrawLine(points[0], points[1]);
+            Handles.DrawLine(points[1], points[2]);
+            Handles.DrawLine(points[2], points[3]);
+            Handles.DrawLine(points[3], points[0]);
+
+            // Draw top square
+            Handles.DrawLine(points[4], points[5]);
+            Handles.DrawLine(points[5], points[6]);
+            Handles.DrawLine(points[6], points[7]);
+            Handles.DrawLine(points[7], points[4]);
+
+            // Draw vertical lines
+            Handles.DrawLine(points[0], points[4]);
+            Handles.DrawLine(points[1], points[5]);
+            Handles.DrawLine(points[2], points[6]);
+            Handles.DrawLine(points[3], points[7]);
+        }
+
     }
 }
