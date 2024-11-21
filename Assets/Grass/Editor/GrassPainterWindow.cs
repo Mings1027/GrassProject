@@ -29,7 +29,7 @@ namespace Grass.Editor
         private readonly string[] _mainTabBarStrings = { "Paint/Edit", "Modify", "Generate", "General Settings" };
         private readonly string[] _toolbarStrings = { "Add", "Remove", "Edit", "Reposition" };
         private readonly string[] _editOptionStrings = { "Edit Colors", "Edit Width/Height", "Both" };
-        private readonly string[] _modifyOptionStrings = { "Width/Height", "Color", "Both" };
+        private readonly string[] _modifyOptionStrings = { "Color", "Width/Height", "Both" };
         private readonly string[] _generateTabStrings = { "Basic", "Terrain Layers" };
         private Vector3 _hitPos;
         private Vector3 _hitNormal;
@@ -561,7 +561,7 @@ namespace Grass.Editor
 
         private void DrawEditBrushSettings()
         {
-            _selectedEditOption = (EditOption)GUILayout.Toolbar((int)_selectedEditOption, _editOptionStrings);
+            _selectedEditOption = (EditOption)GUILayout.Toolbar((int)_selectedEditOption, _editOptionStrings,GUILayout.Height(20));
             EditorGUILayout.Separator();
 
             toolSettings.BrushTransitionSpeed = EditorGUILayout.Slider(
@@ -643,13 +643,6 @@ namespace Grass.Editor
 
             switch (_selectedModifyOption)
             {
-                case ModifyOption.WidthHeight:
-                    EditorGUILayout.LabelField("Width and Height ", EditorStyles.boldLabel);
-                    toolSettings.GrassWidth = EditorGUILayout.Slider("Grass Width", toolSettings.GrassWidth,
-                        toolSettings.MinSizeWidth, toolSettings.MaxSizeWidth);
-                    toolSettings.GrassHeight = EditorGUILayout.Slider("Grass Height", toolSettings.GrassHeight,
-                        toolSettings.MinSizeHeight, toolSettings.MaxSizeHeight);
-                    break;
                 case ModifyOption.Color:
                     EditorGUILayout.LabelField("Color", EditorStyles.boldLabel);
                     toolSettings.BrushColor = EditorGUILayout.ColorField("Brush Color", toolSettings.BrushColor);
@@ -657,6 +650,13 @@ namespace Grass.Editor
                     toolSettings.RangeR = EditorGUILayout.Slider("Red", toolSettings.RangeR, 0f, 1f);
                     toolSettings.RangeG = EditorGUILayout.Slider("Green", toolSettings.RangeG, 0f, 1f);
                     toolSettings.RangeB = EditorGUILayout.Slider("Blue", toolSettings.RangeB, 0f, 1f);
+                    break;
+                case ModifyOption.WidthHeight:
+                    EditorGUILayout.LabelField("Width and Height ", EditorStyles.boldLabel);
+                    toolSettings.GrassWidth = EditorGUILayout.Slider("Grass Width", toolSettings.GrassWidth,
+                        toolSettings.MinSizeWidth, toolSettings.MaxSizeWidth);
+                    toolSettings.GrassHeight = EditorGUILayout.Slider("Grass Height", toolSettings.GrassHeight,
+                        toolSettings.MinSizeHeight, toolSettings.MaxSizeHeight);
                     break;
                 case ModifyOption.Both:
                     EditorGUILayout.LabelField("Width and Height ", EditorStyles.boldLabel);
@@ -1491,10 +1491,14 @@ namespace Grass.Editor
                         if (normalDot >= 1 - toolSettings.NormalLimit)
                         {
                             // 6. 버텍스 컬러 기반 크기 계산
-                            var color = GrassPainterHelper.GetVertexColor(oColors, vertexIndex1, vertexIndex2,
-                                vertexIndex3,
-                                randomBarycentricCoord);
+                            var color = oColors is { Length: > 0 }
+                                ? GrassPainterHelper.GetVertexColor(oColors, vertexIndex1, vertexIndex2, vertexIndex3,
+                                    randomBarycentricCoord)
+                                : Color.white;
+
                             var widthHeightFactor = CalculateWidthHeightFactor(color);
+
+                            if (widthHeightFactor < 0) continue;
                             var widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight) *
                                               widthHeightFactor;
 
@@ -1606,13 +1610,20 @@ namespace Grass.Editor
 
         private float CalculateWidthHeightFactor(Color vertexColor)
         {
-            return toolSettings.VertexColorSettings switch
+            switch (toolSettings.VertexColorSettings)
             {
-                GrassToolSettingSo.VertexColorSetting.Red => 1 - vertexColor.r,
-                GrassToolSettingSo.VertexColorSetting.Green => 1 - vertexColor.g,
-                GrassToolSettingSo.VertexColorSetting.Blue => 1 - vertexColor.b,
-                _ => 1f
-            };
+                case GrassToolSettingSo.VertexColorSetting.Red:
+                    if (vertexColor.r > 0.5f) return -1f;
+                    return 1 - vertexColor.r;
+                case GrassToolSettingSo.VertexColorSetting.Green:
+                    if (vertexColor.g > 0.5f) return -1f;
+                    return 1 - vertexColor.g;
+                case GrassToolSettingSo.VertexColorSetting.Blue:
+                    if (vertexColor.b > 0.5f) return -1f;
+                    return 1 - vertexColor.b;
+                default:
+                    return 1f;
+            }
         }
 
         private async UniTask UpdateProgress(int currentPoint, int totalPoints, string progressMessage)

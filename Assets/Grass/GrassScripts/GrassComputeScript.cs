@@ -12,28 +12,48 @@ using UnityEditor;
 [ExecuteInEditMode]
 public class GrassComputeScript : MonoBehaviour
 {
-    private Camera _mainCamera; // main camera
+    //
+    private const int SourceVertStride = sizeof(float) * (3 + 3 + 2 + 3);
+    private const int DrawStride = sizeof(float) * (3 + 3 + 1 + (3 + 2) * 3);
+    private readonly int _maxBufferSize = 2500000;
 
+    //
+    [SerializeField, HideInInspector] private List<GrassData> grassData = new(); // base data lists
+    [SerializeField] private Material instantiatedMaterial;
+    [SerializeField] private GrassSettingSO grassSetting;
+
+    //
+    private Camera _mainCamera; // main camera
     private List<GrassInteractor> _interactors;
     private readonly List<int> _grassList = new();
     private List<int> _grassVisibleIDList = new(); // list of all visible grass ids, rest are culled
 
+    //
     private ComputeBuffer _sourceVertBuffer; // A compute buffer to hold vertex data of the source mesh
     private ComputeBuffer _drawBuffer; // A compute buffer to hold vertex data of the generated mesh
     private GraphicsBuffer _argsBuffer; // A compute buffer to hold indirect draw arguments
-    private ComputeShader _instComputeShader; // Instantiate the shaders so data belong to their unique compute buffers
     private ComputeBuffer _visibleIDBuffer; // buffer that contains the ids of all visible instances
     private ComputeBuffer _cutBuffer; // added for cutting
 
+    //
+    private ComputeShader _instComputeShader; // Instantiate the shaders so data belong to their unique compute buffers
     private int _idGrassKernel; // The id of the kernel in the grass compute shader
     private int _dispatchSize; // The x dispatch size for the grass compute shader
     private uint _threadGroupSize; // compute shader thread group size
 
-    // The size of one entry in the various compute buffers, size comes from the float3/float2 entrees in the shader
-    private const int SourceVertStride = sizeof(float) * (3 + 3 + 2 + 3);
-    private const int DrawStride = sizeof(float) * (3 + 3 + 1 + (3 + 2) * 3);
-
+    // culling tree data ----------------------------------------------------------------------
     private Bounds _bounds; // bounds of the total grass 
+    private CullingTree _cullingTree;
+    private readonly List<Bounds> _boundsListVis = new();
+    private readonly List<CullingTree> _leaves = new();
+    private readonly Plane[] _cameraFrustumPlanes = new Plane[6];
+
+    // speeding up the editor a bit
+    private Vector3 _cachedCamPos;
+    private Quaternion _cachedCamRot;
+    private bool _fastMode;
+    private int _shaderID;
+
     private float[] _cutIDs;
 
     private readonly uint[] _argsBufferReset =
@@ -44,28 +64,6 @@ public class GrassComputeScript : MonoBehaviour
         0, // Index of the first instance to render
         0 // Not used
     };
-
-    // culling tree data ----------------------------------------------------------------------
-    private CullingTree _cullingTree;
-    private readonly List<Bounds> _boundsListVis = new();
-    private readonly List<CullingTree> _leaves = new();
-    private readonly Plane[] _cameraFrustumPlanes = new Plane[6];
-
-    // list of -1 to overwrite the grassvisible buffer with
-    // private List<int> _empty = new();
-
-    // speeding up the editor a bit
-    private Vector3 _cachedCamPos;
-    private Quaternion _cachedCamRot;
-    private bool _fastMode;
-    private int _shaderID;
-
-    // max buffer size can depend on platform and your draw stride, you may have to change it
-    private readonly int _maxBufferSize = 2500000;
-
-    [SerializeField, HideInInspector] private List<GrassData> grassData = new(); // base data lists
-    [SerializeField] private Material instantiatedMaterial;
-    [SerializeField] private GrassSettingSO grassSetting;
 
     public List<GrassData> GrassDataList
     {
@@ -80,7 +78,9 @@ public class GrassComputeScript : MonoBehaviour
     }
     private SceneView _view;
     [HideInInspector] public bool autoUpdate; // very slow, but will update always
+#endif
 
+#if UNITY_EDITOR
     public void Reset()
     {
         _fastMode = false;
@@ -133,13 +133,9 @@ public class GrassComputeScript : MonoBehaviour
 
     private void OnEnable()
     {
-        GrassEventManager.AddEvent<GrassInteractor>(GrassEvent.InteractorAdded, AddInteractor);
-        GrassEventManager.AddEvent<GrassInteractor>(GrassEvent.InteractorRemoved, RemoveInteractor);
+        RegisterEvents();
 
-        GrassFuncManager.AddEvent(GrassEvent.TotalGrassCount, () => grassData.Count);
-        GrassFuncManager.AddEvent(GrassEvent.VisibleGrassCount, () => _grassVisibleIDList.Count);
-
-        _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
+        InitInteractors();
 
         MainSetup(true);
     }
@@ -187,11 +183,7 @@ public class GrassComputeScript : MonoBehaviour
 
     private void OnDisable()
     {
-        GrassEventManager.RemoveEvent<GrassInteractor>(GrassEvent.InteractorAdded, AddInteractor);
-        GrassEventManager.RemoveEvent<GrassInteractor>(GrassEvent.InteractorRemoved, RemoveInteractor);
-
-        GrassFuncManager.RemoveEvent(GrassEvent.TotalGrassCount, () => grassData.Count);
-        GrassFuncManager.RemoveEvent(GrassEvent.VisibleGrassCount, () => _grassVisibleIDList.Count);
+        UnregisterEvents();
 
         _interactors.Clear();
 
@@ -206,13 +198,7 @@ public class GrassComputeScript : MonoBehaviour
             DestroyImmediate(instantiatedMaterial);
         }
 
-        // Release each buffer
-        _sourceVertBuffer?.Release();
-        _drawBuffer?.Release();
-        _argsBuffer?.Release();
-        _visibleIDBuffer?.Release();
-        // added for cutting
-        _cutBuffer?.Release();
+        ReleaseBuffer();
     }
 
 #if UNITY_EDITOR
@@ -238,6 +224,39 @@ public class GrassComputeScript : MonoBehaviour
     /*=============================================================================================================
       *                                            Unity Event Functions
       =============================================================================================================*/
+
+    private void RegisterEvents()
+    {
+        GrassEventManager.AddEvent<GrassInteractor>(GrassEvent.InteractorAdded, AddInteractor);
+        GrassEventManager.AddEvent<GrassInteractor>(GrassEvent.InteractorRemoved, RemoveInteractor);
+
+        GrassFuncManager.AddEvent(GrassEvent.TotalGrassCount, () => grassData.Count);
+        GrassFuncManager.AddEvent(GrassEvent.VisibleGrassCount, () => _grassVisibleIDList.Count);
+    }
+
+    private void UnregisterEvents()
+    {
+        GrassEventManager.RemoveEvent<GrassInteractor>(GrassEvent.InteractorAdded, AddInteractor);
+        GrassEventManager.RemoveEvent<GrassInteractor>(GrassEvent.InteractorRemoved, RemoveInteractor);
+
+        GrassFuncManager.RemoveEvent(GrassEvent.TotalGrassCount, () => grassData.Count);
+        GrassFuncManager.RemoveEvent(GrassEvent.VisibleGrassCount, () => _grassVisibleIDList.Count);
+    }
+
+    private void InitInteractors()
+    {
+        _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
+    }
+
+    private void ReleaseBuffer()
+    {
+        // Release each buffer
+        _sourceVertBuffer?.Release();
+        _drawBuffer?.Release();
+        _argsBuffer?.Release();
+        _visibleIDBuffer?.Release();
+        _cutBuffer?.Release();
+    }
 
     private void MainSetup(bool full)
     {
@@ -333,11 +352,9 @@ public class GrassComputeScript : MonoBehaviour
 
         SetShaderData();
 
-        _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
+        InitInteractors();
 
         SetupQuadTree(full);
-        _cachedCamPos = Vector3.zero;
-        _cachedCamRot = Quaternion.identity;
         GetFrustumData();
     }
 
@@ -418,6 +435,9 @@ public class GrassComputeScript : MonoBehaviour
     // Get the data from the camera for culling
     private void GetFrustumData()
     {
+        _cachedCamPos = Vector3.zero;
+        _cachedCamRot = Quaternion.identity;
+
         if (!_mainCamera) return;
 
         // Check if the camera's position or rotation has changed

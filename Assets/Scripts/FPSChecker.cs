@@ -72,9 +72,6 @@ public class FPSChecker : MonoBehaviour
 
     private void ApplyTargetFrameRate()
     {
-#if UNITY_EDITOR
-        Application.targetFrameRate = -1;
-#elif UNITY_IOS
         if (targetFrameRate == TargetFrameRate.NoLimit)
         {
             Application.targetFrameRate = -1; // -1 means no limit
@@ -83,6 +80,5 @@ public class FPSChecker : MonoBehaviour
         {
             Application.targetFrameRate = (int)targetFrameRate;
         }
-#endif
     }
 }

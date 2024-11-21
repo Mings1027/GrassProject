@@ -5,7 +5,6 @@ namespace Grass.Editor
 {
     public sealed class GrassRemovePainter : BasePainter
     {
-        private List<GrassData> _grassList;
         private Vector3 _lastBrushPosition;
         private readonly List<int> _grassIndicesToDelete;
         private const float MinRemoveDistanceFactor = 0.25f;
@@ -15,17 +14,17 @@ namespace Grass.Editor
             spatialGrid)
         {
             _grassIndicesToDelete = new List<int>();
-            _grassList = grassCompute.GrassDataList;
         }
 
         public void RemoveGrass(Ray mousePointRay, float radius)
         {
-            if (_grassList == null || _grassList.Count == 0)
+            var grassList = grassCompute.GrassDataList;
+            if (grassList == null || grassList.Count == 0)
                 return;
 
-            if (!Physics.Raycast(mousePointRay, out var hit, grassCompute.GrassSetting.maxFadeDistance)) 
+            if (!Physics.Raycast(mousePointRay, out var hit, grassCompute.GrassSetting.maxFadeDistance))
                 return;
-            
+
             var hitPoint = hit.point;
             _currentBrushRadiusSqr = radius * radius;
             var minMoveSqr = _currentBrushRadiusSqr * MinRemoveDistanceFactor;
@@ -41,24 +40,24 @@ namespace Grass.Editor
 
             if (sharedIndices.Count == 0) return;
 
-            FindGrassWithinBrushRadius(hitPoint);
+            FindGrassWithinBrushRadius(hitPoint, grassList);
 
             if (_grassIndicesToDelete.Count > 0)
             {
-                ExecuteGrassRemoval();
+                ExecuteGrassRemoval(grassList);
             }
         }
 
-        private void FindGrassWithinBrushRadius(Vector3 hitPoint)
+        private void FindGrassWithinBrushRadius(Vector3 hitPoint, List<GrassData> grassList)
         {
-            var currentGrassCount = _grassList.Count;
+            var currentGrassCount = grassList.Count;
 
             for (var i = 0; i < sharedIndices.Count; i++)
             {
                 var index = sharedIndices[i];
                 if (index >= 0 && index < currentGrassCount)
                 {
-                    var grassPosition = _grassList[index].position;
+                    var grassPosition = grassList[index].position;
                     if (GrassPainterHelper.SqrDistance(grassPosition, hitPoint) <= _currentBrushRadiusSqr)
                     {
                         _grassIndicesToDelete.Add(index);
@@ -67,42 +66,40 @@ namespace Grass.Editor
             }
         }
 
-        private void ExecuteGrassRemoval()
+        private void ExecuteGrassRemoval(List<GrassData> grassList)
         {
             _grassIndicesToDelete.Sort((a, b) => b.CompareTo(a));
-            var lastIndex = _grassList.Count - 1;
+            var lastIndex = grassList.Count - 1;
             foreach (var index in _grassIndicesToDelete)
             {
                 if (index < lastIndex && index >= 0)
                 {
-                    SwapLastIndexToDeleteIndex(index, lastIndex);
+                    SwapLastIndexToDeleteIndex(index, lastIndex, grassList);
+
                     lastIndex--;
                 }
             }
 
-            var removeCount = Mathf.Min(_grassIndicesToDelete.Count, _grassList.Count);
+            var removeCount = Mathf.Min(_grassIndicesToDelete.Count, grassList.Count);
             if (removeCount > 0)
             {
-                _grassList.RemoveRange(_grassList.Count - removeCount, removeCount);
-                grassCompute.GrassDataList = _grassList;
+                grassList.RemoveRange(grassList.Count - removeCount, removeCount);
+                grassCompute.GrassDataList = grassList;
                 grassCompute.ResetFaster();
             }
         }
 
-        private void SwapLastIndexToDeleteIndex(int deleteIndex, int lastIndex)
+        private void SwapLastIndexToDeleteIndex(int deleteIndex, int lastIndex, List<GrassData> grassList)
         {
-            var lastGrass = _grassList[lastIndex];
-            var currentGrass = _grassList[deleteIndex];
+            var lastGrass = grassList[lastIndex];
+            var currentGrass = grassList[deleteIndex];
 
-            // 1. 현재 위치의 잔디를 Grid에서 제거
             spatialGrid.RemoveObject(currentGrass.position, deleteIndex);
-
-            // 2. 마지막 잔디를 현재 위치로 이동
-            _grassList[deleteIndex] = lastGrass;
-            spatialGrid.AddObject(lastGrass.position, deleteIndex);
-
-            // 3. Grid에서 마지막 위치의 잔디 제거
             spatialGrid.RemoveObject(lastGrass.position, lastIndex);
+
+            grassList[deleteIndex] = lastGrass;
+
+            spatialGrid.AddObject(lastGrass.position, deleteIndex);
         }
 
         public override void Clear()

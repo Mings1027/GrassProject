@@ -44,6 +44,7 @@ namespace Grass.Editor
                                 {
                                     var newData = CreateGrassData(hit2.point, hit2.normal, toolSettings);
                                     var newIndex = grassCompute.GrassDataList.Count;
+                                    
                                     grassCompute.GrassDataList.Add(newData);
                                     spatialGrid.AddObject(hit2.point, newIndex);
                             

@@ -30,8 +30,8 @@ namespace Grass.Editor
 
     public enum ModifyOption
     {
-        WidthHeight,
         Color,
+        WidthHeight,
         Both
     }
 

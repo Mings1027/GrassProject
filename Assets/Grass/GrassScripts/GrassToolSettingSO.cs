@@ -44,14 +44,12 @@ public class GrassToolSettingSo : ScriptableObject
 
     [Header("Brush Settings")] [SerializeField]
     private float brushSize = 4f;
-    [SerializeField] private float brushFalloffSize = 0.8f;
     [SerializeField] private float brushTransitionSpeed = 0.5f;
     [SerializeField] private int density = 1;
     [SerializeField] private float normalLimit = 1f;
 
     [Header("Generation Settings")] [SerializeField]
     private int generateGrassCount = 100000;
-    [SerializeField] private float generationDensity = 1f;
 
     [Header("Input Settings")] public MouseButton grassMouseButton;
 
