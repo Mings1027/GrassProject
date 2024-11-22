@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shaderToUse: {fileID: 7200000, guid: 11036af5f2d1499c8845585fb5fadb4c, type: 3}
   materialToUse: {fileID: 2100000, guid: 7725493650b5a4b4d9c0d612493ca34d, type: 2}
-  bladeRadius: 0.751
+  bladeRadius: 0.632
   bladeForward: 1.43
   bladeCurve: 2
   bottomWidth: 0.32
@@ -28,7 +28,7 @@ MonoBehaviour:
   windStrength: 0.2
   bladesPerVertex: 10
   segmentsPerBlade: 2
-  interactorStrength: 1
+  interactorStrength: 0.5
   topTint: {r: 1, g: 1, b: 1, a: 1}
   bottomTint: {r: 0.11690103, g: 0.23347847, b: 0.6698113, a: 1}
   drawBounds: 1

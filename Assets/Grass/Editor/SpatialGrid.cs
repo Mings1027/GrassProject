@@ -4,12 +4,12 @@ using UnityEngine;
 
 public class SpatialGrid
 {
-    private readonly Dictionary<long, HashSet<int>> _grid = CollectionsPool.GetDictionary<long, HashSet<int>>();
+    private readonly Dictionary<long, HashSet<int>> _grid = new();
     private readonly float _cellSize;
     private readonly Vector3 _origin;
 
     // 임시 리스트를 재사용하기 위한 필드
-    private readonly HashSet<long> _tempCellKeys = CollectionsPool.GetHashSet<long>();
+    private readonly HashSet<long> _tempCellKeys = new();
 
     public float CellSize => _cellSize;
 
@@ -47,7 +47,7 @@ public class SpatialGrid
 
         if (!_grid.TryGetValue(key, out var cellSet))
         {
-            cellSet = CollectionsPool.GetHashSet<int>(1);
+            cellSet = new HashSet<int>();
             _grid[key] = cellSet;
         }
 
@@ -65,7 +65,7 @@ public class SpatialGrid
             if (cellSet.Count == 0)
             {
                 _grid.Remove(key);
-                CollectionsPool.ReturnHashSet(cellSet);
+                cellSet.Clear();
             }
         }
     }
@@ -171,13 +171,13 @@ public class SpatialGrid
     {
         foreach (var cellSet in _grid.Values)
         {
-            CollectionsPool.ReturnHashSet(cellSet);
+            cellSet.Clear();
         }
 
         _grid.Clear();
         _tempCellKeys.Clear();
 
-        CollectionsPool.ReturnDictionary(_grid);
-        CollectionsPool.ReturnHashSet(_tempCellKeys);
+        _grid.Clear();
+        _tempCellKeys.Clear();
     }
 }

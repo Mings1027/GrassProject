@@ -24,7 +24,7 @@ public class GrassComputeScript : MonoBehaviour
 
     //
     private Camera _mainCamera; // main camera
-    private List<GrassInteractor> _interactors;
+    private List<GrassInteractor> _interactors = new();
     private readonly List<int> _grassList = new();
     private List<int> _grassVisibleIDList = new(); // list of all visible grass ids, rest are culled
 
@@ -52,8 +52,8 @@ public class GrassComputeScript : MonoBehaviour
     private Vector3 _cachedCamPos;
     private Quaternion _cachedCamRot;
     private bool _fastMode;
-    private int _shaderID;
-
+    private int _interactorDataID;
+    
     private float[] _cutIDs;
 
     private readonly uint[] _argsBufferReset =
@@ -134,9 +134,6 @@ public class GrassComputeScript : MonoBehaviour
     private void OnEnable()
     {
         RegisterEvents();
-
-        InitInteractors();
-
         MainSetup(true);
     }
 
@@ -243,11 +240,6 @@ public class GrassComputeScript : MonoBehaviour
         GrassFuncManager.RemoveEvent(GrassEvent.VisibleGrassCount, () => _grassVisibleIDList.Count);
     }
 
-    private void InitInteractors()
-    {
-        _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
-    }
-
     private void ReleaseBuffer()
     {
         // Release each buffer
@@ -341,7 +333,7 @@ public class GrassComputeScript : MonoBehaviour
         // Set vertex data
         _instComputeShader.SetInt(NumSourceVertices, numSourceVertices);
         // cache shader property to int id for interactivity;
-        _shaderID = Shader.PropertyToID("_PositionsMoving");
+        _interactorDataID = Shader.PropertyToID("_InteractorData");
 
         // Calculate the number of threads to use. Get the thread size from the kernel
         // Then, divide the number of triangles by that size
@@ -351,9 +343,9 @@ public class GrassComputeScript : MonoBehaviour
         _dispatchSize = (grassData.Count + (int)_threadGroupSize - 1) >> (int)Math.Log((int)_threadGroupSize, 2);
 
         SetShaderData();
-
-        InitInteractors();
-
+#if UNITY_EDITOR
+        _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
+#endif
         SetupQuadTree(full);
         GetFrustumData();
     }
@@ -372,20 +364,16 @@ public class GrassComputeScript : MonoBehaviour
                 return;
             }
 
-            // 1. 전체 bounds 계산 - 잔디가 있는 모든 영역 포함
-            _bounds = new Bounds();
+            // 1. 잔디가 실제로 존재하는 영역만 포함하는 bounds 계산
+            _bounds = new Bounds(grassData[0].position, Vector3.zero);
             foreach (var grass in grassData)
             {
                 _bounds.Encapsulate(grass.position);
             }
 
-            // 2. bounds에 여유 공간 추가 (옵션)
+            // 2. bounds에 여유 공간 추가
             var extents = _bounds.extents;
-            _bounds.extents = new Vector3(
-                extents.x * 1.1f,
-                extents.y * 1.1f,
-                extents.z * 1.1f
-            );
+            _bounds.extents = extents * 1.1f;
 
             // 3. CullingTree 생성
             _cullingTree = new CullingTree(_bounds, grassSetting.cullingTreeDepth);
@@ -393,16 +381,13 @@ public class GrassComputeScript : MonoBehaviour
             _cullingTree.RetrieveAllLeaves(_leaves);
 
             // 4. 각 잔디의 위치에 ID 할당
-            for (var i = 0; i < grassData.Count; i++)
-            {
-                _cullingTree.FindLeaf(grassData[i].position, i);
-            }
-
-            // 5. 최초 생성시에는 모든 잔디를 visible로 설정
             _grassVisibleIDList = new List<int>(grassData.Count);
             for (int i = 0; i < grassData.Count; i++)
             {
-                _grassVisibleIDList.Add(i);
+                if (_cullingTree.FindLeaf(grassData[i].position, i))
+                {
+                    _grassVisibleIDList.Add(i);
+                }
             }
 
             _visibleIDBuffer?.SetData(_grassVisibleIDList);
@@ -417,10 +402,7 @@ public class GrassComputeScript : MonoBehaviour
         else // 편집 모드 등에서 임시 설정시
         {
             if (grassData.Count == 0)
-            {
-                _grassVisibleIDList = new List<int>();
                 return;
-            }
 
             _grassVisibleIDList = new List<int>(grassData.Count);
             for (int i = 0; i < grassData.Count; i++)
@@ -494,7 +476,7 @@ public class GrassComputeScript : MonoBehaviour
             positions[i] = new Vector4(pos.x, pos.y, pos.z, _interactors[i].radius);
         }
 
-        _instComputeShader.SetVectorArray(_shaderID, positions);
+        _instComputeShader.SetVectorArray(_interactorDataID, positions);
         _instComputeShader.SetFloat(InteractorsLength, _interactors.Count);
     }
 

@@ -5,14 +5,10 @@ namespace Grass.Editor
 {
     public sealed class GrassRepositionPainter : BasePainter
     {
-        private readonly List<int> _changedIndices;
-        private const float MaxRayHeight = 1000f; // 충분히 높은 위치에서 레이를 쏘기 위한 상수
+        private readonly List<int> _changedIndices = new();
 
         public GrassRepositionPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
-            spatialGrid)
-        {
-            _changedIndices = CollectionsPool.GetList<int>();
-        }
+            spatialGrid) { }
 
         public void RepositionGrass(Ray mousePointRay, GrassToolSettingSo toolSettings)
         {
@@ -26,7 +22,8 @@ namespace Grass.Editor
             sharedIndices.Clear();
             _changedIndices.Clear();
 
-            spatialGrid.GetObjectsInRadius(hitPoint, toolSettings.BrushSize, sharedIndices);
+            var extendRadius = Mathf.Sqrt(brushSizeSqr + toolSettings.BrushHeight * toolSettings.BrushHeight);
+            spatialGrid.GetObjectsInRadius(hitPoint, extendRadius, sharedIndices);
 
             var grassList = grassCompute.GrassDataList;
 
@@ -42,30 +39,43 @@ namespace Grass.Editor
         private void ProcessGrassBatch(List<GrassData> grassList, Vector3 hitPoint, float brushSizeSqr,
                                        GrassToolSettingSo toolSettings)
         {
+            var cylinderBottom = hitPoint;
+            var cylinderTop = hitPoint + Vector3.up * toolSettings.BrushHeight;
+
             for (var i = 0; i < sharedIndices.Count; i++)
             {
                 var index = sharedIndices[i];
                 var grassData = grassList[index];
-                var start = new Vector3(
-                    grassData.position.x, MaxRayHeight, grassData.position.z);
 
-                var distanceSqr = GrassPainterHelper.SqrDistance(grassData.position, hitPoint);
-                if (distanceSqr <= brushSizeSqr)
+                var xzDistance = new Vector2(
+                    grassData.position.x - hitPoint.x,
+                    grassData.position.z - hitPoint.z).sqrMagnitude;
+
+                if (xzDistance <= brushSizeSqr)
                 {
-                    var ray = new Ray(start, Vector3.down * MaxRayHeight);
-                    if (Physics.Raycast(ray, out var hit, MaxRayHeight, toolSettings.PaintMask.value))
+                    var height = grassData.position.y;
+                    if (height >= cylinderBottom.y && height <= cylinderTop.y)
                     {
-                        var newData = grassData;
-                        newData.position = hit.point;
-                        newData.normal = hit.normal;
+                        // 지면에 재배치하기 위한 레이캐스트
+                        var ray = new Ray(
+                            new Vector3(grassData.position.x, cylinderTop.y, grassData.position.z), 
+                            Vector3.down);
+                            
+                        if (Physics.Raycast(ray, out var groundHit, toolSettings.BrushHeight * 2f, toolSettings.PaintMask))
+                        {
+                            var newData = grassData;
+                            newData.position = groundHit.point;
+                            newData.normal = groundHit.normal;
 
-                        spatialGrid.RemoveObject(grassData.position, index);
-                        spatialGrid.AddObject(hit.point, index);
+                            // 공간 그리드 업데이트
+                            spatialGrid.RemoveObject(grassData.position, index);
+                            spatialGrid.AddObject(groundHit.point, index);
 
-                        grassList[index] = newData;
-                        _changedIndices.Add(index);
+                            grassList[index] = newData;
+                            _changedIndices.Add(index);
+                        }
                     }
-                }
+                } 
             }
         }
 
@@ -85,7 +95,7 @@ namespace Grass.Editor
         public override void Clear()
         {
             base.Clear();
-            CollectionsPool.ReturnList(_changedIndices);
+            _changedIndices.Clear();
         }
     }
 }

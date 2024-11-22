@@ -5,21 +5,16 @@ namespace Grass.Editor
 {
     public sealed class GrassEditPainter : BasePainter
     {
-        private readonly Dictionary<int, float> _cumulativeChanges;
-        private readonly Dictionary<int, GrassData> _modifiedGrassData;
-        private readonly HashSet<int> _processedIndices;
+        private readonly Dictionary<int, float> _cumulativeChanges = new();
+        private readonly Dictionary<int, GrassData> _modifiedGrassData = new();
+        private readonly HashSet<int> _processedIndices = new();
 
         private float _currentBrushSizeSqr;
         private Vector3 _currentHitPoint;
         private float _deltaTimeSpeed;
 
         public GrassEditPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
-            spatialGrid)
-        {
-            _cumulativeChanges = CollectionsPool.GetDictionary<int, float>();
-            _modifiedGrassData = CollectionsPool.GetDictionary<int, GrassData>();
-            _processedIndices = CollectionsPool.GetHashSet<int>();
-        }
+            spatialGrid) { }
 
         public void EditGrass(Ray mousePointRay, GrassToolSettingSo toolSettings, EditOption editOption)
         {
@@ -146,9 +141,9 @@ namespace Grass.Editor
         public override void Clear()
         {
             base.Clear();
-            CollectionsPool.ReturnDictionary(_cumulativeChanges);
-            CollectionsPool.ReturnDictionary(_modifiedGrassData);
-            CollectionsPool.ReturnHashSet(_processedIndices);
+            _cumulativeChanges.Clear();
+            _modifiedGrassData.Clear();
+            _processedIndices.Clear();
         }
     }
 }

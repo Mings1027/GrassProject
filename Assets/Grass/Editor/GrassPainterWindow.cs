@@ -424,7 +424,7 @@ namespace Grass.Editor
                     DrawEditBrushSettings();
                     break;
                 case BrushOption.Reposition:
-                    DrawRepositionMessage();
+                    DrawRepositionBrushSettings();
                     break;
             }
 
@@ -561,7 +561,8 @@ namespace Grass.Editor
 
         private void DrawEditBrushSettings()
         {
-            _selectedEditOption = (EditOption)GUILayout.Toolbar((int)_selectedEditOption, _editOptionStrings,GUILayout.Height(20));
+            _selectedEditOption =
+                (EditOption)GUILayout.Toolbar((int)_selectedEditOption, _editOptionStrings, GUILayout.Height(20));
             EditorGUILayout.Separator();
 
             toolSettings.BrushTransitionSpeed = EditorGUILayout.Slider(
@@ -619,8 +620,16 @@ namespace Grass.Editor
             );
         }
 
-        private void DrawRepositionMessage()
+        private void DrawRepositionBrushSettings()
         {
+            toolSettings.BrushHeight = GrassPainterHelper.FloatSlider(
+                "Brush Height",
+                "Height limit for repositioning grass",
+                toolSettings.BrushHeight,
+                toolSettings.MinBrushSize,
+                toolSettings.MaxBrushSize
+            );
+
             var style = new GUIStyle(EditorStyles.helpBox)
             {
                 fontSize = 13,
@@ -1224,7 +1233,14 @@ namespace Grass.Editor
             // Shift + 스크롤은 브러시 크기 조절에 사용
             if (e.type == EventType.ScrollWheel && e.shift)
             {
-                HandleScrollWheel(e);
+                HandleBrushSize(e);
+                e.Use();
+                return;
+            }
+
+            if (e.type == EventType.ScrollWheel && e.alt)
+            {
+                HandleBrushHeight(e);
                 e.Use();
                 return;
             }
@@ -1290,7 +1306,7 @@ namespace Grass.Editor
 
         private void DrawTransparentCylinder(Vector3 center, float radius)
         {
-            var topCenter = center + new Vector3(0, toolSettings.BrushSize);
+            var topCenter = center + new Vector3(0, toolSettings.BrushHeight);
             var bottomCenter = center;
 
             // 그리기 전에 현재 색상을 백업
@@ -1357,7 +1373,7 @@ namespace Grass.Editor
 
         private async UniTask GenerateGrass(GameObject[] selections)
         {
-            var newGrassData = CollectionsPool.GetList<GrassData>();
+            var newGrassData = new List<GrassData>();
             var allTempPoints = new List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>();
             var totalRequestedPoints = 0;
 
@@ -1420,7 +1436,6 @@ namespace Grass.Editor
             grassDataList.AddRange(newGrassData);
 
             _grassCompute.Reset();
-            CollectionsPool.ReturnList(newGrassData);
         }
 
         private void LogLayerMismatch(GameObject selection)
@@ -1702,7 +1717,7 @@ namespace Grass.Editor
         private async UniTask<HashSet<Vector3>> GetPositionsToRemove(GameObject[] selectedObjects)
         {
             var positionsToRemove = new HashSet<Vector3>();
-            var tempIndices = CollectionsPool.GetList<int>();
+            var tempIndices = new List<int>();
             var totalObjects = selectedObjects.Length;
             var currentObjectIndex = 0;
 
@@ -1738,13 +1753,11 @@ namespace Grass.Editor
                 currentObjectIndex++;
             }
 
-            CollectionsPool.ReturnList(tempIndices);
             return positionsToRemove;
         }
 
         private static async UniTask HandleMeshFilter(MeshFilter meshFilter, List<int> indices,
-                                                      List<GrassData> grassData,
-                                                      HashSet<Vector3> positionsToRemove)
+                                                      List<GrassData> grassData, HashSet<Vector3> positionsToRemove)
         {
             var localBounds = meshFilter.sharedMesh.bounds;
             const int batchSize = 10000;
@@ -1979,12 +1992,18 @@ namespace Grass.Editor
             _isProcessing = false;
         }
 
-        private void HandleScrollWheel(Event e)
+        private void HandleBrushSize(Event e)
         {
             toolSettings.BrushSize += e.delta.y;
             toolSettings.BrushSize = Mathf.Clamp(toolSettings.BrushSize, toolSettings.MinBrushSize,
                 toolSettings.MaxBrushSize);
-            e.Use();
+        }
+
+        private void HandleBrushHeight(Event e)
+        {
+            toolSettings.BrushHeight += e.delta.y;
+            toolSettings.BrushHeight = Mathf.Clamp(toolSettings.BrushHeight, toolSettings.MinBrushSize,
+                toolSettings.MaxBrushSize);
         }
 
         private void StartPainting()

@@ -30,7 +30,6 @@ MonoBehaviour:
   - 0
   - 0
   - 0
-  layerEnabled: 0100010101000000
   vertexColorSettings: 0
   vertexFade: 0
   grassWidth: 0.25
@@ -49,9 +48,10 @@ MonoBehaviour:
   paintBlockMask:
     serializedVersion: 2
     m_Bits: 64
-  brushSize: 3.9503462
+  brushSize: 3.550009
   brushTransitionSpeed: 0.079
-  density: 14
+  density: 18
   normalLimit: 1
-  generateGrassCount: 150000
+  brushHeight: 12.650003
+  generateGrassCount: 100000
   grassMouseButton: 0

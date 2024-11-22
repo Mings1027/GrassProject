@@ -7,7 +7,7 @@ namespace Grass.Editor
     {
         protected readonly GrassComputeScript grassCompute;
         protected readonly SpatialGrid spatialGrid;
-        protected readonly List<int> sharedIndices = CollectionsPool.GetList<int>();
+        protected readonly List<int> sharedIndices = new();
 
         protected BasePainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
         {
@@ -17,7 +17,7 @@ namespace Grass.Editor
 
         public virtual void Clear()
         {
-            CollectionsPool.ReturnList(sharedIndices);
+            sharedIndices.Clear();
         }
     }
 }

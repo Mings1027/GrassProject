@@ -18,7 +18,6 @@ public class GrassToolSettingSo : ScriptableObject
     [Header("Terrain Layer Settings")] [SerializeField]
     private float[] layerBlocking = new float[8];
     [SerializeField] private float[] heightFading = new float[8];
-    [SerializeField] private bool[] layerEnabled = new bool[8];
 
     [Header("Vertex Color Settings")] [SerializeField]
     private VertexColorSetting vertexColorSettings;
@@ -47,6 +46,7 @@ public class GrassToolSettingSo : ScriptableObject
     [SerializeField] private float brushTransitionSpeed = 0.5f;
     [SerializeField] private int density = 1;
     [SerializeField] private float normalLimit = 1f;
+    [SerializeField] private float brushHeight = 1f;
 
     [Header("Generation Settings")] [SerializeField]
     private int generateGrassCount = 100000;
@@ -79,11 +79,6 @@ public class GrassToolSettingSo : ScriptableObject
     {
         get => heightFading;
         set => heightFading = value;
-    }
-    public bool[] LayerEnabled
-    {
-        get => layerEnabled;
-        set => layerEnabled = value;
     }
     public VertexColorSetting VertexColorSettings
     {
@@ -160,6 +155,11 @@ public class GrassToolSettingSo : ScriptableObject
         get => brushSize;
         set => brushSize = Mathf.Clamp(value, MinBrushSize, MaxBrushSize);
     }
+    public float BrushHeight
+    {
+        get => brushHeight;
+        set => brushHeight = Mathf.Clamp(value, MinBrushSize, MaxBrushSize);
+    }
     public float BrushTransitionSpeed
     {
         get => brushTransitionSpeed;
@@ -220,12 +220,10 @@ public class GrassToolSettingSo : ScriptableObject
         Debug.Log("Setting up initial tool settings");
         layerBlocking = new float[8];
         heightFading = new float[8];
-        layerEnabled = new bool[8];
 
         for (int i = 0; i < layerBlocking.Length; i++)
         {
             layerBlocking[i] = 1;
-            layerEnabled[i] = true; // 기본값은 활성화
         }
 
         heightFading[0] = 0;

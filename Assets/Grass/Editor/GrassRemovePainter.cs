@@ -6,15 +6,12 @@ namespace Grass.Editor
     public sealed class GrassRemovePainter : BasePainter
     {
         private Vector3 _lastBrushPosition;
-        private readonly List<int> _grassIndicesToDelete;
+        private readonly List<int> _grassIndicesToDelete = new();
         private const float MinRemoveDistanceFactor = 0.25f;
         private float _currentBrushRadiusSqr;
 
         public GrassRemovePainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
-            spatialGrid)
-        {
-            _grassIndicesToDelete = new List<int>();
-        }
+            spatialGrid) { }
 
         public void RemoveGrass(Ray mousePointRay, float radius)
         {
