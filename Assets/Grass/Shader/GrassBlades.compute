@@ -206,37 +206,33 @@ half3 WindCalculation(half3 positionWS, half grassHeight)
     return wind;
 }
 
-float3 CalculateInteractor(float3 offsetWorldPos, float3 grassNormal, float3 basePos)
+float4 CalculateInteractor(float3 bladePosition, float3 grassNormal, float cut)
 {
-    half3 combinedDisp = 0;
+    if (cut >= bladePosition.y) return 0;
+    
+    float3 compression = 0;
+    float totalStrength = 0;
+
     for (int i = 0; i < _InteractorsLength; i++)
     {
-        half3 playerToVertex = offsetWorldPos - _InteractorData[i].xyz;
-        half3 directionFromPlayer = normalize(playerToVertex);
-        half distanceFromSphere = abs(length(playerToVertex)) + _InteractorData[i].w;
-        half3 baseXZOffset = half3(directionFromPlayer.x, 0, directionFromPlayer.z) * distanceFromSphere;
-        half3 sphereDisp = (baseXZOffset * _InteractorStrength) - half3(0, distanceFromSphere, 0);
-        half3 dis = distance(_InteractorData[i].xyz, offsetWorldPos);
-        half3 radius = 1 - saturate(dis / _InteractorData[i].w);
+        float3 interactorPos = _InteractorData[i].xyz;
+        float interactorRadius = _InteractorData[i].w;
 
-        sphereDisp *= radius;
-         
-        // 변위가 표면 아래로 가는지 체크
-        float3 newPosition = offsetWorldPos + sphereDisp;
-        float3 displacementFromBase = newPosition - basePos;
-        
-        // grassNormal 방향으로의 투영 거리가 0보다 작으면
-        // (즉, 표면 아래로 내려가려고 하면) 보정
-        float normalProjection = dot(displacementFromBase, grassNormal);
-        if (normalProjection < 0)
-        {
-            // 표면에 평행한 성분만 유지
-            sphereDisp = sphereDisp - dot(sphereDisp, grassNormal) * grassNormal;
-        }
-        
-        combinedDisp += sphereDisp;
+        // Calculate distance from interactor to grass blade
+        float distance = length(bladePosition - interactorPos);
+
+        // Skip if outside interaction radius
+        if (distance > interactorRadius)
+            continue;
+
+        float strength = 1.0 - saturate(distance / interactorRadius);
+        float3 downwardDisplacement = -grassNormal * (strength * _InteractorStrength);
+
+        compression += downwardDisplacement;
+        totalStrength = max(totalStrength, strength);
     }
-    return combinedDisp;
+
+    return float4(compression, totalStrength);
 }
 
 // ----------------------------------------
@@ -302,11 +298,15 @@ void Main(uint id : SV_DispatchThreadID)
         half offset = (1 - bladeRadius) * _BladeRadius * (randVar2);
 
         half3 totalMovement = 0;
+        float compressionStrength = 0;
         if (cut < sv.positionWS.y + 0.5)
         {
-            half3 offsetWorldPos = sv.positionWS + mul(facingRotationMatrix, half3(0, 0, offset));
-            totalMovement = CalculateInteractor(offsetWorldPos, grassNormal, sv.positionWS);
+            float4 interactorEffect = CalculateInteractor(sv.positionWS, grassNormal, cut);
+            totalMovement = interactorEffect.xyz;
+            compressionStrength = saturate(interactorEffect.w);
         }
+
+        half3 combinedMovement = totalMovement + wind * (1.0 - compressionStrength);
         // create blade
         for (int i = 0; i < numSegmentsPerBlade; i++)
         {
@@ -318,7 +318,7 @@ void Main(uint id : SV_DispatchThreadID)
 
             half3 newPos = i == 0
                                ? sv.positionWS
-                               : sv.positionWS + totalMovement * t + wind * t + grassNormal * grassHeight * t;
+                               : sv.positionWS + combinedMovement * t + grassNormal * grassHeight * t;
             half curveStrength = pow(abs(t), _BladeCurve) * _BladeForward;
 
             // vertices 생성
@@ -329,11 +329,11 @@ void Main(uint id : SV_DispatchThreadID)
                                                   facingRotationMatrix);
         }
 
-        half3 topPosOS = sv.positionWS + totalMovement + wind + grassNormal * grassHeight;
+        half3 topPosOS = sv.positionWS + combinedMovement + grassNormal * grassHeight;
         drawVertices[numSegmentsPerBlade * 2] = GrassVertex(topPosOS, 0, grassHeight, offset,
                                                             half2(0.5, 1), _BladeForward, grassNormal,
                                                             facingRotationMatrix);
-
+        
         for (int k = 0; k < numTrianglesPerBlade; ++k)
         {
             DrawTriangle tri = (DrawTriangle)0;

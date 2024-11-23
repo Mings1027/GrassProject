@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -5,6 +6,7 @@ public class TestCutting : MonoBehaviour
 {
     [SerializeField] GrassComputeScript grassComputeScript;
 
+    [SerializeField] private InputActionReference cutAction;
     [SerializeField] private float radius = 1f;
     [SerializeField, Range(0, 1)] private float minMoveDistance = 0.5f;
 
@@ -12,10 +14,22 @@ public class TestCutting : MonoBehaviour
 
     private Vector3 _cachedPos;
 
+    private void OnEnable()
+    {
+        cutAction.action.performed += OnCut;
+    }
+
+    private void OnDisable()
+    {
+        cutAction.action.performed -= OnCut;
+    }
+
     private void Start()
     {
         _cachedPos = transform.position;
     }
+
+    private void OnCut(InputAction.CallbackContext context) => updateCuts = !updateCuts;
 
     private void Update()
     {
@@ -36,10 +50,5 @@ public class TestCutting : MonoBehaviour
         if (!updateCuts) return;
         Gizmos.color = new Color(1, 0, 0);
         Gizmos.DrawWireSphere(transform.position, radius);
-    }
-
-    private void OnCut(InputValue value)
-    {
-        updateCuts = !updateCuts;
     }
 }
