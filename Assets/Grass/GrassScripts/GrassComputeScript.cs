@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Grass.GrassScripts;
-using PoolControl;
+using Pool;
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -15,7 +15,7 @@ public class GrassComputeScript : MonoBehaviour
     //
     private const int SourceVertStride = sizeof(float) * (3 + 3 + 2 + 3);
     private const int DrawStride = sizeof(float) * (3 + 3 + 1 + (3 + 2) * 3);
-    private readonly int _maxBufferSize = 2500000;
+    private const int MaxBufferSize = 2500000;
 
     //
     [SerializeField, HideInInspector] private List<GrassData> grassData = new(); // base data lists
@@ -77,7 +77,6 @@ public class GrassComputeScript : MonoBehaviour
         set => grassSetting = value;
     }
     private SceneView _view;
-    [HideInInspector] public bool autoUpdate; // very slow, but will update always
 #endif
 
 #if UNITY_EDITOR
@@ -140,14 +139,6 @@ public class GrassComputeScript : MonoBehaviour
     // LateUpdate is called after all Update calls
     private void Update()
     {
-#if UNITY_EDITOR
-        if (!Application.isPlaying && autoUpdate && !_fastMode)
-        {
-            OnDisable();
-            OnEnable();
-        }
-
-#endif
         if (grassData.Count <= 0) return;
         GetFrustumData();
         SetGrassDataUpdate();
@@ -224,8 +215,9 @@ public class GrassComputeScript : MonoBehaviour
 
     private void RegisterEvents()
     {
-        GrassEventManager.AddEvent<GrassInteractor>(GrassEvent.InteractorAdded, AddInteractor);
-        GrassEventManager.AddEvent<GrassInteractor>(GrassEvent.InteractorRemoved, RemoveInteractor);
+        GrassEventManager.AddEvent<Vector3, float>(GrassEvent.UpdateCutBuffer, UpdateCutBuffer);
+        GrassEventManager.AddEvent<GrassInteractor>(GrassEvent.AddInteractor, AddInteractor);
+        GrassEventManager.AddEvent<GrassInteractor>(GrassEvent.RemoveInteractor, RemoveInteractor);
 
         GrassFuncManager.AddEvent(GrassEvent.TotalGrassCount, () => grassData.Count);
         GrassFuncManager.AddEvent(GrassEvent.VisibleGrassCount, () => _grassVisibleIDList.Count);
@@ -233,8 +225,9 @@ public class GrassComputeScript : MonoBehaviour
 
     private void UnregisterEvents()
     {
-        GrassEventManager.RemoveEvent<GrassInteractor>(GrassEvent.InteractorAdded, AddInteractor);
-        GrassEventManager.RemoveEvent<GrassInteractor>(GrassEvent.InteractorRemoved, RemoveInteractor);
+        GrassEventManager.RemoveEvent<Vector3, float>(GrassEvent.UpdateCutBuffer, UpdateCutBuffer);
+        GrassEventManager.RemoveEvent<GrassInteractor>(GrassEvent.AddInteractor, AddInteractor);
+        GrassEventManager.RemoveEvent<GrassInteractor>(GrassEvent.RemoveInteractor, RemoveInteractor);
 
         GrassFuncManager.RemoveEvent(GrassEvent.TotalGrassCount, () => grassData.Count);
         GrassFuncManager.RemoveEvent(GrassEvent.VisibleGrassCount, () => _grassVisibleIDList.Count);
@@ -292,11 +285,10 @@ public class GrassComputeScript : MonoBehaviour
 
         // Create compute buffers
         // The stride is the size, in bytes, each object in the buffer takes up
-        _sourceVertBuffer = new ComputeBuffer(numSourceVertices, SourceVertStride, ComputeBufferType.Structured,
-            ComputeBufferMode.Immutable);
+        _sourceVertBuffer = new ComputeBuffer(numSourceVertices, SourceVertStride, ComputeBufferType.Structured);
         _sourceVertBuffer.SetData(grassData);
 
-        _drawBuffer = new ComputeBuffer(_maxBufferSize, DrawStride, ComputeBufferType.Append);
+        _drawBuffer = new ComputeBuffer(MaxBufferSize, DrawStride, ComputeBufferType.Append);
 
         // _argsBuffer = new ComputeBuffer(1, _argsBufferReset.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
         _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1,
@@ -480,7 +472,7 @@ public class GrassComputeScript : MonoBehaviour
         _instComputeShader.SetFloat(InteractorsLength, _interactors.Count);
     }
 
-    public void UpdateCutBuffer(Vector3 hitPoint, float radius)
+    private void UpdateCutBuffer(Vector3 hitPoint, float radius)
     {
         if (grassData.Count > 0)
         {
@@ -619,7 +611,6 @@ public class GrassComputeScript : MonoBehaviour
         _drawBuffer.SetCounterValue(0);
         _argsBuffer.SetData(_argsBufferReset);
 
-        // _dispatchSize = Mathf.CeilToInt((int)(grassData.Count / _threadGroupSize));
         _dispatchSize = (_grassVisibleIDList.Count + (int)_threadGroupSize - 1) >> (int)Math.Log(_threadGroupSize, 2);
     }
 

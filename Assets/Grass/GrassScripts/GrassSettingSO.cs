@@ -54,7 +54,7 @@ public class GrassSettingSO : ScriptableObject
 
     public int segmentsPerBlade = 3;
     public int MinSegmentsPerBlade => 1;
-    public int MaxSegmentsPerBlade => 4;
+    public int MaxSegmentsPerBlade => 3;
 
     // Interactor
     [Header("Interactor Strength")] public float interactorStrength = 1;

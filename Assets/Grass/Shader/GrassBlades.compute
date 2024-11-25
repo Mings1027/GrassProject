@@ -31,8 +31,8 @@ struct DrawTriangle
     DrawVertex vertices[3]; // Three vertices that mask up the triangle
 };
 
-// Buffer for storing the generated mesh
-AppendStructuredBuffer<DrawTriangle> _DrawTriangles; // Only push is allowed, read-only
+// 쓰기전용
+AppendStructuredBuffer<DrawTriangle> _DrawTriangles;
 
 // _argsBuffer for GrassCompute script
 struct IndirectArgs
@@ -193,7 +193,7 @@ DrawVertex GrassVertex(float3 positionWS, float width, float height,
     return output;
 }
 
-half3 WindCalculation(half3 positionWS, half grassHeight)
+half3 CalculationWind(half3 positionWS, half grassHeight)
 {
     half timeWind = _Time.x * _WindSpeed; // Time value based on wind speed
     half posX = positionWS.x; // X position of the vertex
@@ -206,33 +206,28 @@ half3 WindCalculation(half3 positionWS, half grassHeight)
     return wind;
 }
 
-float4 CalculateInteractor(float3 bladePosition, float3 grassNormal, float cut)
+float3 CalculateInteraction(float3 grassPosition)
 {
-    if (cut >= bladePosition.y) return 0;
-    
-    float3 compression = 0;
-    float totalStrength = 0;
+    float3 totalBend = float3(0, 0, 0);
 
     for (int i = 0; i < _InteractorsLength; i++)
     {
         float3 interactorPos = _InteractorData[i].xyz;
         float interactorRadius = _InteractorData[i].w;
 
-        // Calculate distance from interactor to grass blade
-        float distance = length(bladePosition - interactorPos);
+        float3 distanceVector = grassPosition - interactorPos;
+        float distance = length(distanceVector);
 
-        // Skip if outside interaction radius
-        if (distance > interactorRadius)
-            continue;
-
-        float strength = 1.0 - saturate(distance / interactorRadius);
-        float3 downwardDisplacement = -grassNormal * (strength * _InteractorStrength);
-
-        compression += downwardDisplacement;
-        totalStrength = max(totalStrength, strength);
+        if (distance < interactorRadius)
+        {
+            float strength = (1.0 - distance / interactorRadius) * _InteractorStrength;
+            float3 bendDirection = normalize(distanceVector);
+            bendDirection.y = 0; // Y축 변형은 제한
+            totalBend += bendDirection * strength;
+        }
     }
 
-    return float4(compression, totalStrength);
+    return totalBend;
 }
 
 // ----------------------------------------
@@ -273,13 +268,16 @@ void Main(uint id : SV_DispatchThreadID)
     uint localVertexCount = 0;
     half cut = _CutBuffer[visibleID];
     // Random height offsets
-    half randomOffset = RandomRange(sv.positionWS, _GrassRandomHeightMin, _GrassRandomHeightMax);
+    uint heightHash = Hash3Pos(sv.positionWS, 0);
+    half randomOffset = lerp(_GrassRandomHeightMin, _GrassRandomHeightMax, HashToFloat01(heightHash));
     grassHeight = clamp(grassHeight + randomOffset, _MinHeight, _MaxHeight);
     grassWidth = clamp(grassWidth, _MinWidth, _MaxWidth);
     grassWidth *= saturate(distanceFade);
     _BladeForward *= grassHeight;
 
-    half3 wind = WindCalculation(sv.positionWS, grassHeight);
+    half3 wind = CalculationWind(sv.positionWS, grassHeight);
+
+    half3 interaction = CalculateInteraction(sv.positionWS);
 
     // Loop to create blade per vertex
     for (int j = 0; j < numBladesPerVertex * distanceFade; j++)
@@ -295,18 +293,8 @@ void Main(uint id : SV_DispatchThreadID)
         half3x3 facingRotationMatrix = AngleAxis3x3(randAngle, grassNormal);
 
         half bladeRadius = (j + randVar1) / numBladesPerVertex;
-        half offset = (1 - bladeRadius) * _BladeRadius * (randVar2);
+        half offset = (1 - bladeRadius) * _BladeRadius * randVar2;
 
-        half3 totalMovement = 0;
-        float compressionStrength = 0;
-        if (cut < sv.positionWS.y + 0.5)
-        {
-            float4 interactorEffect = CalculateInteractor(sv.positionWS, grassNormal, cut);
-            totalMovement = interactorEffect.xyz;
-            compressionStrength = saturate(interactorEffect.w);
-        }
-
-        half3 combinedMovement = totalMovement + wind * (1.0 - compressionStrength);
         // create blade
         for (int i = 0; i < numSegmentsPerBlade; i++)
         {
@@ -318,7 +306,7 @@ void Main(uint id : SV_DispatchThreadID)
 
             half3 newPos = i == 0
                                ? sv.positionWS
-                               : sv.positionWS + combinedMovement * t + grassNormal * grassHeight * t;
+                               : sv.positionWS + (wind + grassNormal * grassHeight + interaction) * t;
             half curveStrength = pow(abs(t), _BladeCurve) * _BladeForward;
 
             // vertices 생성
@@ -329,11 +317,11 @@ void Main(uint id : SV_DispatchThreadID)
                                                   facingRotationMatrix);
         }
 
-        half3 topPosOS = sv.positionWS + combinedMovement + grassNormal * grassHeight;
+        half3 topPosOS = sv.positionWS + wind + interaction + grassNormal * grassHeight;
         drawVertices[numSegmentsPerBlade * 2] = GrassVertex(topPosOS, 0, grassHeight, offset,
                                                             half2(0.5, 1), _BladeForward, grassNormal,
                                                             facingRotationMatrix);
-        
+
         for (int k = 0; k < numTrianglesPerBlade; ++k)
         {
             DrawTriangle tri = (DrawTriangle)0;

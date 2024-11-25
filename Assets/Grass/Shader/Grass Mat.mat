@@ -46,8 +46,8 @@ Material:
     - _AdditionalLightShadowStrength: 1
     - _AlphaTestToggle: 0
     - _BlendFloor: 0
-    - _BlendMult: 1
-    - _BlendOff: 0.2
+    - _BlendMult: 0.75
+    - _BlendOff: 0.207
     - _DebugVisualization: 0
     - _Edge: 1
     - _Exposure: 1

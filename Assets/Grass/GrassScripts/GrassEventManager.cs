@@ -5,8 +5,9 @@ namespace Grass.GrassScripts
 {
     public enum GrassEvent
     {
-        InteractorAdded,
-        InteractorRemoved,
+        UpdateCutBuffer,
+        AddInteractor,
+        RemoveInteractor,
         TotalGrassCount,
         VisibleGrassCount,
     }

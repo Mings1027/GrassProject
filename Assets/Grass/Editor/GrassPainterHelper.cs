@@ -38,6 +38,7 @@ namespace Grass.Editor
     public enum GenerateTab
     {
         Basic,
+        Mesh,
         TerrainLayers,
     }
 

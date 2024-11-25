@@ -156,7 +156,6 @@ half4 Fragment(FragmentData input) : SV_Target
     half3 additionalLight = CalculateAdditionalLight(input.worldPos, input.normalWS, _AdditionalLightIntensity,
                                                      _AdditionalLightShadowStrength, _AdditionalShadowColor.rgb);
 
-    // 뷰 방향 계산
     half3 viewDirWS = normalize(_WorldSpaceCameraPos - input.worldPos);
 
     half3 rimLight = CalculateRimLight(input.normalWS, viewDirWS);

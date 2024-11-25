@@ -15,7 +15,7 @@ struct DrawTriangle
 };
 
 // A buffer containing the generated mesh
-StructuredBuffer<DrawTriangle> _DrawTriangles;
+StructuredBuffer<DrawTriangle> _DrawTriangles;  // 읽는 역할
 float _OrthographicCamSizeTerrain;
 float3 _OrthographicCamPosTerrain;
 

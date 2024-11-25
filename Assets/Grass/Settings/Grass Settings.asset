@@ -24,16 +24,16 @@ MonoBehaviour:
   maxHeight: 3
   randomHeightMin: 0.01
   randomHeightMax: 0.2
-  windSpeed: 2
+  windSpeed: 1
   windStrength: 0.2
-  bladesPerVertex: 10
+  bladesPerVertex: 7
   segmentsPerBlade: 2
-  interactorStrength: 1.2
+  interactorStrength: 1.5
   topTint: {r: 1, g: 1, b: 1, a: 1}
   bottomTint: {r: 0.11690103, g: 0.23347847, b: 0.6698113, a: 1}
   drawBounds: 1
   minFadeDistance: 20
-  maxFadeDistance: 119
+  maxFadeDistance: 120
   cullingTreeDepth: 5
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}
   castShadow: 0

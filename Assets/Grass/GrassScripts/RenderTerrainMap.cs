@@ -47,14 +47,14 @@ public class RenderTerrainMap : MonoBehaviour
     {
         GetBounds();
         SetUpCam();
-        DrawToMap(TerrainDiffuse);
+        // DrawToMap(TerrainDiffuse);
         if (realTimeDiffuse)
         {
-            UpdateTex().Forget();
+            _ = UpdateTex();
         }
     }
 
-    private async UniTaskVoid UpdateTex()
+    private async UniTask UpdateTex()
     {
         await UniTask.Delay(1000, cancellationToken: destroyCancellationToken);
 
