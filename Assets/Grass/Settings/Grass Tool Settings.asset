@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   layerBlocking:
   - 0.24
-  - 0.14
+  - 1
   - 0
   - 1
   - 0.17
@@ -48,10 +48,10 @@ MonoBehaviour:
   paintBlockMask:
     serializedVersion: 2
     m_Bits: 64
-  brushSize: 0.85000026
+  brushSize: 2.2499998
   brushTransitionSpeed: 0.079
-  density: 22
+  density: 1
   normalLimit: 1
   brushHeight: 10.15
-  generateGrassCount: 353
+  generateGrassCount: 5000
   grassMouseButton: 0

@@ -25,13 +25,12 @@ namespace Grass.Editor
         private bool _paintModeActive;
         private bool _enableGrass;
         private bool _autoUpdate;
-        private bool _showSpatialGrid;
 
         private readonly string[] _mainTabBarStrings = { "Paint/Edit", "Modify", "Generate", "General Settings" };
         private readonly string[] _toolbarStrings = { "Add", "Remove", "Edit", "Reposition" };
         private readonly string[] _editOptionStrings = { "Edit Colors", "Edit Width/Height", "Both" };
         private readonly string[] _modifyOptionStrings = { "Color", "Width/Height", "Both" };
-        private readonly string[] _generateTabStrings = { "Basic", "Mesh", "Terrain Layers" };
+        private readonly string[] _generateTabStrings = { "Basic", "Terrain Layers" };
         private Vector3 _hitPos;
         private Vector3 _hitNormal;
 
@@ -139,9 +138,7 @@ namespace Grass.Editor
 
             GrassPainterHelper.DrawHorizontalLine(Color.gray);
             DrawKeyBindingsUI();
-            DrawEnableGrassToggle();
-            DrawAutoUpdateToggle();
-            DrawPaintModeToggle();
+            DrawToggles();
             GrassPainterHelper.DrawHorizontalLine(Color.gray);
             DrawMainToolbar();
             DrawControlPanels();
@@ -277,24 +274,14 @@ namespace Grass.Editor
             return grassSetting;
         }
 
-        private const float LabelWidth = 150f;
-        private const float ToggleWidth = 20f;
-
-        private void DrawEnableGrassToggle()
+        private void DrawToggles()
         {
             EditorGUILayout.BeginHorizontal();
 
-            // 왼쪽 그룹
-            EditorGUILayout.LabelField("Enable Grass", GUILayout.Width(LabelWidth));
-            _enableGrass = EditorGUILayout.Toggle(_enableGrass, GUILayout.Width(ToggleWidth));
-
+            _enableGrass = GrassPainterHelper.ToggleButton("Enable Grass", _enableGrass);
             grassCompute.enabled = _enableGrass;
-        }
 
-        private void DrawAutoUpdateToggle()
-        {
-            EditorGUILayout.LabelField("Auto Update", GUILayout.Width(LabelWidth));
-            var newAutoUpdate = EditorGUILayout.Toggle(_autoUpdate, GUILayout.Width(ToggleWidth));
+            var newAutoUpdate = GrassPainterHelper.ToggleButton("Auto Update", "Slow but always update", _autoUpdate);
             if (newAutoUpdate != _autoUpdate)
             {
                 _autoUpdate = newAutoUpdate;
@@ -308,18 +295,7 @@ namespace Grass.Editor
                 }
             }
 
-            EditorGUILayout.EndHorizontal();
-        }
-
-        private void DrawPaintModeToggle()
-        {
-            EditorGUILayout.BeginHorizontal();
-
-            EditorGUILayout.LabelField("Paint Mode", GUILayout.Width(LabelWidth));
-            _paintModeActive = EditorGUILayout.Toggle(_paintModeActive, GUILayout.Width(ToggleWidth));
-
-            _showSpatialGrid = GrassPainterHelper.ToggleWithLabel("Show Spatial Grid",
-                "Show grid cells used to optimize grass editing performance", _showSpatialGrid);
+            _paintModeActive = GrassPainterHelper.ToggleButton("Paint Mode", _paintModeActive);
 
             EditorGUILayout.EndHorizontal();
         }
@@ -1161,55 +1137,6 @@ namespace Grass.Editor
                         _hitNormal = hit.normal;
                         DrawGrassBrush(_hitPos, _hitNormal, toolSettings.BrushSize);
                     }
-
-                    if (_showSpatialGrid)
-                    {
-                        DrawGridHandles();
-                    }
-                }
-            }
-        }
-
-        private void DrawGridHandles()
-        {
-            if (_spatialGrid == null) return;
-            var cellSize = _spatialGrid.CellSize;
-
-            if (!Physics.Raycast(_mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
-                return;
-
-            var hitCell = _spatialGrid.WorldToCell(hit.point);
-            var cellRadius = Mathf.CeilToInt(toolSettings.BrushSize / cellSize);
-
-            // Debug point to verify ray hit
-            Handles.color = Color.yellow;
-            Handles.SphereHandleCap(0, hit.point, Quaternion.identity, 0.3f, EventType.Repaint);
-
-            var notActiveCellColor = new Color(1f, 0f, 0f, 0.3f);
-            var activeCellColor = new Color(0f, 1f, 0f, 1f);
-
-            // 브러시 범위 내 모든 셀 순회
-            for (var x = -cellRadius; x <= cellRadius; x++)
-            for (var y = -cellRadius; y <= cellRadius; y++)
-            for (var z = -cellRadius; z <= cellRadius; z++)
-            {
-                // 원형 브러시 범위 체크
-                if (x * x + y * y + z * z > cellRadius * cellRadius)
-                    continue;
-
-                // Y축은 히트 포인트 기준으로 고정
-                var checkCell = new Vector3Int(hitCell.x + x, hitCell.y + y, hitCell.z + z);
-                var cellWorldPos = _spatialGrid.CellToWorld(checkCell);
-                var cellCenter = cellWorldPos + Vector3.one * (cellSize * 0.5f);
-
-                // 실제 브러시 범위 내에 있는지 체크
-                if (Vector3.Distance(cellCenter, hit.point) <= toolSettings.BrushSize)
-                {
-                    var key = SpatialGrid.GetKey(checkCell.x, checkCell.y, checkCell.z);
-                    var hasGrass = _spatialGrid.HasAnyObject(key);
-
-                    Handles.color = hasGrass ? activeCellColor : notActiveCellColor;
-                    GrassPainterHelper.DrawCellWireframe(cellCenter, cellSize);
                 }
             }
         }
@@ -1452,72 +1379,82 @@ namespace Grass.Editor
             var localToWorld = sourceMesh.transform.localToWorldMatrix;
             var objectUp = sourceMesh.transform.up;
             var sharedMesh = sourceMesh.sharedMesh;
-            var oVertices = sharedMesh.vertices;
-            var oColors = sharedMesh.colors;
-            var oNormals = sharedMesh.normals;
+            var vertices = sharedMesh.vertices;
+            var normals = sharedMesh.normals;
             var triangles = sharedMesh.triangles;
+            var colors = sharedMesh.colors; // 버텍스 컬러 데이터 가져오기
+            var hasColors = colors is { Length: > 0 };
             var tempPoints = new List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>();
 
             const int batchSize = 1000;
             var totalBatches = (numPoints + batchSize - 1) / batchSize;
             var tasks =
                 new UniTask<
-                        List<(Vector3 worldPoint, Vector3 worldNormal, Vector2 widthHeight, bool needsPhysicsCheck)>>
-                    [totalBatches];
+                    List<(Vector3 worldPoint, Vector3 worldNormal, Vector2 widthHeight)>>[totalBatches];
 
             for (var batchIndex = 0; batchIndex < totalBatches; batchIndex++)
             {
                 var start = batchIndex * batchSize;
                 var end = Mathf.Min(start + batchSize, numPoints);
-                var localBatchIndex = batchIndex;
 
                 tasks[batchIndex] = UniTask.RunOnThreadPool(() =>
                 {
-                    var localResults =
-                        new List<(Vector3 worldPoint, Vector3 worldNormal, Vector2 widthHeight, bool needsPhysicsCheck
-                            )>();
-                    var localRandom = new System.Random(Environment.TickCount + localBatchIndex);
+                    var localResults = new List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>();
+                    var random = new System.Random(Environment.TickCount + batchIndex);
 
                     for (var i = start; i < end; i++)
                     {
-                        // 1. 무작위 삼각형 선택
-                        var randomTriIndex = localRandom.Next(0, triangles.Length / 3);
-                        var randomBarycentricCoord = GrassPainterHelper.GetRandomBarycentricCoordWithSeed(localRandom);
-                        var vertexIndex1 = triangles[randomTriIndex * 3];
-                        var vertexIndex2 = triangles[randomTriIndex * 3 + 1];
-                        var vertexIndex3 = triangles[randomTriIndex * 3 + 2];
+                        // 랜덤한 삼각형 선택
+                        var triIndex = random.Next(0, triangles.Length / 3) * 3;
 
-                        // 2. 삼각형 내의 랜덤한 점 계산
-                        var point = randomBarycentricCoord.x * oVertices[vertexIndex1] +
-                                    randomBarycentricCoord.y * oVertices[vertexIndex2] +
-                                    randomBarycentricCoord.z * oVertices[vertexIndex3];
+                        // 삼각형의 랜덤한 점 계산
+                        var baryCoords = GrassPainterHelper.GetRandomBarycentricCoordWithSeed(random);
+                        var localPos = baryCoords.x * vertices[triangles[triIndex]] +
+                                       baryCoords.y * vertices[triangles[triIndex + 1]] +
+                                       baryCoords.z * vertices[triangles[triIndex + 2]];
 
-                        // 3. 해당 점의 법선 벡터 계산
-                        var normal = randomBarycentricCoord.x * oNormals[vertexIndex1] +
-                                     randomBarycentricCoord.y * oNormals[vertexIndex2] +
-                                     randomBarycentricCoord.z * oNormals[vertexIndex3];
+                        // 노말 계산
+                        var normal = baryCoords.x * normals[triangles[triIndex]] +
+                                     baryCoords.y * normals[triangles[triIndex + 1]] +
+                                     baryCoords.z * normals[triangles[triIndex + 2]];
 
-                        // 4. 로컬 좌표를 월드 좌표로 변환 (미리 저장한 매트릭스 사용)
-                        var worldPoint = localToWorld.MultiplyPoint3x4(point);
+                        // 버텍스 컬러 보간 계산
+                        var shouldSkip = false;
+                        if (hasColors)
+                        {
+                            var interpolatedColor = baryCoords.x * colors[triangles[triIndex]] +
+                                                    baryCoords.y * colors[triangles[triIndex + 1]] +
+                                                    baryCoords.z * colors[triangles[triIndex + 2]];
+
+                            // VertexColorSettings에 따라 컬러 체크
+                            switch (toolSettings.VertexColorSettings)
+                            {
+                                case GrassToolSettingSo.VertexColorSetting.Red:
+                                    if (interpolatedColor.r > 0.5f) shouldSkip = true;
+                                    break;
+                                case GrassToolSettingSo.VertexColorSetting.Green:
+                                    if (interpolatedColor.g > 0.5f) shouldSkip = true;
+                                    break;
+                                case GrassToolSettingSo.VertexColorSetting.Blue:
+                                    if (interpolatedColor.b > 0.5f) shouldSkip = true;
+                                    break;
+                            }
+                        }
+
+                        if (shouldSkip)
+                            continue;
+
+                        // 월드 좌표로 변환
+                        var worldPos = localToWorld.MultiplyPoint3x4(localPos);
                         var worldNormal = localToWorld.MultiplyVector(normal).normalized;
 
-                        // 5. 경사도 체크
+                        // 경사도 체크
                         var normalDot = Mathf.Abs(Vector3.Dot(worldNormal, objectUp));
                         if (normalDot >= 1 - toolSettings.NormalLimit)
                         {
-                            // 6. 버텍스 컬러 기반 크기 계산
-                            var color = oColors is { Length: > 0 }
-                                ? GrassPainterHelper.GetVertexColor(oColors, vertexIndex1, vertexIndex2, vertexIndex3,
-                                    randomBarycentricCoord)
-                                : Color.white;
-
-                            var widthHeightFactor = CalculateWidthHeightFactor(color);
-
-                            if (widthHeightFactor < 0) continue;
-                            var widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight) *
-                                              widthHeightFactor;
-
-                            localResults.Add((worldPoint, worldNormal, widthHeight, true));
+                            // 물리 체크를 위해 결과 저장
+                            var widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight);
+                            localResults.Add((worldPos, worldNormal, widthHeight));
                         }
                     }
 
@@ -1532,9 +1469,9 @@ namespace Grass.Editor
             // 메인 스레드에서 물리 검사 수행
             foreach (var batchResult in batchResults)
             {
-                foreach (var (worldPoint, worldNormal, widthHeight, needsPhysicsCheck) in batchResult)
+                foreach (var (worldPoint, worldNormal, widthHeight) in batchResult)
                 {
-                    if (needsPhysicsCheck && !Physics.CheckSphere(worldPoint, 0.1f, toolSettings.PaintBlockMask))
+                    if (!Physics.CheckSphere(worldPoint, 0.1f, toolSettings.PaintBlockMask))
                     {
                         tempPoints.Add((worldPoint, worldNormal, widthHeight));
                     }

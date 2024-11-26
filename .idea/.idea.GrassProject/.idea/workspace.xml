@@ -21,7 +21,6 @@
       <change beforePath="$PROJECT_DIR$/Assets/Fantasy House/Scene.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Fantasy House/Scene/Fantasy House.unity" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Fantasy House/Scene/Fantasy House.unity.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/BasePainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/BasePainter.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/EnumGeneratorWindow.cs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/EnumGeneratorWindow.cs.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterHelper.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterHelper.cs" afterDir="false" />
@@ -29,20 +28,12 @@
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/ShaderVariantChecker.cs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/ShaderVariantChecker.cs.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassEventManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassEventManager.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassInteractor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassInteractor.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/RenderTerrainMap.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/RenderTerrainMap.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/TestCutting.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/TestCutting.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Material/WhiteGroundMat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Material/WhiteGroundMat.mat" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Grass Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/Grass Mat.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Grass.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/Grass.hlsl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassBlades.compute" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassBlades.compute" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassPass.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassPass.hlsl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/New Terrain.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/New Terrain.asset.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/New Terrain.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/New Terrain.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/New Terrain.asset.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/New Terrain.asset.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PoolControl.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PoolControl/IPoolObjectKey.cs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PoolControl/IPoolObjectKey.cs.meta" beforeDir="false" />
@@ -56,9 +47,11 @@
       <change beforePath="$PROJECT_DIR$/Assets/PoolControl/PoolObjectManager.cs.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PoolControl/VfxPoolObject.cs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PoolControl/VfxPoolObject.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/New Lighting Settings.lighting" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/New Lighting Settings.lighting.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene/LightingData.asset" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene/LightingData.asset.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene/Lightmap-0_comp_dir.png" beforeDir="false" />
@@ -126,8 +119,6 @@
       <change beforePath="$PROJECT_DIR$/Assets/_TerrainAutoUpgrade/layer_GroundDryLeaves01GroundDryLeaves01_N793646612c42751.terrainlayer.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/_TerrainAutoUpgrade/layer_GroundStones01GroundStones01_N2023054508611406.terrainlayer" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/_TerrainAutoUpgrade/layer_GroundStones01GroundStones01_N2023054508611406.terrainlayer.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Packages/manifest.json" beforeDir="false" afterPath="$PROJECT_DIR$/Packages/manifest.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Packages/packages-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Packages/packages-lock.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -279,6 +270,7 @@
     <setting file="file://$PROJECT_DIR$/../../GrassBlades-Quad.compute" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../GrassBlades-Tri.compute" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../Unity/UnityProject/GrassBackupFolder/2024.11.21/Assets/Grass/Shader/GrassBlades.compute" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../../Unity/UnityProject/GrassBackupFolder/2024.11.25/Assets/Grass/GrassScripts/GrassComputeScript.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="SWEA" />
@@ -346,15 +338,13 @@
       </option>
       <method v="2" />
     </configuration>
-    <configuration name="Attach to Unity Editor" type="UNITY_DEBUG_RUN_CONFIGURATION" factoryName="Unity Debug" show_console_on_std_err="false" show_console_on_std_out="false" port="50000" address="localhost" ignored-value-for-modified-check="64428">
+    <configuration name="Attach to Unity Editor" type="UNITY_DEBUG_RUN_CONFIGURATION" factoryName="Unity Debug" show_console_on_std_err="false" show_console_on_std_out="false" port="50000" address="localhost">
       <option name="allowRunningInParallel" value="false" />
       <option name="listenPortForConnections" value="false" />
-      <option name="pid" value="64428" />
+      <option name="pid" />
       <option name="projectPathOnTarget" />
       <option name="runtimes">
-        <list>
-          <MonoRuntime />
-        </list>
+        <list />
       </option>
       <option name="selectedOptions">
         <list />
@@ -502,6 +492,8 @@
       <workItem from="1732409825507" duration="10411000" />
       <workItem from="1732429996456" duration="3722000" />
       <workItem from="1732489506466" duration="43983000" />
+      <workItem from="1732577986768" duration="6467000" />
+      <workItem from="1732584978845" duration="18553000" />
     </task>
     <servers />
   </component>

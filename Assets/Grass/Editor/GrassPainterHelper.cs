@@ -38,7 +38,6 @@ namespace Grass.Editor
     public enum GenerateTab
     {
         Basic,
-        Mesh,
         TerrainLayers,
     }
 
@@ -218,6 +217,142 @@ namespace Grass.Editor
             Handles.DrawLine(points[1], points[5]);
             Handles.DrawLine(points[2], points[6]);
             Handles.DrawLine(points[3], points[7]);
+        }
+
+        public static bool ToggleButton(string label, bool value, float width = 100f)
+        {
+            // 버튼의 기본 색상 설정
+            var enabledColor = new Color(0.3f, 0.8f, 0.3f, 1f); // 초록빛 색상
+            var disabledColor = new Color(0.8f, 0.3f, 0.3f, 1f); // 빨간빛 색상
+
+            // 현재 상태에 따른 배경 텍스처 생성
+            var bgColor = value ? enabledColor : disabledColor;
+            var bgTexture = new Texture2D(1, 1);
+            bgTexture.SetPixel(0, 0, bgColor);
+            bgTexture.Apply();
+
+            var style = new GUIStyle(GUI.skin.button)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fixedHeight = 25,
+                fontSize = 12,
+                fontStyle = FontStyle.Bold,
+                normal = new GUIStyleState
+                {
+                    background = bgTexture,
+                    textColor = Color.white // 텍스트는 항상 흰색으로
+                },
+                hover = new GUIStyleState
+                {
+                    background = bgTexture,
+                    textColor = Color.white
+                }
+            };
+
+            var buttonContent = new GUIContent(label);
+
+            bool result = value;
+            if (GUILayout.Button(buttonContent, style, GUILayout.Width(width)))
+            {
+                result = !value;
+                GUI.changed = true;
+            }
+
+            // 텍스처 정리
+            if (Event.current.type == EventType.Repaint)
+            {
+                Object.DestroyImmediate(bgTexture);
+            }
+
+            return result;
+        }
+
+        // 툴팁이 있는 버전
+        public static bool ToggleButton(string label, string tooltip, bool value, float width = 100f)
+        {
+            // 버튼의 기본 색상 설정
+            var enabledColor = new Color(0.3f, 0.8f, 0.3f, 1f); // 초록빛 색상
+            var disabledColor = new Color(0.8f, 0.3f, 0.3f, 1f); // 빨간빛 색상
+
+            // 현재 상태에 따른 배경 텍스처 생성
+            var bgColor = value ? enabledColor : disabledColor;
+            var bgTexture = new Texture2D(1, 1);
+            bgTexture.SetPixel(0, 0, bgColor);
+            bgTexture.Apply();
+
+            var style = new GUIStyle(GUI.skin.button)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fixedHeight = 25,
+                fontSize = 12,
+                fontStyle = FontStyle.Bold,
+                normal = new GUIStyleState
+                {
+                    background = bgTexture,
+                    textColor = Color.white // 텍스트는 항상 흰색으로
+                },
+                hover = new GUIStyleState
+                {
+                    background = bgTexture,
+                    textColor = Color.white
+                }
+            };
+
+            var buttonContent = new GUIContent(label, tooltip);
+
+            bool result = value;
+            if (GUILayout.Button(buttonContent, style, GUILayout.Width(width)))
+            {
+                result = !value;
+                GUI.changed = true;
+            }
+
+            // 텍스처 정리
+            if (Event.current.type == EventType.Repaint)
+            {
+                Object.DestroyImmediate(bgTexture);
+            }
+
+            return result;
+        }
+
+        public static void DrawGridHandles(SpatialGrid spatialGrid, Ray mousePointRay, GrassToolSettingSo toolSettings)
+        {
+            if (spatialGrid == null) return;
+            var cellSize = spatialGrid.CellSize;
+
+            if (!Physics.Raycast(mousePointRay, out var hit, float.MaxValue, toolSettings.PaintMask.value))
+                return;
+
+            var hitCell = spatialGrid.WorldToCell(hit.point);
+            var cellRadius = Mathf.CeilToInt(toolSettings.BrushSize / cellSize / 2);
+
+            var notActiveCellColor = new Color(1f, 0f, 0f, 0.3f);
+            var activeCellColor = new Color(0f, 1f, 0f, 1f);
+
+            // 브러시 범위 내 모든 셀 순회 (Y축은 hit point의 높이로 고정)
+            for (var x = -cellRadius; x <= cellRadius; x++)
+            for (var z = -cellRadius; z <= cellRadius; z++)
+            {
+                // 원형 브러시 범위 체크 (Y축 제외하고 X,Z 평면에서만 체크)
+                if (x * x + z * z > cellRadius * cellRadius)
+                    continue;
+
+                var checkCell = new Vector3Int(hitCell.x + x, hitCell.y, hitCell.z + z);
+                var cellWorldPos = spatialGrid.CellToWorld(checkCell);
+                var cellCenter = cellWorldPos + Vector3.one * (cellSize * 0.5f);
+
+                // XZ 평면에서의 거리만 체크
+                var horizontalDistance = new Vector2(cellCenter.x - hit.point.x, cellCenter.z - hit.point.z).magnitude;
+                if (horizontalDistance <= toolSettings.BrushSize)
+                {
+                    var key = SpatialGrid.GetKey(checkCell.x, checkCell.y, checkCell.z);
+                    var hasGrass = spatialGrid.HasAnyObject(key);
+
+                    Handles.color = hasGrass ? activeCellColor : notActiveCellColor;
+                    GrassPainterHelper.DrawCellWireframe(cellCenter, cellSize);
+                }
+            }
         }
     }
 }

@@ -50,7 +50,7 @@ public class GrassSettingSO : ScriptableObject
     //Grass
     [Header("Grass")] public int bladesPerVertex = 4;
     public int MinBladesPerVertex => 1;
-    public int MaxBladesPerVertex => 10;
+    public int MaxBladesPerVertex => 30;
 
     public int segmentsPerBlade = 3;
     public int MinSegmentsPerBlade => 1;

@@ -172,6 +172,32 @@ float3x3 CreateTangentToWorld(float3 normal)
     );
 }
 
+// Modified blade positioning function
+float2 GetSimpleBladePosition(float index, float totalBlades, float2 randValues)
+{
+    // 1. 균일한 그리드 위치 계산
+    float gridSize = sqrt(totalBlades);
+    float2 gridPos;
+    gridPos.x = fmod(index, gridSize) / gridSize;
+    gridPos.y = floor(index / gridSize) / gridSize;
+    
+    // 2. 그리드 위치를 -0.5에서 0.5 범위로 변환 (중심이 0이 되도록)
+    gridPos = gridPos - 0.5;
+    
+    // 3. 랜덤 오프셋 적용 (하지만 현재 위치에서의 방향을 고려)
+    float2 randomOffset = (randValues - 0.5) * 0.8;
+    
+    // 4. 현재 위치에서 중심까지의 거리 계산
+    float distanceFromCenter = length(gridPos);
+    
+    // 5. 중심에서 멀어질수록 랜덤 오프셋을 제한
+    float maxOffset = 0.8 * (1.0 - distanceFromCenter);
+    randomOffset *= maxOffset;
+    
+    // 6. 최종 위치 계산 (그리드 위치 + 제한된 랜덤 오프셋)
+    return gridPos + randomOffset;
+}
+
 // 4. 수정된 잔디 blade 생성 함수
 DrawVertex GrassVertex(float3 positionWS, float width, float height,
                        float offset, float2 uv, float curve, float3 normal, float3x3 rotationMatrix)
@@ -253,7 +279,7 @@ void Main(uint id : SV_DispatchThreadID)
     // Do not draw if outside the fading range
     if (distanceFade < 0) return;
 
-    half numBladesPerVertex = min(GRASS_BLADES, _MaxBladesPerVertex); // Set the number of blades per vertex
+    half numBladesPerVertex = _MaxBladesPerVertex; // Set the number of blades per vertex
     half numSegmentsPerBlade = min(GRASS_SEGMENTS, _MaxSegmentsPerBlade);
     // Set the number of segments per blade
     half numTrianglesPerBlade = (numSegmentsPerBlade - 1) * 2 + 1; // Triangles per blade
@@ -286,14 +312,16 @@ void Main(uint id : SV_DispatchThreadID)
         DrawVertex drawVertices[GRASS_NUM_VERTICES_PER_BLADE];
 
         uint baseHash = Hash3Pos(sv.positionWS, j);
-        float randAngle = HashToFloat01(baseHash) * TWO_PI;
         float randVar1 = HashToFloat01(FastHash(baseHash));
-        float randVar2 = HashToFloat01(FastHash(baseHash + 1));
-        // Set rotation and radius of the blades
-        half3x3 facingRotationMatrix = AngleAxis3x3(randAngle, grassNormal);
 
-        half bladeRadius = (j + randVar1) / numBladesPerVertex;
-        half offset = (1 - bladeRadius) * _BladeRadius * randVar2;
+        // Get blade position using simple grid-based distribution
+        float2 bladePos = GetSimpleBladePosition(j, numBladesPerVertex, float2(randVar1, randVar1));
+
+        // Calculate offset based on position and random value
+        float offset = _BladeRadius * length(bladePos) * (0.5 + randVar1 * 0.5);
+
+        // Simple rotation based on random value
+        half3x3 facingRotationMatrix = AngleAxis3x3(randVar1 * TWO_PI, grassNormal);
 
         // create blade
         for (int i = 0; i < numSegmentsPerBlade; i++)
