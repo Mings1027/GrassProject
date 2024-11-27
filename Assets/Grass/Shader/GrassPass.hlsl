@@ -54,8 +54,7 @@ half3 CalculateMainLight(half3 albedo, half3 normalWS, half3 worldPos)
     return ambient + diffuse;
 }
 
-half3 CalculateAdditionalLight(float3 worldPos, float3 worldNormal, half lightIntensity,
-                               half shadowStrength, half3 additionalShadowColor)
+half3 CalculateAdditionalLight(float3 worldPos, float3 worldNormal)
 {
     uint pixelLightCount = GetAdditionalLightsCount();
     InputData inputData;
@@ -85,14 +84,14 @@ half3 CalculateAdditionalLight(float3 worldPos, float3 worldNormal, half lightIn
         #endif
         {
             // 기본 라이팅 계산
-            half3 lightColor = light.color * light.distanceAttenuation * lightIntensity;
+            half3 lightColor = light.color * light.distanceAttenuation * _AdditionalLightIntensity;
             half3 lighting = LightingLambert(lightColor, light.direction, worldNormal);
 
             // 그림자 계산
             half shadowAtten = light.shadowAttenuation;
-            half calculatedShadowStrength = shadowStrength * (1 - shadowAtten);
+            half calculatedShadowStrength = _AdditionalLightShadowStrength * (1 - shadowAtten);
 
-            half3 shadowedColor = lerp(lighting, additionalShadowColor * Luminance(lighting),
+            half3 shadowedColor = lerp(lighting, _AdditionalShadowColor.rgb * Luminance(lighting),
                                        calculatedShadowStrength);
 
             diffuseColor += shadowedColor;
@@ -152,9 +151,7 @@ half4 Fragment(FragmentData input) : SV_Target
     CalculateCutOff(input.extraBuffer.x, input.worldPos.y);
 
     half3 mainLighting = CalculateMainLight(baseColor.rgb, input.normalWS, input.worldPos);
-
-    half3 additionalLight = CalculateAdditionalLight(input.worldPos, input.normalWS, _AdditionalLightIntensity,
-                                                     _AdditionalLightShadowStrength, _AdditionalShadowColor.rgb);
+    half3 additionalLight = CalculateAdditionalLight(input.worldPos, input.normalWS);
 
     half3 viewDirWS = normalize(_WorldSpaceCameraPos - input.worldPos);
 

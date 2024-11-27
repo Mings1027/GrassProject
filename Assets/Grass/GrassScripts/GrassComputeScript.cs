@@ -18,8 +18,7 @@ public class GrassComputeScript : MonoBehaviour
     private const int MaxBufferSize = 2500000;
 
     //
-    [SerializeField] private GrassDataSO grassDataSo;
-    // [SerializeField, HideInInspector] private List<GrassData> grassData = new(); // base data lists
+    [SerializeField] private GrassDataSo grassDataSo;
     [SerializeField] private Material instantiatedMaterial;
     [SerializeField] private GrassSettingSO grassSetting;
 
@@ -68,6 +67,11 @@ public class GrassComputeScript : MonoBehaviour
     {
         get => grassSetting;
         set => grassSetting = value;
+    }
+    public GrassDataSo GrassData
+    {
+        get => grassDataSo;
+        set => grassDataSo = value;
     }
     private SceneView _view;
 #endif
@@ -258,7 +262,7 @@ public class GrassComputeScript : MonoBehaviour
 
         // Don't do anything if resources are not found,
         // or no vertex is put on the mesh.
-        if (grassDataSo.grassData.Count == 0) return;
+        if (grassDataSo == null || grassDataSo.grassData.Count == 0) return;
 
         if (!grassSetting.shaderToUse || !grassSetting.materialToUse)
         {

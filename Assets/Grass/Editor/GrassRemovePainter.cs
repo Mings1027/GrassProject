@@ -49,9 +49,8 @@ namespace Grass.Editor
         {
             var currentGrassCount = grassList.Count;
 
-            for (var i = 0; i < sharedIndices.Count; i++)
+            foreach (var index in sharedIndices)
             {
-                var index = sharedIndices[i];
                 if (index >= 0 && index < currentGrassCount)
                 {
                     var grassPosition = grassList[index].position;
@@ -67,11 +66,30 @@ namespace Grass.Editor
         {
             _grassIndicesToDelete.Sort((a, b) => b.CompareTo(a));
             var lastIndex = grassList.Count - 1;
+            
+            // 삭제될 위치들만 spatialGrid에서 제거
+            foreach (var index in _grassIndicesToDelete)
+            {
+                if (index >= 0 && index < grassList.Count)
+                {
+                    spatialGrid.RemoveObject(grassList[index].position, index);
+                }
+            }
+            
             foreach (var index in _grassIndicesToDelete)
             {
                 if (index < lastIndex && index >= 0)
                 {
-                    SwapLastIndexToDeleteIndex(index, lastIndex, grassList);
+                    var lastGrass = grassList[lastIndex];
+
+                    // 마지막 요소의 이전 위치에서 제거
+                    spatialGrid.RemoveObject(lastGrass.position, lastIndex);
+            
+                    // 스왑
+                    grassList[index] = lastGrass;
+            
+                    // 새 위치에 추가
+                    spatialGrid.AddObject(lastGrass.position, index);
 
                     lastIndex--;
                 }
@@ -85,20 +103,7 @@ namespace Grass.Editor
                 grassCompute.ResetFaster();
             }
         }
-
-        private void SwapLastIndexToDeleteIndex(int deleteIndex, int lastIndex, List<GrassData> grassList)
-        {
-            var lastGrass = grassList[lastIndex];
-            var currentGrass = grassList[deleteIndex];
-
-            spatialGrid.RemoveObject(currentGrass.position, deleteIndex);
-            spatialGrid.RemoveObject(lastGrass.position, lastIndex);
-
-            grassList[deleteIndex] = lastGrass;
-
-            spatialGrid.AddObject(lastGrass.position, deleteIndex);
-        }
-
+        
         public override void Clear()
         {
             base.Clear();

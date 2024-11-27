@@ -23,17 +23,16 @@
       <change beforePath="$PROJECT_DIR$/Assets/Fantasy House/Scene/Fantasy House.unity.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/EnumGeneratorWindow.cs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/EnumGeneratorWindow.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterHelper.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterHelper.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassEditPainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassEditPainter.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassRemovePainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassRemovePainter.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/ShaderVariantChecker.cs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/ShaderVariantChecker.cs.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassBlades.compute" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassBlades.compute" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassPass.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassPass.hlsl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/New Terrain.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/New Terrain.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/New Terrain.asset.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/New Terrain.asset.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PoolControl.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PoolControl/IPoolObjectKey.cs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PoolControl/IPoolObjectKey.cs.meta" beforeDir="false" />
@@ -96,8 +95,8 @@
       <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene/Lightmap-9_comp_light.exr.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene/ReflectionProbe-0.exr" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene/ReflectionProbe-0.exr.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/TestScene.unity" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/TestScene.unity.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/TestScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/TestScene.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/TestScene.unity.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/TestScene.unity.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scripts/ObstacleCheck.cs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scripts/ObstacleCheck.cs.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scripts/PlayerController.cs" beforeDir="false" />
@@ -177,6 +176,7 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/45/88ded070/Transform.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/4f/12c570d1/ComputeShader.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/5f/f7ca4150/Mathf.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/64/950a4c3d/Matrix4x4.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/67/61d536b0/LayerMask.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/69/ea19c32a/RenderingLayerMask.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/73/5830c0a8/RenderParams.cs" root0="FORCE_HIGHLIGHTING" />
@@ -230,6 +230,7 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/a8/6a6fa08a/Single.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/bc/559ad89a/Convert.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/c5/3191266e/Index.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/e0/30c22979/Random.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/ed/eb774271/List`1.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/e76ba1f9dd9946efbeaff28ca747bde931600/19/a8236931/Event.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/e76ba1f9dd9946efbeaff28ca747bde931600/29/766e3f77/GUIContent.cs" root0="SKIP_HIGHLIGHTING" />
@@ -494,6 +495,8 @@
       <workItem from="1732489506466" duration="43983000" />
       <workItem from="1732577986768" duration="6467000" />
       <workItem from="1732584978845" duration="18553000" />
+      <workItem from="1732625504374" duration="3457000" />
+      <workItem from="1732661585124" duration="26927000" />
     </task>
     <servers />
   </component>

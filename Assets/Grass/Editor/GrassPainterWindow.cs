@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Grass.GrassScripts;
@@ -34,8 +35,6 @@ namespace Grass.Editor
         private Vector3 _hitPos;
         private Vector3 _hitNormal;
 
-        [SerializeField] private GrassToolSettingSo toolSettings;
-
         // options
         private GrassEditorTab _grassEditorTab;
         private BrushOption _selectedToolOption;
@@ -47,6 +46,7 @@ namespace Grass.Editor
 
         private Vector3 _mousePos;
 
+        [SerializeField] private GrassToolSettingSo toolSettings;
         [SerializeField] private GrassComputeScript grassCompute;
 
         private Vector3 _cachedPos;
@@ -103,38 +103,53 @@ namespace Grass.Editor
                 return;
             }
 
-            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
-
-            // 기본 필수 오브젝트 필드 표시
             toolSettings = (GrassToolSettingSo)EditorGUILayout.ObjectField(
                 "Grass Tool Settings", toolSettings, typeof(GrassToolSettingSo), false);
 
             grassCompute = (GrassComputeScript)EditorGUILayout.ObjectField(
                 "Grass Compute Object", grassCompute, typeof(GrassComputeScript), true);
 
-            // grassObject가 없으면 여기서 종료
             if (grassCompute == null)
             {
-                var obj = FindAnyObjectByType<GrassComputeScript>();
-                if (obj == null)
-                {
-                    if (GUILayout.Button("Create Grass Compute Object", GUILayout.Height(30)))
-                    {
-                        CreateNewGrassObject();
-                    }
-
-                    EditorGUILayout.HelpBox($"Please Create Grass Compute Object.", MessageType.Warning);
-                }
-                else
-                {
-                    EditorGUILayout.HelpBox($"Please assign a GameObject name '{obj.name}'.", MessageType.Warning);
-                }
-
-                EditorGUILayout.EndScrollView();
+                HandleMissingGrassCompute();
                 return;
             }
 
-            DrawBasicControls();
+            DrawGrassDataField();
+
+            if (grassCompute.GrassData == null)
+            {
+                HandleMissingGrassData();
+                return;
+            }
+
+            if (grassCompute.GrassSetting == null)
+            {
+                grassCompute.GrassSetting = CreateOrGetGrassSetting();
+            }
+
+            grassCompute.GrassSetting = (GrassSettingSO)EditorGUILayout.ObjectField(
+                "Grass Settings Object",
+                grassCompute.GrassSetting,
+                typeof(GrassSettingSO),
+                false
+            );
+
+            // 5. Grass Material
+            grassCompute.GrassSetting.materialToUse = (Material)EditorGUILayout.ObjectField(
+                "Grass Material",
+                grassCompute.GrassSetting.materialToUse,
+                typeof(Material),
+                false
+            );
+
+            // 6. Manual Update Button
+            if (GUILayout.Button("Manual Update", GUILayout.Height(45)))
+            {
+                Init();
+            }
+
+            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
 
             GrassPainterHelper.DrawHorizontalLine(Color.gray);
             DrawKeyBindingsUI();
@@ -168,7 +183,7 @@ namespace Grass.Editor
         {
             Debug.Log("OnDisable");
             RemoveDelegates();
-            _spatialGrid.Clear();
+            _spatialGrid?.Clear();
 
             EditorApplication.update -= grassCompute.Reset;
         }
@@ -211,37 +226,80 @@ namespace Grass.Editor
             Repaint();
         }
 
-        private void DrawBasicControls()
+        private void HandleMissingGrassCompute()
         {
-            // SpatialGrid 초기화 검사
-            if (_spatialGrid == null)
+            var obj = FindAnyObjectByType<GrassComputeScript>();
+            if (obj == null)
             {
-                InitSpatialGrid();
-            }
+                if (GUILayout.Button("Create Grass Compute Object", GUILayout.Height(30)))
+                {
+                    CreateNewGrassObject();
+                }
 
-            if (GUILayout.Button("Manual Update", GUILayout.Height(45)))
+                EditorGUILayout.HelpBox($"Please Create Grass Compute Object.", MessageType.Warning);
+            }
+            else
             {
-                Init();
+                EditorGUILayout.HelpBox($"Please assign a GameObject name '{obj.name}'.", MessageType.Warning);
             }
+        }
 
-            if (grassCompute.GrassSetting == null)
-            {
-                grassCompute.GrassSetting = CreateOrGetGrassSetting();
-            }
-
-            grassCompute.GrassSetting = (GrassSettingSO)EditorGUILayout.ObjectField(
-                "Grass Settings Object",
-                grassCompute.GrassSetting,
-                typeof(GrassSettingSO),
+        private void DrawGrassDataField()
+        {
+            EditorGUI.BeginChangeCheck();
+            var newGrassData = (GrassDataSo)EditorGUILayout.ObjectField(
+                "Grass Data",
+                grassCompute.GrassData,
+                typeof(GrassDataSo),
                 false
             );
+            if (EditorGUI.EndChangeCheck())
+            {
+                grassCompute.GrassData = newGrassData;
+                EditorUtility.SetDirty(grassCompute);
+            }
+        }
 
-            grassCompute.GrassSetting.materialToUse = (Material)EditorGUILayout.ObjectField(
-                "Grass Material",
-                grassCompute.GrassSetting.materialToUse,
-                typeof(Material),
-                false
-            );
+        private void HandleMissingGrassData()
+        {
+            var dataFolderPath = "Assets/Grass/GrassData";
+
+            if (AssetDatabase.IsValidFolder(dataFolderPath))
+            {
+                var existingGrassData = AssetDatabase.FindAssets("t:GrassDataSO", new[] { dataFolderPath });
+                if (existingGrassData.Length > 0)
+                {
+                    EditorGUILayout.HelpBox(
+                        $"GrassData found in '{dataFolderPath}'. You can assign it using the button below or manually assign your preferred GrassData above.",
+                        MessageType.Info);
+
+                    if (GUILayout.Button("Assign Existing GrassData", GUILayout.Height(30)))
+                    {
+                        var path = AssetDatabase.GUIDToAssetPath(existingGrassData[0]);
+                        grassCompute.GrassData = AssetDatabase.LoadAssetAtPath<GrassDataSo>(path);
+                        EditorUtility.SetDirty(grassCompute);
+                    }
+                }
+                else
+                {
+                    ShowCreateGrassDataOption();
+                }
+            }
+            else
+            {
+                ShowCreateGrassDataOption();
+            }
+        }
+
+        private void ShowCreateGrassDataOption()
+        {
+            EditorGUILayout.HelpBox("GrassData not found. Would you like to create a new one?",
+                MessageType.Warning);
+
+            if (GUILayout.Button("Create New GrassData", GUILayout.Height(30)))
+            {
+                CreateNewGrassData();
+            }
         }
 
         private GrassSettingSO CreateOrGetGrassSetting()
@@ -281,6 +339,8 @@ namespace Grass.Editor
             _enableGrass = GrassPainterHelper.ToggleButton("Enable Grass", _enableGrass);
             grassCompute.enabled = _enableGrass;
 
+            _paintModeActive = GrassPainterHelper.ToggleButton("Paint Mode", _paintModeActive);
+
             var newAutoUpdate = GrassPainterHelper.ToggleButton("Auto Update", "Slow but always update", _autoUpdate);
             if (newAutoUpdate != _autoUpdate)
             {
@@ -294,8 +354,6 @@ namespace Grass.Editor
                     EditorApplication.update -= grassCompute.Reset;
                 }
             }
-
-            _paintModeActive = GrassPainterHelper.ToggleButton("Paint Mode", _paintModeActive);
 
             EditorGUILayout.EndHorizontal();
         }
@@ -692,9 +750,6 @@ namespace Grass.Editor
                     DrawVertexSettings();
                     DrawGrassAppearanceSettings();
                     break;
-                // case GenerateTab.Mesh:
-                //     DrawMeshSettings();
-                //     break;
                 case GenerateTab.TerrainLayers:
                     DrawTerrainLayerSettings();
                     break;
@@ -766,39 +821,6 @@ namespace Grass.Editor
             toolSettings.RangeG = EditorGUILayout.Slider("Green", toolSettings.RangeG, 0f, 1f);
             toolSettings.RangeB = EditorGUILayout.Slider("Blue", toolSettings.RangeB, 0f, 1f);
         }
-
-        // private bool _isColorPickerActive;
-        // private Color _pickedColor;
-
-        // private void DrawMeshSettings()
-        // {
-        //     EditorGUILayout.BeginHorizontal();
-        //     _isColorPickerActive = EditorGUILayout.Toggle("Enable Color Picker", _isColorPickerActive);
-        //     EditorGUILayout.LabelField($"R: {_pickedColor.r:F2} G: {_pickedColor.g:F2} B: {_pickedColor.b:F2}");
-        //     EditorGUILayout.EndHorizontal();
-        //
-        //     if (_isColorPickerActive)
-        //     {
-        //         HandleContinuousColorPicking();
-        //     }
-        // }
-        //
-        // private void HandleContinuousColorPicking()
-        // {
-        //     if (Physics.Raycast(_mousePointRay, out RaycastHit hit))
-        //     {
-        //         if (hit.collider.TryGetComponent<MeshRenderer>(out var meshRenderer))
-        //         {
-        //             _pickedColor = meshRenderer.sharedMaterial.color;
-        //             Repaint();
-        //         }
-        //         else if (hit.collider.TryGetComponent<SpriteRenderer>(out var spriteRenderer))
-        //         {
-        //             _pickedColor = spriteRenderer.color;
-        //             Repaint();
-        //         }
-        //     }
-        // }
 
         private bool _layerGuideExpanded;
 
@@ -1115,13 +1137,43 @@ namespace Grass.Editor
                 name = "Grass Compute System"
             };
             grassCompute = grassObject.AddComponent<GrassComputeScript>();
+            grassCompute.enabled = false;
             grassCompute.GrassSetting = CreateOrGetGrassSetting();
-
-            InitSpatialGrid();
 
             EditorUtility.SetDirty(grassObject);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+        }
+
+        private void CreateNewGrassData()
+        {
+            const string basePath = "Assets/Grass";
+            const string grassDataPath = basePath + "/GrassData";
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var newAssetPath = $"{grassDataPath}/GrassData_{timestamp}.asset";
+
+            if (!AssetDatabase.IsValidFolder(basePath))
+            {
+                AssetDatabase.CreateFolder("Assets", "Grass");
+            }
+
+            if (!AssetDatabase.IsValidFolder(grassDataPath))
+            {
+                AssetDatabase.CreateFolder(basePath, "GrassData");
+            }
+
+            var grassData = CreateInstance<GrassDataSo>();
+            AssetDatabase.CreateAsset(grassData, newAssetPath);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            if (grassCompute != null)
+            {
+                grassCompute.GrassData = grassData;
+                EditorUtility.SetDirty(grassCompute);
+            }
+
+            Debug.Log($"Created new GrassData asset at: {newAssetPath}");
         }
 
         private void OnSceneGUI(SceneView sceneView)
@@ -1301,20 +1353,9 @@ namespace Grass.Editor
         private async UniTask GenerateGrass(GameObject[] selections)
         {
             var newGrassData = new List<GrassData>();
-            var allTempPoints = new List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>();
-            var totalRequestedPoints = 0;
+            var totalRequestedPoints = selections.Sum(s => toolSettings.GenerateGrassCount);
+            var processedPoints = 0;
 
-            // 먼저 총 요청된 포인트 수 계산
-            foreach (var selection in selections)
-            {
-                if (((1 << selection.layer) & toolSettings.PaintMask.value) != 0)
-                {
-                    totalRequestedPoints += toolSettings.GenerateGrassCount;
-                }
-            }
-
-            var currentPoint = 0;
-            // 모든 오브젝트에 대해 생성 가능한 잔디 위치를 계산
             foreach (var selection in selections)
             {
                 if (((1 << selection.layer) & toolSettings.PaintMask.value) == 0)
@@ -1324,39 +1365,36 @@ namespace Grass.Editor
                 }
 
                 var numPoints = toolSettings.GenerateGrassCount;
+                List<(Vector3 position, Vector3 normal, Vector2 widthHeight)> points;
 
-                if (selection.TryGetComponent(out MeshFilter mesh))
+                if (selection.TryGetComponent<MeshFilter>(out var mesh))
                 {
-                    var tempPoints =
-                        await CalculateValidPointsForMesh(mesh, numPoints, currentPoint, totalRequestedPoints);
-                    allTempPoints.AddRange(tempPoints);
-                    currentPoint += numPoints;
+                    points = CalculateValidPointsForMesh(mesh, numPoints);
                 }
-                else if (selection.TryGetComponent(out Terrain terrain))
+                else if (selection.TryGetComponent<Terrain>(out var terrain))
                 {
-                    var tempPoints =
-                        await CalculateValidPointsForTerrain(terrain, numPoints, currentPoint, totalRequestedPoints);
-                    allTempPoints.AddRange(tempPoints);
-                    currentPoint += numPoints;
+                    points = CalculateValidPointsForTerrain(terrain, numPoints);
                 }
-            }
-
-            // 실제 잔디 생성
-            for (var i = 0; i < allTempPoints.Count; i++)
-            {
-                await UpdateProgress(i + 1, allTempPoints.Count,
-                    $"Generating grass: ({i + 1:N0}/{allTempPoints.Count:N0})");
-
-                var (worldPoint, worldNormal, widthHeight) = allTempPoints[i];
-                var grassData = new GrassData
+                else
                 {
-                    position = worldPoint,
-                    normal = worldNormal,
-                    color = GetRandomColor(),
-                    widthHeight = widthHeight
-                };
+                    continue;
+                }
 
-                newGrassData.Add(grassData);
+                foreach (var (worldPoint, worldNormal, widthHeight) in points)
+                {
+                    await UpdateProgress(processedPoints++, totalRequestedPoints,
+                        $"Generating grass: ({processedPoints:N0}/{totalRequestedPoints:N0})", 0.1f);
+
+                    var grassData = new GrassData
+                    {
+                        position = worldPoint,
+                        normal = worldNormal,
+                        color = GetRandomColor(),
+                        widthHeight = widthHeight
+                    };
+
+                    newGrassData.Add(grassData);
+                }
             }
 
             var grassDataList = grassCompute.GrassDataList;
@@ -1372,8 +1410,8 @@ namespace Grass.Editor
                 $"'{selection.name}' layer mismatch. Expected: '{expectedLayers}', Current: {LayerMask.LayerToName(selection.layer)}");
         }
 
-        private async UniTask<List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>>
-            CalculateValidPointsForMesh(MeshFilter sourceMesh, int numPoints, int startPoint, int totalPoints)
+        private List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>
+            CalculateValidPointsForMesh(MeshFilter sourceMesh, int numPoints)
         {
             // 메인 스레드에서 필요한 데이터 미리 준비
             var localToWorld = sourceMesh.transform.localToWorldMatrix;
@@ -1386,94 +1424,61 @@ namespace Grass.Editor
             var hasColors = colors is { Length: > 0 };
             var tempPoints = new List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>();
 
-            const int batchSize = 1000;
-            var totalBatches = (numPoints + batchSize - 1) / batchSize;
-            var tasks =
-                new UniTask<
-                    List<(Vector3 worldPoint, Vector3 worldNormal, Vector2 widthHeight)>>[totalBatches];
-
-            for (var batchIndex = 0; batchIndex < totalBatches; batchIndex++)
+            for (var i = 0; i < numPoints; i++)
             {
-                var start = batchIndex * batchSize;
-                var end = Mathf.Min(start + batchSize, numPoints);
+                // await UpdateProgress(startPoint + i + 1, totalPoints, "Calculating grass positions");
 
-                tasks[batchIndex] = UniTask.RunOnThreadPool(() =>
+                // 랜덤한 삼각형 선택
+                var triIndex = Random.Range(0, triangles.Length / 3) * 3;
+
+                // 삼각형의 랜덤한 점 계산
+                var baryCoords = GrassPainterHelper.GetRandomBarycentricCoord();
+                var localPos = baryCoords.x * vertices[triangles[triIndex]] +
+                               baryCoords.y * vertices[triangles[triIndex + 1]] +
+                               baryCoords.z * vertices[triangles[triIndex + 2]];
+
+                // 노말 계산
+                var normal = baryCoords.x * normals[triangles[triIndex]] +
+                             baryCoords.y * normals[triangles[triIndex + 1]] +
+                             baryCoords.z * normals[triangles[triIndex + 2]];
+
+                // 버텍스 컬러 보간 계산
+                var shouldSkip = false;
+                if (hasColors)
                 {
-                    var localResults = new List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>();
-                    var random = new System.Random(Environment.TickCount + batchIndex);
+                    var interpolatedColor = baryCoords.x * colors[triangles[triIndex]] +
+                                            baryCoords.y * colors[triangles[triIndex + 1]] +
+                                            baryCoords.z * colors[triangles[triIndex + 2]];
 
-                    for (var i = start; i < end; i++)
+                    switch (toolSettings.VertexColorSettings)
                     {
-                        // 랜덤한 삼각형 선택
-                        var triIndex = random.Next(0, triangles.Length / 3) * 3;
-
-                        // 삼각형의 랜덤한 점 계산
-                        var baryCoords = GrassPainterHelper.GetRandomBarycentricCoordWithSeed(random);
-                        var localPos = baryCoords.x * vertices[triangles[triIndex]] +
-                                       baryCoords.y * vertices[triangles[triIndex + 1]] +
-                                       baryCoords.z * vertices[triangles[triIndex + 2]];
-
-                        // 노말 계산
-                        var normal = baryCoords.x * normals[triangles[triIndex]] +
-                                     baryCoords.y * normals[triangles[triIndex + 1]] +
-                                     baryCoords.z * normals[triangles[triIndex + 2]];
-
-                        // 버텍스 컬러 보간 계산
-                        var shouldSkip = false;
-                        if (hasColors)
-                        {
-                            var interpolatedColor = baryCoords.x * colors[triangles[triIndex]] +
-                                                    baryCoords.y * colors[triangles[triIndex + 1]] +
-                                                    baryCoords.z * colors[triangles[triIndex + 2]];
-
-                            // VertexColorSettings에 따라 컬러 체크
-                            switch (toolSettings.VertexColorSettings)
-                            {
-                                case GrassToolSettingSo.VertexColorSetting.Red:
-                                    if (interpolatedColor.r > 0.5f) shouldSkip = true;
-                                    break;
-                                case GrassToolSettingSo.VertexColorSetting.Green:
-                                    if (interpolatedColor.g > 0.5f) shouldSkip = true;
-                                    break;
-                                case GrassToolSettingSo.VertexColorSetting.Blue:
-                                    if (interpolatedColor.b > 0.5f) shouldSkip = true;
-                                    break;
-                            }
-                        }
-
-                        if (shouldSkip)
-                            continue;
-
-                        // 월드 좌표로 변환
-                        var worldPos = localToWorld.MultiplyPoint3x4(localPos);
-                        var worldNormal = localToWorld.MultiplyVector(normal).normalized;
-
-                        // 경사도 체크
-                        var normalDot = Mathf.Abs(Vector3.Dot(worldNormal, objectUp));
-                        if (normalDot >= 1 - toolSettings.NormalLimit)
-                        {
-                            // 물리 체크를 위해 결과 저장
-                            var widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight);
-                            localResults.Add((worldPos, worldNormal, widthHeight));
-                        }
+                        case GrassToolSettingSo.VertexColorSetting.Red:
+                            if (interpolatedColor.r > 0.5f) shouldSkip = true;
+                            break;
+                        case GrassToolSettingSo.VertexColorSetting.Green:
+                            if (interpolatedColor.g > 0.5f) shouldSkip = true;
+                            break;
+                        case GrassToolSettingSo.VertexColorSetting.Blue:
+                            if (interpolatedColor.b > 0.5f) shouldSkip = true;
+                            break;
                     }
+                }
 
-                    return localResults;
-                });
+                if (shouldSkip)
+                    continue;
 
-                await UpdateProgress(startPoint + start, totalPoints, "Calculating grass positions");
-            }
+                // 월드 좌표로 변환
+                var worldPos = localToWorld.MultiplyPoint3x4(localPos);
+                var worldNormal = localToWorld.MultiplyVector(normal).normalized;
 
-            var batchResults = await UniTask.WhenAll(tasks);
-
-            // 메인 스레드에서 물리 검사 수행
-            foreach (var batchResult in batchResults)
-            {
-                foreach (var (worldPoint, worldNormal, widthHeight) in batchResult)
+                // 경사도 체크
+                var normalDot = Mathf.Abs(Vector3.Dot(worldNormal, objectUp));
+                if (normalDot >= 1 - toolSettings.NormalLimit)
                 {
-                    if (!Physics.CheckSphere(worldPoint, 0.1f, toolSettings.PaintBlockMask))
+                    if (!Physics.CheckSphere(worldPos, 0.1f, toolSettings.PaintBlockMask))
                     {
-                        tempPoints.Add((worldPoint, worldNormal, widthHeight));
+                        var widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight);
+                        tempPoints.Add((worldPos, worldNormal, widthHeight));
                     }
                 }
             }
@@ -1481,8 +1486,8 @@ namespace Grass.Editor
             return tempPoints;
         }
 
-        private async UniTask<List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>>
-            CalculateValidPointsForTerrain(Terrain terrain, int numPoints, int startPoint, int totalPoints)
+        private List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>
+            CalculateValidPointsForTerrain(Terrain terrain, int numPoints)
         {
             var terrainData = terrain.terrainData;
             var terrainSize = terrainData.size;
@@ -1490,8 +1495,7 @@ namespace Grass.Editor
 
             for (var i = 0; i < numPoints; i++)
             {
-                await UpdateProgress(startPoint + i + 1, totalPoints,
-                    "Calculating grass positions");
+                // await UpdateProgress(startPoint + i + 1, totalPoints, "Calculating grass positions");
 
                 var randomPoint = new Vector3(
                     Random.Range(0, terrainSize.x),
@@ -1523,10 +1527,8 @@ namespace Grass.Editor
                     var heightFade = 0f;
                     var shouldSkip = true;
 
-                    // 각 레이어별 계산
                     for (var j = 0; j < splatmapData.GetLength(2); j++)
                     {
-                        // Skip if layer has max density or zero height
                         if (toolSettings.LayerBlocking[j] <= 0f || toolSettings.HeightFading[j] <= 0f)
                             continue;
 
@@ -1537,14 +1539,12 @@ namespace Grass.Editor
                         heightFade += layerStrength * toolSettings.HeightFading[j];
                     }
 
-                    // Skip this point if all applicable layers are disabled
                     if (shouldSkip)
                         continue;
 
                     var averageDensity = totalWeight > 0 ? totalDensity / totalWeight : 0;
                     heightFade = totalWeight > 0 ? heightFade / totalWeight : 1f;
 
-                    // 밀도에 따른 잔디 생성 여부 결정
                     if (Random.value <= averageDensity)
                     {
                         var widthHeight = new Vector2(
@@ -1577,12 +1577,13 @@ namespace Grass.Editor
             }
         }
 
-        private async UniTask UpdateProgress(int currentPoint, int totalPoints, string progressMessage)
+        private async UniTask UpdateProgress(int currentPoint, int totalPoints, string progressMessage,
+                                             float updateFrequencyPercent = 1) // 기본값 1%
         {
             _objectProgress.progress = (float)currentPoint / totalPoints;
             _objectProgress.progressMessage = $"{progressMessage} {currentPoint / (float)totalPoints * 100:F1}%";
 
-            if (currentPoint % Math.Max(1, totalPoints / 100) == 0)
+            if (currentPoint % Math.Max(1, totalPoints * updateFrequencyPercent / 100) == 0)
             {
                 await UniTask.Yield(_cts.Token);
                 Repaint();
@@ -1647,7 +1648,7 @@ namespace Grass.Editor
         private async UniTask RemoveGrassFromObjects(GameObject[] selectedObjects)
         {
             var positionsToRemove = await GetPositionsToRemove(selectedObjects);
-            await RemoveGrassAtPositions(positionsToRemove);
+            RemoveGrassAtPositions(positionsToRemove);
         }
 
         private async UniTask<HashSet<Vector3>> GetPositionsToRemove(GameObject[] selectedObjects)
@@ -1672,19 +1673,17 @@ namespace Grass.Editor
                 await _spatialGrid.GetObjectsInRadiusAsync(center, radius, tempIndices);
                 var grassData = grassCompute.GrassDataList;
 
-                if (obj.TryGetComponent(out MeshFilter meshFilter))
+                foreach (var index in tempIndices)
                 {
-                    await HandleMeshFilter(meshFilter, tempIndices, grassData, positionsToRemove);
-                }
-                else if (obj.TryGetComponent(out Terrain terrain))
-                {
-                    HandleTerrain(terrain, tempIndices, grassData, positionsToRemove);
+                    if (index < grassData.Count)
+                    {
+                        positionsToRemove.Add(grassData[index].position);
+                    }
                 }
 
                 tempIndices.Clear();
 
-                await UpdateProgress(currentObjectIndex, totalObjects,
-                    "Checking object");
+                await UpdateProgress(currentObjectIndex, totalObjects, "Scanning grass positions");
 
                 currentObjectIndex++;
             }
@@ -1692,109 +1691,7 @@ namespace Grass.Editor
             return positionsToRemove;
         }
 
-        private static async UniTask HandleMeshFilter(MeshFilter meshFilter, List<int> indices,
-                                                      List<GrassData> grassData, HashSet<Vector3> positionsToRemove)
-        {
-            var localBounds = meshFilter.sharedMesh.bounds;
-            const int batchSize = 10000;
-            var totalBatches = (indices.Count + batchSize - 1) / batchSize;
-            var batchResults = new List<Vector3>[totalBatches];
-
-            // 메인 스레드에서 필요한 데이터만 미리 캐시
-            var worldToLocalMatrix = meshFilter.transform.worldToLocalMatrix;
-
-            // 변환 작업을 스레드풀에서 수행
-            var localPositions = await UniTask.RunOnThreadPool(() =>
-            {
-                var positions = new Vector3[indices.Count];
-
-                for (var i = 0; i < indices.Count; i++)
-                {
-                    var index = indices[i];
-                    if (index < grassData.Count)
-                    {
-                        positions[i] = worldToLocalMatrix.MultiplyPoint3x4(grassData[index].position);
-                    }
-                }
-
-                return positions;
-            });
-
-            // 각 배치를 병렬로 처리
-            var tasks = new UniTask[totalBatches];
-            for (var batchIndex = 0; batchIndex < totalBatches; batchIndex++)
-            {
-                var start = batchIndex * batchSize;
-                var end = Mathf.Min(start + batchSize, indices.Count);
-                var localBatchIndex = batchIndex;
-
-                tasks[batchIndex] = UniTask.RunOnThreadPool(() =>
-                {
-                    var localPositionsToRemove = new List<Vector3>();
-                    for (var i = start; i < end; i++)
-                    {
-                        var index = indices[i];
-                        if (index >= grassData.Count) continue;
-
-                        var localPosition = localPositions[i];
-                        var grassPosition = grassData[index].position;
-
-                        const float epsilon = 0.001f;
-                        if (localPosition.x >= localBounds.min.x - epsilon &&
-                            localPosition.x <= localBounds.max.x + epsilon &&
-                            localPosition.y >= localBounds.min.y - epsilon &&
-                            localPosition.y <= localBounds.max.y + epsilon &&
-                            localPosition.z >= localBounds.min.z - epsilon &&
-                            localPosition.z <= localBounds.max.z + epsilon)
-                        {
-                            localPositionsToRemove.Add(grassPosition);
-                        }
-                    }
-
-                    // 결과를 배열에 저장
-                    batchResults[localBatchIndex] = localPositionsToRemove;
-                    return UniTask.CompletedTask;
-                });
-            }
-
-            // 모든 배치가 완료될 때까지 대기
-            await UniTask.WhenAll(tasks);
-
-            // 메인 스레드에서 한 번에 결과 합치기
-            foreach (var batchResult in batchResults)
-            {
-                if (batchResult == null) continue;
-                foreach (var pos in batchResult)
-                {
-                    positionsToRemove.Add(pos);
-                }
-            }
-        }
-
-        private static void HandleTerrain(Terrain terrain, List<int> indices, List<GrassData> grassData,
-                                          HashSet<Vector3> positionsToRemove)
-        {
-            var terrainPos = terrain.transform.position;
-            var terrainSize = terrain.terrainData.size;
-            foreach (var index in indices)
-            {
-                if (index >= grassData.Count) continue;
-
-                var grassPosition = grassData[index].position;
-                const float epsilon = 0.001f;
-                if (grassPosition.x >= terrainPos.x - epsilon &&
-                    grassPosition.x <= terrainPos.x + terrainSize.x + epsilon &&
-                    grassPosition.y >= terrainPos.y - epsilon &&
-                    grassPosition.y <= terrainPos.y + terrainSize.y + epsilon &&
-                    grassPosition.z >= terrainPos.z - epsilon &&
-                    grassPosition.z <= terrainPos.z + terrainSize.z + epsilon)
-                {
-                    positionsToRemove.Add(grassPosition);
-                }
-            }
-        }
-
-        private async UniTask RemoveGrassAtPositions(HashSet<Vector3> positionsToRemove)
+        private void RemoveGrassAtPositions(HashSet<Vector3> positionsToRemove)
         {
             if (positionsToRemove.Count == 0)
             {
@@ -1802,57 +1699,45 @@ namespace Grass.Editor
                 return;
             }
 
-            const int batchSize = 10000;
             var grassData = grassCompute.GrassDataList;
-            var totalBatches = (grassData.Count + batchSize - 1) / batchSize;
-            var finalGrassToKeep = new List<GrassData>();
-            var totalRemoved = 0;
+            var newGrassList = new List<GrassData>();
+            var totalCount = grassData.Count;
 
-            // 배치별로 순차 처리
-            for (var batchIndex = 0; batchIndex < totalBatches; batchIndex++)
+            // 진행 상황을 보여주면서 필터링
+            for (var i = 0; i < totalCount; i++)
             {
-                var start = batchIndex * batchSize;
-                var end = Mathf.Min(start + batchSize, grassData.Count);
-
-                var result = await UniTask.RunOnThreadPool(() =>
+                if (!positionsToRemove.Contains(grassData[i].position))
                 {
-                    var localGrassToKeep = new List<GrassData>();
-                    var localRemovedCount = 0;
-
-                    for (var i = start; i < end; i++)
-                    {
-                        if (!positionsToRemove.Contains(grassData[i].position))
-                        {
-                            localGrassToKeep.Add(grassData[i]);
-                        }
-                        else
-                        {
-                            localRemovedCount++;
-                        }
-                    }
-
-                    return (localGrassToKeep, localRemovedCount);
-                });
-
-                finalGrassToKeep.AddRange(result.localGrassToKeep);
-                totalRemoved += result.localRemovedCount;
-
-                await UpdateProgress(batchIndex + 1, totalBatches,
-                    $"Removing Grass");
+                    newGrassList.Add(grassData[i]);
+                }
             }
 
-            grassCompute.GrassDataList = finalGrassToKeep;
+            var removedCount = grassData.Count - newGrassList.Count;
+            Debug.Log($"Removed {removedCount} grass instances");
+
+            grassCompute.GrassDataList = newGrassList;
+
+            // GrassDataSo의 bounds 및 culling 관련 데이터 업데이트
+            if (grassCompute.GrassData != null)
+            {
+                // bounds와 cullingTree 재초기화
+                grassCompute.GrassData.InitCullingTree(grassCompute.GrassSetting.cullingTreeDepth);
+
+                // 보이는 grass ID 리스트도 업데이트
+                grassCompute.GrassData.UpdateCulling(new Plane[6]); // 빈 Plane 배열로 초기화
+            }
+
             InitSpatialGrid();
-            Debug.Log($"Removed {totalRemoved} grass instances in total");
         }
 
         private Vector3 GetRandomColor()
         {
+            var random = new System.Random();
             var baseColor = toolSettings.BrushColor;
             var newRandomCol = new Color(
-                baseColor.r + Random.Range(0, toolSettings.RangeR),
-                baseColor.g + Random.Range(0, toolSettings.RangeG),
-                baseColor.b + Random.Range(0, toolSettings.RangeB),
+                baseColor.r + (float)random.NextDouble() * toolSettings.RangeR,
+                baseColor.g + (float)random.NextDouble() * toolSettings.RangeG,
+                baseColor.b + (float)random.NextDouble() * toolSettings.RangeB,
                 1
             );
             return new Vector3(newRandomCol.r, newRandomCol.g, newRandomCol.b);

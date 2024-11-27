@@ -67,6 +67,9 @@ namespace Grass.Editor
             {
                 var index = sharedIndices[i];
 
+                if (index < 0 || index >= grassDataList.Count)
+                    continue;
+
                 // 이미 처리된 인덱스는 건너뛰기
                 if (_processedIndices.Contains(index)) continue;
 
