@@ -67,7 +67,10 @@ namespace Grass.Editor
                         }
                     }
 
-                    if (grassAdded) grassCompute.ResetFaster();
+                    if (grassAdded)
+                    {
+                        grassCompute.ResetFaster();
+                    }
                     _lastPosition = hit.point;
                 }
             }

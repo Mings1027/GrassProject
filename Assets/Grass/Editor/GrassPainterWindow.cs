@@ -114,15 +114,7 @@ namespace Grass.Editor
                 HandleMissingGrassCompute();
                 return;
             }
-
-            DrawGrassDataField();
-
-            if (grassCompute.GrassData == null)
-            {
-                HandleMissingGrassData();
-                return;
-            }
-
+ 
             if (grassCompute.GrassSetting == null)
             {
                 grassCompute.GrassSetting = CreateOrGetGrassSetting();
@@ -243,65 +235,7 @@ namespace Grass.Editor
                 EditorGUILayout.HelpBox($"Please assign a GameObject name '{obj.name}'.", MessageType.Warning);
             }
         }
-
-        private void DrawGrassDataField()
-        {
-            EditorGUI.BeginChangeCheck();
-            var newGrassData = (GrassDataSo)EditorGUILayout.ObjectField(
-                "Grass Data",
-                grassCompute.GrassData,
-                typeof(GrassDataSo),
-                false
-            );
-            if (EditorGUI.EndChangeCheck())
-            {
-                grassCompute.GrassData = newGrassData;
-                EditorUtility.SetDirty(grassCompute);
-            }
-        }
-
-        private void HandleMissingGrassData()
-        {
-            var dataFolderPath = "Assets/Grass/GrassData";
-
-            if (AssetDatabase.IsValidFolder(dataFolderPath))
-            {
-                var existingGrassData = AssetDatabase.FindAssets("t:GrassDataSO", new[] { dataFolderPath });
-                if (existingGrassData.Length > 0)
-                {
-                    EditorGUILayout.HelpBox(
-                        $"GrassData found in '{dataFolderPath}'. You can assign it using the button below or manually assign your preferred GrassData above.",
-                        MessageType.Info);
-
-                    if (GUILayout.Button("Assign Existing GrassData", GUILayout.Height(30)))
-                    {
-                        var path = AssetDatabase.GUIDToAssetPath(existingGrassData[0]);
-                        grassCompute.GrassData = AssetDatabase.LoadAssetAtPath<GrassDataSo>(path);
-                        EditorUtility.SetDirty(grassCompute);
-                    }
-                }
-                else
-                {
-                    ShowCreateGrassDataOption();
-                }
-            }
-            else
-            {
-                ShowCreateGrassDataOption();
-            }
-        }
-
-        private void ShowCreateGrassDataOption()
-        {
-            EditorGUILayout.HelpBox("GrassData not found. Would you like to create a new one?",
-                MessageType.Warning);
-
-            if (GUILayout.Button("Create New GrassData", GUILayout.Height(30)))
-            {
-                CreateNewGrassData();
-            }
-        }
-
+ 
         private GrassSettingSO CreateOrGetGrassSetting()
         {
             // 먼저 에셋을 찾아봅니다
@@ -1144,38 +1078,7 @@ namespace Grass.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }
-
-        private void CreateNewGrassData()
-        {
-            const string basePath = "Assets/Grass";
-            const string grassDataPath = basePath + "/GrassData";
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var newAssetPath = $"{grassDataPath}/GrassData_{timestamp}.asset";
-
-            if (!AssetDatabase.IsValidFolder(basePath))
-            {
-                AssetDatabase.CreateFolder("Assets", "Grass");
-            }
-
-            if (!AssetDatabase.IsValidFolder(grassDataPath))
-            {
-                AssetDatabase.CreateFolder(basePath, "GrassData");
-            }
-
-            var grassData = CreateInstance<GrassDataSo>();
-            AssetDatabase.CreateAsset(grassData, newAssetPath);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-
-            if (grassCompute != null)
-            {
-                grassCompute.GrassData = grassData;
-                EditorUtility.SetDirty(grassCompute);
-            }
-
-            Debug.Log($"Created new GrassData asset at: {newAssetPath}");
-        }
-
+ 
         private void OnSceneGUI(SceneView sceneView)
         {
             if (hasFocus)
@@ -1716,17 +1619,7 @@ namespace Grass.Editor
             Debug.Log($"Removed {removedCount} grass instances");
 
             grassCompute.GrassDataList = newGrassList;
-
-            // GrassDataSo의 bounds 및 culling 관련 데이터 업데이트
-            if (grassCompute.GrassData != null)
-            {
-                // bounds와 cullingTree 재초기화
-                grassCompute.GrassData.InitCullingTree(grassCompute.GrassSetting.cullingTreeDepth);
-
-                // 보이는 grass ID 리스트도 업데이트
-                grassCompute.GrassData.UpdateCulling(new Plane[6]); // 빈 Plane 배열로 초기화
-            }
-
+ 
             InitSpatialGrid();
         }
 
