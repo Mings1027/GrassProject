@@ -23,12 +23,12 @@
       <change beforePath="$PROJECT_DIR$/Assets/Fantasy House/Scene/Fantasy House.unity.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/EnumGeneratorWindow.cs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/EnumGeneratorWindow.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassAddPainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassAddPainter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterHelper.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterHelper.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/ShaderVariantChecker.cs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/ShaderVariantChecker.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/SpatialGrid.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/SpatialGrid.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PoolControl.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PoolControl/IPoolObjectKey.cs" beforeDir="false" />
@@ -141,6 +141,7 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/ILViewer/b5fd0cba37db47b4a1163ba105f94217a400/47/022dc555/0200000Dpdb16.il" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/ILViewer/b5fd0cba37db47b4a1163ba105f94217a400/8d/9e99a182/0200000Bpdb14High.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/1a442531cca24bea97ae32b642164846109800/08/71e80f13/HashSet`1.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/1a442531cca24bea97ae32b642164846109800/83/c30f90d8/HashSet`1.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/4657e37fb3234f7aa59776cea9af49471dd600/08/69ea2e92/GraphicsBuffer.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/4657e37fb3234f7aa59776cea9af49471dd600/0e/34092051/SerializeField.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/4657e37fb3234f7aa59776cea9af49471dd600/14/cbc70771/LayerMask.cs" root0="FORCE_HIGHLIGHTING" />
@@ -191,6 +192,8 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/c9/5f9964a7/ComputeBufferMode.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/c9/7262bb05/Graphics.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/e1/3718af43/ThrowHelper.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/e6/cdd8ca7c/MeshFilter.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/f6/5ab6e555/ComputeShader.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/9813d164b8404166af09825a040c4c789ace00/1a/abc1b6a7/Handles.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/9813d164b8404166af09825a040c4c789ace00/26/32608940/EditorGUILayout.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/9813d164b8404166af09825a040c4c789ace00/79/42fac638/EditorWindow.cs" root0="SKIP_HIGHLIGHTING" />
@@ -203,6 +206,7 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/52/b9901fc5/EditorGUILayout.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/78/e1df070c/EditorWindow.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/78/f020e3ed/Handles.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/bb/bd129351/Undo.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/e8/78ede366/SceneView.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/f8/a565d3d7/Undo.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/fe/2e62a042/EditorUtility.cs" root0="SKIP_HIGHLIGHTING" />
@@ -214,12 +218,14 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/c4fc38394b6844468181cc3d680e4bb82f200/79/95aa9fa6/PolygonCollider2D.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/c96ca9f80c03444cac6295b9415f9cb430e00/cb/98903ed9/Event.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/cf76873c49254ed6ad9c71039de1d4721e400/22/6a49b14a/TerrainChangedFlags.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/cf76873c49254ed6ad9c71039de1d4721e400/2e/6b9e2d29/Terrain.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/cf76873c49254ed6ad9c71039de1d4721e400/58/066437c3/TerrainData.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/cf76873c49254ed6ad9c71039de1d4721e400/5a/340d4073/TerrainPaintUtility.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/cf76873c49254ed6ad9c71039de1d4721e400/cf/852ab8d2/Terrain.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/d3422287e15c4730bca1c333bb8637919b4400/da/c7a96f29/InternalEditorUtility.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/12/622d6709/IEquatable`1.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/1c/45a55934/Math.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/23/ceb2e65b/Interlocked.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/2a/9d7821a5/CollectionExtensions.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/93/fca0b40e/Int64.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/de80aed0bd3646409e8bfb15c101f005e2000/a0/fc17f4c1/Dictionary`2.cs" root0="SKIP_HIGHLIGHTING" />
@@ -266,10 +272,17 @@
     <setting file="file://$PROJECT_DIR$/../RogueDefense/Assets/Scripts/EventControl/SoundEventManager.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../GrassBlades-Quad.compute" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../GrassBlades-Tri.compute" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../../Unity/UnityProject/GrassBackupFolder/2024.11.20/Assets/Grass/Editor/GrassPainterWindow.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../../Unity/UnityProject/GrassBackupFolder/2024.11.21/Assets/Grass/Editor/GrassPainterWindow.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../Unity/UnityProject/GrassBackupFolder/2024.11.21/Assets/Grass/Shader/GrassBlades.compute" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../../Unity/UnityProject/GrassBackupFolder/2024.11.22/Assets/Grass/Editor/GrassPainterWindow.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../../Unity/UnityProject/GrassBackupFolder/2024.11.23/Assets/Grass/Editor/GrassPainterWindow.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../../Unity/UnityProject/GrassBackupFolder/2024.11.25/Assets/Grass/Editor/GrassPainterWindow.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../Unity/UnityProject/GrassBackupFolder/2024.11.25/Assets/Grass/GrassScripts/GrassComputeScript.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../../Unity/UnityProject/GrassBackupFolder/2024.11.26/Assets/Grass/Editor/GrassPainterWindow.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../Unity/UnityProject/GrassBackupFolder/2024.11.26/Assets/Grass/GrassScripts/GrassComputeScript.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../Unity/UnityProject/GrassBackupFolder/2024.11.26/Assets/Grass/GrassScripts/GrassDataSO.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../../Unity/UnityProject/GrassBackupFolder/2024.11.27/Assets/Grass/Editor/GrassPainterWindow.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="SWEA" />
@@ -496,6 +509,8 @@
       <workItem from="1732625504374" duration="3457000" />
       <workItem from="1732661585124" duration="26927000" />
       <workItem from="1732712405313" duration="6889000" />
+      <workItem from="1732752018936" duration="16411000" />
+      <workItem from="1732772568789" duration="25034000" />
     </task>
     <servers />
   </component>

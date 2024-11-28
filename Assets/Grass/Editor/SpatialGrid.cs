@@ -5,7 +5,7 @@ using UnityEngine;
 public class SpatialGrid
 {
     private readonly Dictionary<long, HashSet<int>> _grid = new();
-    private readonly float _cellSize;
+    private float _cellSize;
     private readonly Vector3 _origin;
 
     // 임시 리스트를 재사용하기 위한 필드
@@ -77,20 +77,50 @@ public class SpatialGrid
 
         var cellRadius = Mathf.CeilToInt(radius / _cellSize);
         var centerCell = WorldToCell(position);
+        var radiusSqr = radius * radius;
+
+        // 셀 대각선의 제곱 길이를 미리 계산
+        var cellDiagonalSqr = _cellSize * _cellSize * 3;
+
+        // 예상되는 셀 수만큼 용량 미리 할당
+        var estimatedCells = (cellRadius * 2 + 1) * (cellRadius * 2 + 1) * (cellRadius * 2 + 1);
+        _tempCellKeys.EnsureCapacity(estimatedCells);
 
         for (var x = -cellRadius; x <= cellRadius; x++)
-        for (var y = -cellRadius; y <= cellRadius; y++)
-        for (var z = -cellRadius; z <= cellRadius; z++)
         {
-            var checkCell = new Vector3Int(centerCell.x + x, centerCell.y + y, centerCell.z + z);
-            var key = GetKey(checkCell.x, checkCell.y, checkCell.z);
+            // x 거리의 제곱을 미리 계산
+            var xOffset = x * _cellSize;
+            var xDistSqr = xOffset * xOffset;
 
-            // 이미 처리한 셀은 건너뛰기
-            if (!_tempCellKeys.Add(key)) continue;
-
-            if (_grid.TryGetValue(key, out var indices))
+            for (var y = -cellRadius; y <= cellRadius; y++)
             {
-                results.AddRange(indices);
+                // xy 평면상의 거리 제곱을 미리 계산
+                var yOffset = y * _cellSize;
+                var xyDistSqr = xDistSqr + (yOffset * yOffset);
+
+                // 현재 xy 위치가 이미 반경을 벗어났다면 z축 검사 스킵
+                if (xyDistSqr - cellDiagonalSqr > radiusSqr) continue;
+
+                for (var z = -cellRadius; z <= cellRadius; z++)
+                {
+                    // 최종 거리 제곱 계산
+                    var zOffset = z * _cellSize;
+                    var totalDistSqr = xyDistSqr + (zOffset * zOffset);
+
+                    // 셀의 대각선 길이를 고려한 거리 체크
+                    if (totalDistSqr - cellDiagonalSqr > radiusSqr) continue;
+
+                    var checkCell = new Vector3Int(centerCell.x + x, centerCell.y + y, centerCell.z + z);
+                    var key = GetKey(checkCell.x, checkCell.y, checkCell.z);
+
+                    // 이미 처리한 셀은 스킵
+                    if (!_tempCellKeys.Add(key)) continue;
+
+                    if (_grid.TryGetValue(key, out var indices))
+                    {
+                        results.AddRange(indices);
+                    }
+                }
             }
         }
     }

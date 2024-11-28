@@ -50,7 +50,7 @@ namespace Grass.Editor
                 var meshBounds = meshFilter.sharedMesh.bounds;
                 return new Bounds(
                     obj.transform.TransformPoint(meshBounds.center),
-                    Vector3.Scale(meshBounds.size, obj.transform.lossyScale)
+                    Vector3.Scale(meshBounds.size, obj.transform.localScale)
                 );
             }
 

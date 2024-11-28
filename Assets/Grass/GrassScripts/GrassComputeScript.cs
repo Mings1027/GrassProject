@@ -143,9 +143,11 @@ public class GrassComputeScript : MonoBehaviour
         if (grassData.Count <= 0) return;
         GetFrustumData();
         SetGrassDataUpdate();
+        
         // Clear the draw and indirect args buffers of last frame's data
         _drawBuffer.SetCounterValue(0);
         _argsBuffer.SetData(_argsBufferReset);
+        
         // _dispatchSize = Mathf.CeilToInt((int)(_grassVisibleIDList.Count / _threadGroupSize));
         _dispatchSize = (_grassVisibleIDList.Count + (int)_threadGroupSize - 1) >>
                         (int)Math.Log(_threadGroupSize, 2);
@@ -266,7 +268,11 @@ public class GrassComputeScript : MonoBehaviour
 
         // Don't do anything if resources are not found,
         // or no vertex is put on the mesh.
-        if (grassData.Count == 0) return;
+        if (grassData.Count == 0)
+        {
+            _boundsListVis.Clear();
+            return;
+        }
 
         if (!grassSetting.shaderToUse || !grassSetting.materialToUse)
         {
