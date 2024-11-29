@@ -1016,6 +1016,10 @@ namespace Grass.Editor
             curPresets.autumnColor = EditorGUILayout.ColorField("Autumn Color", curPresets.autumnColor);
 
             EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Season Range", EditorStyles.boldLabel);
+            DrawMinMaxSection("Season Range", ref curPresets.seasonRangeMin, ref curPresets.seasonRangeMax, 0f, 4f);
+
+            EditorGUILayout.Space();
             EditorGUILayout.LabelField("LOD/Culling Settings", EditorStyles.boldLabel);
             curPresets.drawBounds = EditorGUILayout.Toggle("Show Culling Bounds",curPresets.drawBounds);
 

@@ -32,9 +32,11 @@ MonoBehaviour:
   topTint: {r: 1, g: 1, b: 1, a: 1}
   bottomTint: {r: 0, g: 0, b: 0, a: 1}
   winterColor: {r: 0.9254902, g: 0.8862745, b: 0.8666667, a: 1}
-  springColor: {r: 0.78431374, g: 0.8, b: 0.3137255, a: 1}
+  springColor: {r: 0.9122191, g: 0.9339623, b: 0.2599235, a: 1}
   summerColor: {r: 0.06666667, g: 0.81960785, b: 0.07450981, a: 1}
-  autumnColor: {r: 1, g: 0.16470589, b: 0.043137256, a: 1}
+  autumnColor: {r: 1, g: 0.16996826, b: 0, a: 1}
+  seasonRangeMin: 0
+  seasonRangeMax: 4
   drawBounds: 0
   minFadeDistance: 20
   maxFadeDistance: 120

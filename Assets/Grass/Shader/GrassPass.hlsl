@@ -9,6 +9,18 @@ half CalculateVerticalFade(half2 uv)
     return saturate(blendAdd);
 }
 
+half4 CalculateZoneTint(half3 diffuseColor, half verticalFade, float3 worldPos)
+{
+    half3 delta = abs(worldPos - _ZonePosData);
+    half inZone = all(delta <= _ZoneScaleData * 0.5);
+
+    // verticalFade를 기반으로 한번만 보간 계산
+    half4 baseTint = lerp(_BottomTint, inZone ? _SeasonTint : _TopTint, verticalFade);
+
+    // 영역 안일 때는 흰색에 tint 적용, 밖일 때는 diffuseColor에 tint 적용
+    return baseTint * (inZone ? half4(1, 1, 1, 1) : half4(diffuseColor, 0));
+}
+
 void CalculateCutOff(half extraBufferX, half worldPosY)
 {
     half cutOffTop = extraBufferX >= worldPosY ? 1 : 0;
@@ -80,32 +92,16 @@ half3 CalculateAdditionalLight(float3 worldPos, float3 worldNormal)
     return diffuseColor;
 }
 
-half3 AdjustSaturation(half3 color, half saturation)
-{
-    half grey = dot(color, half3(0.2126, 0.7152, 0.0722));
-    return lerp(grey.xxx, color, saturation);
-}
-
 half3 CustomNeutralToneMapping(half3 color, half exposure)
 {
     color *= exposure;
     return NeutralTonemap(color);
 }
 
-half4 CalculateZoneTint(half3 diffuseColor, half verticalFade, float3 worldPos)
+half3 AdjustSaturation(half3 color, half saturation)
 {
-    half3 zoneMin = _ZonePosData - _ZoneScaleData * 0.5;
-    half3 zoneMax = _ZonePosData + _ZoneScaleData * 0.5f;
-
-    half inZone = worldPos.x > zoneMin.x && worldPos.x < zoneMax.x &&
-                  worldPos.y > zoneMin.y && worldPos.y < zoneMax.y &&
-                  worldPos.z > zoneMin.z && worldPos.z < zoneMax.z
-                      ? 1
-                      : 0;
-
-    half4 normalTint = lerp(_BottomTint, _TopTint, verticalFade);
-    half4 zoneTint = lerp(_BottomTint, _SeasonTint, verticalFade);
-    return half4(diffuseColor, 0) * lerp(normalTint, zoneTint, inZone);
+    half grey = dot(color, half3(0.2126, 0.7152, 0.0722));
+    return lerp(grey.xxx, color, saturation);
 }
 
 FragmentData Vertex(VertexData input)

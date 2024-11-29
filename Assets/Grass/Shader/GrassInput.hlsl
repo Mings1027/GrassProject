@@ -32,7 +32,6 @@ CBUFFER_START(UnityPerMaterial)
 
     // Blend
     float _BlendMult, _BlendOff;
-    float4 _AmbientAdjustmentColor;
 
     float3 _ZonePosData;
     float3 _ZoneScaleData;

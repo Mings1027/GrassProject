@@ -41,7 +41,7 @@ MonoBehaviour:
   rangeR: 0.53
   rangeG: 0.517
   rangeB: 0.492
-  brushColor: {r: 1, g: 1, b: 1, a: 1}
+  brushColor: {r: 0.6917001, g: 0.17647056, b: 0.7921569, a: 1}
   paintMask:
     serializedVersion: 2
     m_Bits: 8
