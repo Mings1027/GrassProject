@@ -26,13 +26,13 @@
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/ShaderVariantChecker.cs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/ShaderVariantChecker.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Grass Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/Grass Mat.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassBlades.compute" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassBlades.compute" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassInput.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassInput.hlsl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassPass.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassPass.hlsl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassShader.shader" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassShader.shader" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PoolControl.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PoolControl/IPoolObjectKey.cs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PoolControl/IPoolObjectKey.cs.meta" beforeDir="false" />
@@ -354,15 +354,13 @@
       </option>
       <method v="2" />
     </configuration>
-    <configuration name="Attach to Unity Editor" type="UNITY_DEBUG_RUN_CONFIGURATION" factoryName="Unity Debug" show_console_on_std_err="false" show_console_on_std_out="false" port="50000" address="localhost" ignored-value-for-modified-check="48990">
+    <configuration name="Attach to Unity Editor" type="UNITY_DEBUG_RUN_CONFIGURATION" factoryName="Unity Debug" show_console_on_std_err="false" show_console_on_std_out="false" port="50000" address="localhost">
       <option name="allowRunningInParallel" value="false" />
       <option name="listenPortForConnections" value="false" />
-      <option name="pid" value="48990" />
+      <option name="pid" />
       <option name="projectPathOnTarget" />
       <option name="runtimes">
-        <list>
-          <MonoRuntime />
-        </list>
+        <list />
       </option>
       <option name="selectedOptions">
         <list />
@@ -519,6 +517,7 @@
       <workItem from="1732772568789" duration="25034000" />
       <workItem from="1732834628445" duration="28245000" />
       <workItem from="1732869144513" duration="2791000" />
+      <workItem from="1732880983728" duration="9645000" />
     </task>
     <servers />
   </component>

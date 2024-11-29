@@ -84,7 +84,7 @@ public class GrassComputeScript : MonoBehaviour
         get => grassSetting;
         set => grassSetting = value;
     }
-    
+
 #if UNITY_EDITOR
     private SceneView _view;
 #endif
@@ -610,6 +610,39 @@ public class GrassComputeScript : MonoBehaviour
 
         _instComputeShader.SetFloat(MinFadeDist, grassSetting.minFadeDistance);
         _instComputeShader.SetFloat(MaxFadeDist, grassSetting.maxFadeDistance);
+
+        _instComputeShader.SetVector(ZonePosData, Vector3.zero);
+        _instComputeShader.SetVector(ZoneScaleData, Vector3.one);
+        _instComputeShader.SetFloat(SeasonWidth, 1.0f);
+        _instComputeShader.SetFloat(SeasonHeight, 1.0f);
+
+        if (instantiatedMaterial != null)
+        {
+            instantiatedMaterial.SetVector(ZonePosData, Vector3.zero);
+            instantiatedMaterial.SetVector(ZoneScaleData, Vector3.one);
+            instantiatedMaterial.SetFloat(SeasonWidth, 1.0f);
+            instantiatedMaterial.SetFloat(SeasonHeight, 1.0f);
+        }
+    }
+
+    public void UpdateSeasonData(Vector3 zonePosition, Vector3 zoneScale, Color seasonColor, float width, float height)
+    {
+        if (_instComputeShader != null)
+        {
+            _instComputeShader.SetVector(ZonePosData, zonePosition);
+            _instComputeShader.SetVector(ZoneScaleData, zoneScale);
+            _instComputeShader.SetFloat(SeasonWidth, width);
+            _instComputeShader.SetFloat(SeasonHeight, height);
+        }
+
+        if (instantiatedMaterial != null)
+        {
+            instantiatedMaterial.SetVector(ZonePosData, zonePosition);
+            instantiatedMaterial.SetVector(ZoneScaleData, zoneScale);
+            instantiatedMaterial.SetFloat(SeasonWidth, width);
+            instantiatedMaterial.SetFloat(SeasonHeight, height);
+            instantiatedMaterial.SetColor(SeasonTint, seasonColor);
+        }
     }
 
     private static readonly int SourceVertices = Shader.PropertyToID("_SourceVertices");
@@ -645,6 +678,12 @@ public class GrassComputeScript : MonoBehaviour
 
     private static readonly int TopTint = Shader.PropertyToID("_TopTint");
     private static readonly int BottomTint = Shader.PropertyToID("_BottomTint");
+
+    private static readonly int SeasonWidth = Shader.PropertyToID("_SeasonWidth");
+    private static readonly int SeasonHeight = Shader.PropertyToID("_SeasonHeight");
+    private static readonly int ZonePosData = Shader.PropertyToID("_ZonePosData");
+    private static readonly int ZoneScaleData = Shader.PropertyToID("_ZoneScaleData");
+    private static readonly int SeasonTint = Shader.PropertyToID("_SeasonTint");
 
 #if UNITY_EDITOR
 

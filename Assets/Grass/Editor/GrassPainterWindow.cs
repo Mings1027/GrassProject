@@ -970,6 +970,9 @@ namespace Grass.Editor
 
         private void ShowMainSettingsPanel()
         {
+            DrawSeasonSettings();
+            EditorGUILayout.Space(10);
+            
             EditorGUILayout.LabelField("Blade Min/Max Settings", EditorStyles.boldLabel);
             var curPresets = grassCompute.GrassSetting;
 
@@ -1007,21 +1010,10 @@ namespace Grass.Editor
             EditorGUILayout.LabelField("Tinting Settings", EditorStyles.boldLabel);
             curPresets.topTint = EditorGUILayout.ColorField("Top Tint", curPresets.topTint);
             curPresets.bottomTint = EditorGUILayout.ColorField("Bottom Tint", curPresets.bottomTint);
-
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Season Settings", EditorStyles.boldLabel);
-            curPresets.winterColor = EditorGUILayout.ColorField("Winter Color", curPresets.winterColor);
-            curPresets.springColor = EditorGUILayout.ColorField("Spring Color", curPresets.springColor);
-            curPresets.summerColor = EditorGUILayout.ColorField("Summer Color", curPresets.summerColor);
-            curPresets.autumnColor = EditorGUILayout.ColorField("Autumn Color", curPresets.autumnColor);
-
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Season Range", EditorStyles.boldLabel);
-            DrawMinMaxSection("Season Range", ref curPresets.seasonRangeMin, ref curPresets.seasonRangeMax, 0f, 4f);
-
+            
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("LOD/Culling Settings", EditorStyles.boldLabel);
-            curPresets.drawBounds = EditorGUILayout.Toggle("Show Culling Bounds",curPresets.drawBounds);
+            curPresets.drawBounds = EditorGUILayout.Toggle("Show Culling Bounds", curPresets.drawBounds);
 
             DrawFadeDistanceSlider("Min Fade Distance", ref curPresets.minFadeDistance, 0, curPresets.maxFadeDistance);
             DrawFadeDistanceSlider("Max Fade Distance", ref curPresets.maxFadeDistance, curPresets.minFadeDistance,
@@ -1035,6 +1027,110 @@ namespace Grass.Editor
                 EditorGUILayout.FloatField("Interactor Strength", curPresets.interactorStrength);
             curPresets.castShadow = (UnityEngine.Rendering.ShadowCastingMode)EditorGUILayout.EnumPopup(
                 "Shadow Settings", curPresets.castShadow);
+        }
+
+        private bool _seasonSettingsExpanded;
+
+        private void DrawSeasonSettings()
+        {
+            var headerStyle = new GUIStyle(EditorStyles.helpBox)
+            {
+                fontSize = 12,
+                fontStyle = FontStyle.Bold,
+                padding = new RectOffset(5, 5, 10, 10),
+                margin = new RectOffset(0, 0, 10, 10)
+            };
+
+            EditorGUILayout.BeginVertical(headerStyle);
+            EditorGUILayout.BeginHorizontal();
+
+            _seasonSettingsExpanded = EditorGUILayout.Foldout(_seasonSettingsExpanded, "", true,
+                new GUIStyle(EditorStyles.foldout) { margin = new RectOffset(5, 0, 0, 0) });
+
+            var labelStyle = new GUIStyle
+            {
+                fontSize = 12,
+                alignment = TextAnchor.MiddleLeft,
+                normal = { textColor = Color.white },
+            };
+
+            if (GUILayout.Button("Season Settings", labelStyle))
+            {
+                _seasonSettingsExpanded = !_seasonSettingsExpanded;
+            }
+
+            EditorGUILayout.EndHorizontal();
+
+            if (_seasonSettingsExpanded)
+            {
+                EditorGUILayout.Space(5);
+
+                // Column Headers
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.Space(80);
+                var headerLabelStyle = new GUIStyle(GUI.skin.label)
+                {
+                    alignment = TextAnchor.MiddleCenter
+                };
+                GUILayout.Label("Color", headerLabelStyle, GUILayout.Width(60));
+                GUILayout.Label("Width", headerLabelStyle, GUILayout.Width(150));
+                GUILayout.Label("Height", headerLabelStyle, GUILayout.Width(150));
+                EditorGUILayout.EndHorizontal();
+
+                GrassPainterHelper.DrawHorizontalLine(Color.gray, 1, 2);
+
+                if (!grassCompute || !grassCompute.GrassSetting) return;
+
+                var settings = grassCompute.GrassSetting;
+
+                DrawSeasonSettingRow("Winter", ref settings.winterSettings);
+                DrawSeasonSettingRow("Spring", ref settings.springSettings);
+                DrawSeasonSettingRow("Summer", ref settings.summerSettings);
+                DrawSeasonSettingRow("Autumn", ref settings.autumnSettings);
+
+                EditorGUILayout.Space(5);
+                DrawMinMaxSection("Season Range", ref settings.seasonRangeMin, ref settings.seasonRangeMax, 0f, 4f);
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawSeasonSettingRow(string seasonName, ref SeasonSettings seasonSettings)
+        {
+            EditorGUILayout.BeginHorizontal();
+
+            // Season Name
+            EditorGUILayout.LabelField(seasonName, GUILayout.Width(80));
+
+            // Color Field
+            var newColor = EditorGUILayout.ColorField(GUIContent.none, seasonSettings.seasonColor, false, false, false,
+                GUILayout.Width(60));
+            if (newColor != seasonSettings.seasonColor)
+            {
+                Undo.RecordObject(grassCompute.GrassSetting, "Changed Season Color");
+                seasonSettings.seasonColor = newColor;
+                EditorUtility.SetDirty(grassCompute.GrassSetting);
+            }
+
+            // Width Slider
+            var newWidth = EditorGUILayout.Slider(seasonSettings.width, 0.1f, 2f, GUILayout.Width(150));
+            if (!Mathf.Approximately(newWidth, seasonSettings.width))
+            {
+                Undo.RecordObject(grassCompute.GrassSetting, "Changed Season Width");
+                seasonSettings.width = newWidth;
+                EditorUtility.SetDirty(grassCompute.GrassSetting);
+            }
+
+            // Height Slider
+            var newHeight = EditorGUILayout.Slider(seasonSettings.height, 0.1f, 2f, GUILayout.Width(150));
+            if (!Mathf.Approximately(newHeight, seasonSettings.height))
+            {
+                Undo.RecordObject(grassCompute.GrassSetting, "Changed Season Height");
+                seasonSettings.height = newHeight;
+                EditorUtility.SetDirty(grassCompute.GrassSetting);
+            }
+
+            EditorGUILayout.EndHorizontal();
         }
 
         private void DrawMinMaxSection(string label, ref float min, ref float max, float minLimit, float maxLimit)

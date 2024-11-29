@@ -1,3 +1,4 @@
+using Grass.GrassScripts;
 using UnityEngine;
 
 [System.Serializable]
@@ -63,10 +64,11 @@ public class GrassSettingSO : ScriptableObject
     [Header("Material")] public Color topTint = new(1, 1, 1);
     public Color bottomTint = new(0, 0, 1);
 
-    [Header("Season Color")] public Color winterColor;
-    public Color springColor;
-    public Color summerColor;
-    public Color autumnColor;
+    [Header("Season Settings")]
+    public SeasonSettings winterSettings = new();
+    public SeasonSettings springSettings = new();
+    public SeasonSettings summerSettings = new();
+    public SeasonSettings autumnSettings = new();
 
     [Header("Season Range")] public float seasonRangeMin = 0f;
     public float seasonRangeMax = 4f;

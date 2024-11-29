@@ -34,14 +34,14 @@ MonoBehaviour:
   vertexFade: 0
   grassWidth: 0.25
   grassHeight: 0.398
-  adjustWidth: 0.1
-  adjustHeight: 0.1
+  adjustWidth: -0.233
+  adjustHeight: -0.225
   adjustWidthMax: 0.3
   adjustHeightMax: 0.01
   rangeR: 0.53
   rangeG: 0.517
   rangeB: 0.492
-  brushColor: {r: 0.6917001, g: 0.17647056, b: 0.7921569, a: 1}
+  brushColor: {r: 0.9093621, g: 0.8329477, b: 0.9245283, a: 1}
   paintMask:
     serializedVersion: 2
     m_Bits: 8
@@ -49,10 +49,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   brushSize: 14.599996
-  brushTransitionSpeed: 1
+  brushTransitionSpeed: 0.953
   density: 100
   normalLimit: 1
-  brushHeight: 12.949984
+  brushHeight: 27.94998
   generateGrassCount: 1000000
   grassMouseButton: 0
   brushSizeShortcut: 2

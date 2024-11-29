@@ -91,9 +91,16 @@ uniform float3 _CameraPositionWS; // Camera position in world space
 ===========================================================================================*/
 
 float grassWidth, grassHeight;
-
+float _SeasonWidth, _SeasonHeight;
+float3 _ZonePosData;
+float3 _ZoneScaleData;
 // ----------------------------------------
 // Helper Functions
+bool IsInZone(float3 position)
+{
+    float3 delta = abs(position - _ZonePosData);
+    return all(delta <= _ZoneScaleData * 0.5);
+}
 
 // Random generation function
 float random(float3 co)
@@ -180,20 +187,20 @@ float2 GetSimpleBladePosition(float index, float totalBlades, float2 randValues)
     float2 gridPos;
     gridPos.x = fmod(index, gridSize) / gridSize;
     gridPos.y = floor(index / gridSize) / gridSize;
-    
+
     // 2. 그리드 위치를 -0.5에서 0.5 범위로 변환 (중심이 0이 되도록)
     gridPos = gridPos - 0.5;
-    
+
     // 3. 랜덤 오프셋 적용 (하지만 현재 위치에서의 방향을 고려)
     float2 randomOffset = (randValues - 0.5) * 0.8;
-    
+
     // 4. 현재 위치에서 중심까지의 거리 계산
     float distanceFromCenter = length(gridPos);
-    
+
     // 5. 중심에서 멀어질수록 랜덤 오프셋을 제한
     float maxOffset = 0.8 * (1.0 - distanceFromCenter);
     randomOffset *= maxOffset;
-    
+
     // 6. 최종 위치 계산 (그리드 위치 + 제한된 랜덤 오프셋)
     return gridPos + randomOffset;
 }
@@ -298,6 +305,13 @@ void Main(uint id : SV_DispatchThreadID)
     half randomOffset = lerp(_GrassRandomHeightMin, _GrassRandomHeightMax, HashToFloat01(heightHash));
     grassHeight = clamp(grassHeight + randomOffset, _MinHeight, _MaxHeight);
     grassWidth = clamp(grassWidth, _MinWidth, _MaxWidth);
+
+    if (IsInZone(sv.positionWS))
+    {
+        grassHeight *= _SeasonHeight;
+        grassWidth *= _SeasonWidth;
+    }
+
     grassWidth *= saturate(distanceFade);
     _BladeForward *= grassHeight;
 

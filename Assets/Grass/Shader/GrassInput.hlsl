@@ -35,5 +35,8 @@ CBUFFER_START(UnityPerMaterial)
 
     float3 _ZonePosData;
     float3 _ZoneScaleData;
+
     float4 _SeasonTint;
+    float _SeasonWidth;
+    float _SeasonHeight;
 CBUFFER_END
