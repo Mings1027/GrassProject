@@ -23,8 +23,11 @@ public class GrassComputeScript : MonoBehaviour
     [SerializeField] private GrassSettingSO grassSetting;
 
     private readonly List<int> _nearbyGrassIds = new();
-    private List<int> _grassVisibleIDList = new(); // list of all visible grass ids, rest are culled
-    private float[] _cutIDs;
+
+    // list of all visible grass ids, rest are culled
+    [SerializeField, HideInInspector] private List<int> _grassVisibleIDList = new();
+    [SerializeField, HideInInspector] private float[] _cutIDs;
+
     private Bounds _bounds; // bounds of the total grass 
     private readonly List<Bounds> _boundsListVis = new();
 
@@ -43,7 +46,7 @@ public class GrassComputeScript : MonoBehaviour
     private ComputeBuffer _cutBuffer; // added for cutting
 
     //
-    private ComputeShader _instComputeShader; // Instantiate the shaders so data belong to their unique compute buffers
+    private ComputeShader _instComputeShader;
     private int _idGrassKernel; // The id of the kernel in the grass compute shader
     private int _dispatchSize; // The x dispatch size for the grass compute shader
     private uint _threadGroupSize; // compute shader thread group size
@@ -71,12 +74,18 @@ public class GrassComputeScript : MonoBehaviour
         get => grassData;
         set => grassData = value;
     }
-#if UNITY_EDITOR
+    public Material InstantiatedMaterial
+    {
+        get => instantiatedMaterial;
+        set => instantiatedMaterial = value;
+    }
     public GrassSettingSO GrassSetting
     {
         get => grassSetting;
         set => grassSetting = value;
     }
+    
+#if UNITY_EDITOR
     private SceneView _view;
 #endif
 
@@ -143,11 +152,11 @@ public class GrassComputeScript : MonoBehaviour
         if (grassData.Count <= 0) return;
         GetFrustumData();
         SetGrassDataUpdate();
-        
+
         // Clear the draw and indirect args buffers of last frame's data
         _drawBuffer.SetCounterValue(0);
         _argsBuffer.SetData(_argsBufferReset);
-        
+
         // _dispatchSize = Mathf.CeilToInt((int)(_grassVisibleIDList.Count / _threadGroupSize));
         _dispatchSize = (_grassVisibleIDList.Count + (int)_threadGroupSize - 1) >>
                         (int)Math.Log(_threadGroupSize, 2);

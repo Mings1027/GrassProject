@@ -62,6 +62,12 @@ public class GrassSettingSO : ScriptableObject
     // Material
     [Header("Material")] public Color topTint = new(1, 1, 1);
     public Color bottomTint = new(0, 0, 1);
+    
+    [Header("Season Color")]
+    public Color winterColor;
+    public Color springColor;
+    public Color summerColor;
+    public Color autumnColor;
 
     [Header("LOD/ Culling")] public bool drawBounds;
     public float minFadeDistance = 40;

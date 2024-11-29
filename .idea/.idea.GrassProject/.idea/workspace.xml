@@ -27,9 +27,18 @@
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterWindow.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/ShaderVariantChecker.cs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/ShaderVariantChecker.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/SpatialGrid.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/SpatialGrid.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassToolSettingSO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassToolSettingSO.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/KeyBinding.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/KeyBinding.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Material/GreenGroundMat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Material/GreenGroundMat.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/Grass Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/Grass Mat.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassInput.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassInput.hlsl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassPass.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassPass.hlsl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassShader.shader" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassShader.shader" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassShadowCasterPass.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassShadowCasterPass.hlsl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PoolControl.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PoolControl/IPoolObjectKey.cs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PoolControl/IPoolObjectKey.cs.meta" beforeDir="false" />
@@ -511,6 +520,7 @@
       <workItem from="1732712405313" duration="6889000" />
       <workItem from="1732752018936" duration="16411000" />
       <workItem from="1732772568789" duration="25034000" />
+      <workItem from="1732834628445" duration="25173000" />
     </task>
     <servers />
   </component>

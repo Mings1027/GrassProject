@@ -51,8 +51,11 @@ public class GrassToolSettingSo : ScriptableObject
     [Header("Generation Settings")] [SerializeField]
     private int generateGrassCount = 100000;
 
+#if UNITY_EDITOR
     [Header("Input Settings")] public MouseButton grassMouseButton;
-
+    public KeyType brushSizeShortcut;
+    public KeyType brushHeightShortcut;
+#endif
     // Constants
     public float MinSizeWidth => 0.01f;
     public float MaxSizeWidth => 2f;

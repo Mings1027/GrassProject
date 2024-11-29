@@ -12,11 +12,6 @@ Shader "Custom/TestGrass"
 		_Exposure("Exposure", Range(0.1, 2)) = 0.85
 		_Saturation("Saturation", Range(0, 2)) = 0.95
 
-		[Header(Rim Light)]
-		[HDR] _RimColor("Rim Color", Color) = (1,1,1,1)
-		_RimPower("Rim Power", Range(1, 10)) = 5
-		_RimIntensity("Rim Intensity", Range(0, 2)) = 1
-
 		[Header(Blend)]
 		[Toggle(BLEND)] _BlendFloor("Blend with floor", Float) = 0
 		_BlendMult("Blend Multiply", Range(0, 5)) = 1

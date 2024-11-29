@@ -1,6 +1,8 @@
+using System;
 using Grass.GrassScripts;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
 namespace Grass.Editor
@@ -92,6 +94,46 @@ namespace Grass.Editor
         public static bool IsMouseButtonPressed(MouseButton button)
         {
             return Event.current.button == (int)button;
+        }
+
+        public static bool IsShortcutPressed(KeyType keyType)
+        {
+            switch (keyType)
+            {
+                case KeyType.Control:
+                    return Event.current.control;
+                case KeyType.Alt:
+                    return Event.current.alt;
+                case KeyType.Shift:
+                    return Event.current.shift;
+                case KeyType.Command:
+                    return Event.current.command;
+            }
+
+            return false;
+        }
+
+        public static string GetMouseButtonName(MouseButton button)
+        {
+            return button switch
+            {
+                MouseButton.LeftMouse => "LeftMouse",
+                MouseButton.RightMouse => "RightMouse",
+                MouseButton.MiddleMouse => "MiddleMouse",
+                _ => throw new ArgumentOutOfRangeException(nameof(button), button, null)
+            };
+        }
+
+        public static string GetShortcutName(KeyType keyType)
+        {
+            return keyType switch
+            {
+                KeyType.Control => "Control",
+                KeyType.Alt => "Alt",
+                KeyType.Shift => "Shift",
+                KeyType.Command => "Command",
+                _ => throw new ArgumentOutOfRangeException(nameof(keyType), keyType, null)
+            };
         }
 
         // 최적화된 거리 계산 (제곱근 계산 제거)

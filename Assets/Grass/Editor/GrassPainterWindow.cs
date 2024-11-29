@@ -103,36 +103,29 @@ namespace Grass.Editor
                 return;
             }
 
-            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
-
-            // 기본 필수 오브젝트 필드 표시
             toolSettings = (GrassToolSettingSo)EditorGUILayout.ObjectField(
                 "Grass Tool Settings", toolSettings, typeof(GrassToolSettingSo), false);
 
             grassCompute = (GrassComputeScript)EditorGUILayout.ObjectField(
                 "Grass Compute Object", grassCompute, typeof(GrassComputeScript), true);
 
-            // grassObject가 없으면 여기서 종료
             if (grassCompute == null)
             {
-                var obj = FindAnyObjectByType<GrassComputeScript>();
-                if (obj == null)
-                {
-                    if (GUILayout.Button("Create Grass Compute Object", GUILayout.Height(30)))
-                    {
-                        CreateNewGrassObject();
-                    }
+                grassCompute = FindAnyObjectByType<GrassComputeScript>();
+            }
 
-                    EditorGUILayout.HelpBox($"Please Create Grass Compute Object.", MessageType.Warning);
-                }
-                else
+            if (grassCompute == null)
+            {
+                if (GUILayout.Button("Create Grass Compute Object", GUILayout.Height(30)))
                 {
-                    EditorGUILayout.HelpBox($"Please assign a GameObject name '{obj.name}'.", MessageType.Warning);
+                    CreateNewGrassObject();
                 }
 
-                EditorGUILayout.EndScrollView();
+                EditorGUILayout.HelpBox("Please Create Grass Compute Object.", MessageType.Warning);
                 return;
             }
+
+            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
 
             DrawBasicControls();
 
@@ -168,7 +161,7 @@ namespace Grass.Editor
         {
             Debug.Log("OnDisable");
             RemoveDelegates();
-            _spatialGrid.Clear();
+            _spatialGrid?.Clear();
 
             EditorApplication.update -= grassCompute.Reset;
         }
@@ -345,20 +338,26 @@ namespace Grass.Editor
 
         private void DrawKeyBindingsUI()
         {
-            var buttonName = toolSettings.grassMouseButton switch
-            {
-                MouseButton.LeftMouse => "Left",
-                MouseButton.RightMouse => "Right",
-                MouseButton.MiddleMouse => "Middle",
-                _ => "Unknown"
-            };
-
-            var style = new GUIStyle(EditorStyles.label) { richText = true };
-            EditorGUILayout.LabelField($"Hold and drag <b>{buttonName}</b> mouse button to paint grass",
-                style);
-
             toolSettings.grassMouseButton =
-                (MouseButton)EditorGUILayout.EnumPopup("Mouse Button", toolSettings.grassMouseButton);
+                (MouseButton)EditorGUILayout.EnumPopup(
+                    new GUIContent("Mouse Button",
+                        $"Hold and drag <b>{GrassPainterHelper.GetMouseButtonName(toolSettings.grassMouseButton)}</b> mouse button to paint grass"),
+                    toolSettings.grassMouseButton);
+
+            if (_paintModeActive)
+            {
+                toolSettings.brushSizeShortcut =
+                    (KeyType)EditorGUILayout.EnumPopup(
+                        new GUIContent("Brush Size Shortcut",
+                            $"Hold {GrassPainterHelper.GetShortcutName(toolSettings.brushSizeShortcut)} + scroll to adjust size"),
+                        toolSettings.brushSizeShortcut);
+
+                toolSettings.brushHeightShortcut =
+                    (KeyType)EditorGUILayout.EnumPopup(
+                        new GUIContent("Brush Height Shortcut",
+                            $"Hold {GrassPainterHelper.GetShortcutName(toolSettings.brushHeightShortcut)} + scroll to adjust height"),
+                        toolSettings.brushHeightShortcut);
+            }
         }
 
         private void ShowPaintPanel()
@@ -418,12 +417,6 @@ namespace Grass.Editor
         {
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Brush Settings", EditorStyles.boldLabel);
-
-            var style = new GUIStyle(EditorStyles.helpBox)
-            {
-                fontSize = 12
-            };
-            EditorGUILayout.LabelField("Hold Shift + Scroll to adjust Brush size", style);
 
             toolSettings.BrushSize = GrassPainterHelper.FloatSlider(
                 "Brush Size",
@@ -519,11 +512,11 @@ namespace Grass.Editor
                 (EditOption)GUILayout.Toolbar((int)_selectedEditOption, _editOptionStrings, GUILayout.Height(25));
             EditorGUILayout.Separator();
 
-            toolSettings.BrushTransitionSpeed = EditorGUILayout.Slider(
+            toolSettings.BrushTransitionSpeed = GrassPainterHelper.FloatSlider(
                 "Brush Transition Speed",
+                "Speed of grass modifications",
                 toolSettings.BrushTransitionSpeed,
-                0f,
-                1f
+                0f, 1f
             );
 
             switch (_selectedEditOption)
@@ -582,18 +575,6 @@ namespace Grass.Editor
                 toolSettings.BrushHeight,
                 toolSettings.MinBrushSize,
                 toolSettings.MaxBrushSize
-            );
-
-            var style = new GUIStyle(EditorStyles.helpBox)
-            {
-                fontSize = 13,
-                fontStyle = FontStyle.Bold,
-                padding = new RectOffset(10, 10, 10, 10)
-            };
-
-            EditorGUILayout.LabelField(
-                "Increase brush size if grass is not being repositioned",
-                style
             );
         }
 
@@ -766,39 +747,6 @@ namespace Grass.Editor
             toolSettings.RangeG = EditorGUILayout.Slider("Green", toolSettings.RangeG, 0f, 1f);
             toolSettings.RangeB = EditorGUILayout.Slider("Blue", toolSettings.RangeB, 0f, 1f);
         }
-
-        // private bool _isColorPickerActive;
-        // private Color _pickedColor;
-
-        // private void DrawMeshSettings()
-        // {
-        //     EditorGUILayout.BeginHorizontal();
-        //     _isColorPickerActive = EditorGUILayout.Toggle("Enable Color Picker", _isColorPickerActive);
-        //     EditorGUILayout.LabelField($"R: {_pickedColor.r:F2} G: {_pickedColor.g:F2} B: {_pickedColor.b:F2}");
-        //     EditorGUILayout.EndHorizontal();
-        //
-        //     if (_isColorPickerActive)
-        //     {
-        //         HandleContinuousColorPicking();
-        //     }
-        // }
-        //
-        // private void HandleContinuousColorPicking()
-        // {
-        //     if (Physics.Raycast(_mousePointRay, out RaycastHit hit))
-        //     {
-        //         if (hit.collider.TryGetComponent<MeshRenderer>(out var meshRenderer))
-        //         {
-        //             _pickedColor = meshRenderer.sharedMaterial.color;
-        //             Repaint();
-        //         }
-        //         else if (hit.collider.TryGetComponent<SpriteRenderer>(out var spriteRenderer))
-        //         {
-        //             _pickedColor = spriteRenderer.color;
-        //             Repaint();
-        //         }
-        //     }
-        // }
 
         private bool _layerGuideExpanded;
 
@@ -1061,12 +1009,15 @@ namespace Grass.Editor
             curPresets.bottomTint = EditorGUILayout.ColorField("Bottom Tint", curPresets.bottomTint);
 
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField("LOD/Culling Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Season Settings", EditorStyles.boldLabel);
+            curPresets.winterColor = EditorGUILayout.ColorField("Winter Color", curPresets.winterColor);
+            curPresets.springColor = EditorGUILayout.ColorField("Spring Color", curPresets.springColor);
+            curPresets.summerColor = EditorGUILayout.ColorField("Summer Color", curPresets.summerColor);
+            curPresets.autumnColor = EditorGUILayout.ColorField("Autumn Color", curPresets.autumnColor);
 
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Show Culling Bounds:", EditorStyles.boldLabel);
-            curPresets.drawBounds = EditorGUILayout.Toggle(curPresets.drawBounds);
-            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("LOD/Culling Settings", EditorStyles.boldLabel);
+            curPresets.drawBounds = EditorGUILayout.Toggle("Show Culling Bounds",curPresets.drawBounds);
 
             DrawFadeDistanceSlider("Min Fade Distance", ref curPresets.minFadeDistance, 0, curPresets.maxFadeDistance);
             DrawFadeDistanceSlider("Max Fade Distance", ref curPresets.maxFadeDistance, curPresets.minFadeDistance,
@@ -1157,15 +1108,15 @@ namespace Grass.Editor
             // 현재 이벤트에서 modifier 키가 눌려있는지 체크
             var hasModifier = e.alt || e.control || e.command;
 
-            // Shift + 스크롤은 브러시 크기 조절에 사용
-            if (e.type == EventType.ScrollWheel && e.shift)
+            if (e.type == EventType.ScrollWheel && GrassPainterHelper.IsShortcutPressed(toolSettings.brushSizeShortcut))
             {
                 HandleBrushSize(e);
                 e.Use();
                 return;
             }
 
-            if (e.type == EventType.ScrollWheel && e.alt)
+            if (e.type == EventType.ScrollWheel &&
+                GrassPainterHelper.IsShortcutPressed(toolSettings.brushHeightShortcut))
             {
                 HandleBrushHeight(e);
                 e.Use();
@@ -1297,7 +1248,7 @@ namespace Grass.Editor
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
             Debug.Log("Removed all grass from the scene");
         }
- 
+
         public async UniTask UpdateProgress(int currentPoint, int totalPoints, string progressMessage)
         {
             _objectProgress.progress = (float)currentPoint / totalPoints;

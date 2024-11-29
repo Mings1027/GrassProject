@@ -6,4 +6,12 @@ namespace Grass.GrassScripts
         RightMouse,
         MiddleMouse
     }
+
+    public enum KeyType
+    {
+        Control,
+        Alt,
+        Shift,
+        Command,
+    }
 }

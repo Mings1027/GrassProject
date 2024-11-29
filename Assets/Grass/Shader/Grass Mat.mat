@@ -46,8 +46,8 @@ Material:
     - _AdditionalLightShadowStrength: 1
     - _AlphaTestToggle: 0
     - _BlendFloor: 0
-    - _BlendMult: 0.75
-    - _BlendOff: 0.207
+    - _BlendMult: 1
+    - _BlendOff: 0.2
     - _DebugVisualization: 0
     - _Edge: 1
     - _Exposure: 1
@@ -62,7 +62,7 @@ Material:
     - _OverallIntensity: 1
     - _RimGradientEnd: 0.256
     - _RimGradientStart: 0
-    - _RimIntensity: 0.527
+    - _RimIntensity: 0.92
     - _RimPower: 10
     - _SSSAttenuation: 1
     - _SSSDistortion: 0.531
@@ -79,8 +79,8 @@ Material:
     m_Colors:
     - _AdditionalLightColor: {r: 0, g: 0, b: 0, a: 0}
     - _AdditionalLightShadowColor: {r: 0, g: 0.009653568, b: 1, a: 1}
-    - _AdditionalShadowColor: {r: 0.08007696, g: 0, b: 0.9607843, a: 1}
-    - _AmbientAdjustmentColor: {r: 0.7169812, g: 0.7169812, b: 0.7169812, a: 1}
+    - _AdditionalShadowColor: {r: 0.081632614, g: 0, b: 1, a: 1}
+    - _AmbientAdjustmentColor: {r: 0.6981132, g: 0.6981132, b: 0.6981132, a: 1}
     - _BottomTint: {r: 0.754717, g: 0.18867925, b: 0.18867925, a: 1}
     - _MainLightColorOverride: {r: 0.49056602, g: 0.49056602, b: 0.49056602, a: 1}
     - _MainLightShadowColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}

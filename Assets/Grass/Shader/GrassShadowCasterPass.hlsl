@@ -8,8 +8,6 @@ FragmentData ShadowPassVertex(VertexData input)
 {
     FragmentData output;
 
-    output.terrainBlendingColor = float4(0, 0, 0, 0);
-
     GetComputeData_float(input.vertexID, output.worldPos, output.normalWS, output.uv, output.diffuseColor,
                          output.extraBuffer);
 

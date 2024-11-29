@@ -2,32 +2,11 @@
 #include "GrassInput.hlsl"
 #include "Grass.hlsl"
 
-half4 SampleTerrainTexture(half3 worldPos)
-{
-    half2 terrainUV = worldPos.xz - _OrthographicCamPosTerrain.xz;
-    terrainUV /= _OrthographicCamSizeTerrain * 2;
-    terrainUV += 0.5;
-
-    return SAMPLE_TEXTURE2D_LOD(_TerrainDiffuse, sampler_TerrainDiffuse, terrainUV, 0);
-}
-
 half CalculateVerticalFade(half2 uv)
 {
     half blendMul = uv.y * _BlendMult;
     half blendAdd = blendMul + _BlendOff;
     return saturate(blendAdd);
-}
-
-half4 CalculateBaseColor(half3 diffuseColor, half verticalFade)
-{
-    return half4(diffuseColor, 0) * lerp(_BottomTint, _TopTint, verticalFade);
-}
-
-half4 BlendWithTerrain(FragmentData input, half verticalFade)
-{
-    return lerp(input.terrainBlendingColor,
-                input.terrainBlendingColor + _TopTint * half4(input.diffuseColor, 1) *
-                _AmbientAdjustmentColor, verticalFade);
 }
 
 void CalculateCutOff(half extraBufferX, half worldPosY)
@@ -101,17 +80,6 @@ half3 CalculateAdditionalLight(float3 worldPos, float3 worldNormal)
     return diffuseColor;
 }
 
-half3 CalculateRimLight(half3 normalWS, half3 viewDirWS)
-{
-    half3 lightDir = GetMainLight().direction;
-    half t = smoothstep(0, 0.1, lightDir.y);
-    half rimDot = 1 - dot(normalWS, viewDirWS);
-    half rimPower = pow(rimDot, _RimPower);
-    half rimIntensity = rimPower * _RimIntensity;
-    half3 rimColor = rimIntensity * _RimColor * t;
-    return rimColor;
-}
-
 half3 AdjustSaturation(half3 color, half saturation)
 {
     half grey = dot(color, half3(0.2126, 0.7152, 0.0722));
@@ -124,6 +92,22 @@ half3 CustomNeutralToneMapping(half3 color, half exposure)
     return NeutralTonemap(color);
 }
 
+half4 CalculateZoneTint(half3 diffuseColor, half verticalFade, float3 worldPos)
+{
+    half3 zoneMin = _ZonePosData - _ZoneScaleData * 0.5;
+    half3 zoneMax = _ZonePosData + _ZoneScaleData * 0.5f;
+
+    half inZone = worldPos.x > zoneMin.x && worldPos.x < zoneMax.x &&
+                  worldPos.y > zoneMin.y && worldPos.y < zoneMax.y &&
+                  worldPos.z > zoneMin.z && worldPos.z < zoneMax.z
+                      ? 1
+                      : 0;
+
+    half4 normalTint = lerp(_BottomTint, _TopTint, verticalFade);
+    half4 zoneTint = lerp(_BottomTint, _SeasonTint, verticalFade);
+    return half4(diffuseColor, 0) * lerp(normalTint, zoneTint, inZone);
+}
+
 FragmentData Vertex(VertexData input)
 {
     FragmentData output;
@@ -132,9 +116,6 @@ FragmentData Vertex(VertexData input)
                          output.extraBuffer);
     output.positionCS = TransformObjectToHClip(output.worldPos);
 
-    #if defined(BLEND)
-    output.terrainBlendingColor = SampleTerrainTexture(output.worldPos);
-    #endif
     return output;
 }
 
@@ -142,22 +123,14 @@ half4 Fragment(FragmentData input) : SV_Target
 {
     half verticalFade = CalculateVerticalFade(input.uv);
 
-    half4 baseColor = CalculateBaseColor(input.diffuseColor, verticalFade);
-
-    #if defined(BLEND)
-    baseColor = BlendWithTerrain(input, verticalFade);
-    #endif
+    half4 baseColor = CalculateZoneTint(input.diffuseColor, verticalFade, input.worldPos);
 
     CalculateCutOff(input.extraBuffer.x, input.worldPos.y);
 
     half3 mainLighting = CalculateMainLight(baseColor.rgb, input.normalWS, input.worldPos);
     half3 additionalLight = CalculateAdditionalLight(input.worldPos, input.normalWS);
 
-    half3 viewDirWS = normalize(_WorldSpaceCameraPos - input.worldPos);
-
-    half3 rimLight = CalculateRimLight(input.normalWS, viewDirWS);
-
-    half3 finalColor = mainLighting + additionalLight + rimLight;
+    half3 finalColor = mainLighting + additionalLight;
 
     finalColor *= _OverallIntensity;
     finalColor = CustomNeutralToneMapping(finalColor, _Exposure);
