@@ -753,7 +753,8 @@ namespace Grass.Editor
             EditorGUILayout.BeginVertical(headerStyle);
 
             // Foldout을 DrawToggleButton으로 교체
-            if (GrassEditorHelper.DrawToggleButton("Layer Settings Guide", "Display information about terrain layer settings",
+            if (GrassEditorHelper.DrawToggleButton("Layer Settings Guide",
+                    "Display information about terrain layer settings",
                     _layerGuideExpanded, out var expanded))
             {
                 _layerGuideExpanded = expanded;
@@ -1015,8 +1016,11 @@ namespace Grass.Editor
 
             EditorGUILayout.BeginVertical(headerStyle);
 
+            // Season Settings 토글 버튼
             if (GrassEditorHelper.DrawToggleButton("Global Season Settings",
-                    "Configure season-specific settings and ranges", _seasonSettingsExpanded, out var expanded))
+                    "Configure season-specific settings and ranges",
+                    _seasonSettingsExpanded,
+                    out var expanded))
             {
                 _seasonSettingsExpanded = expanded;
             }
@@ -1025,31 +1029,69 @@ namespace Grass.Editor
             {
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
-                // Column Headers
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Space(80);
-                var headerLabelStyle = new GUIStyle(GUI.skin.label)
+                var seasonController = FindAnyObjectByType<GrassSeasonManager>();
+                if (seasonController == null)
                 {
-                    alignment = TextAnchor.MiddleCenter
-                };
-                GUILayout.Label("Color", headerLabelStyle, GUILayout.Width(60));
-                GUILayout.Label("Width", headerLabelStyle, GUILayout.Width(150));
-                GUILayout.Label("Height", headerLabelStyle, GUILayout.Width(150));
-                EditorGUILayout.EndHorizontal();
+                    EditorGUILayout.HelpBox("No GrassSeasonManager found in scene. Season effects are disabled.", MessageType.Info);
+                    if (GUILayout.Button("Create Season Controller"))
+                    {
+                        // Create Season Controller
+                        var controllerObject = new GameObject("Grass Season Manager");
+                        seasonController = controllerObject.AddComponent<GrassSeasonManager>();
 
-                GrassEditorHelper.DrawHorizontalLine(Color.gray, 1, 2);
+                        // Create Season Effect Volume as child
+                        var volumeObject = new GameObject("Season Effect Volume");
+                        volumeObject.transform.SetParent(controllerObject.transform);
+                        var volume = volumeObject.AddComponent<GrassSeasonZone>();
+                
+                        // Set initial transform values for volume
+                        volumeObject.transform.localPosition = Vector3.zero;
+                        volumeObject.transform.localScale = new Vector3(10f, 10f, 10f); // 적당한 초기 크기
 
-                if (!grassCompute || !grassCompute.GrassSetting) return;
+                        if (grassCompute != null && grassCompute.GrassSetting != null)
+                        {
+                            seasonController.Initialize(grassCompute.GrassSetting);
+                        }
 
-                var settings = grassCompute.GrassSetting;
+                        // Register both objects for undo
+                        Undo.RegisterCreatedObjectUndo(controllerObject, "Create Season Controller");
+                        Selection.activeGameObject = controllerObject; // 생성 후 선택
+                    }
+                }
+                else
+                {
+                    // 컬럼 헤더
+                    EditorGUILayout.BeginHorizontal();
+                    GUILayout.Space(80); // Season 라벨 공간
+                    var headerLabelStyle = new GUIStyle(GUI.skin.label)
+                    {
+                        alignment = TextAnchor.MiddleCenter
+                    };
+                    GUILayout.Label("Color", headerLabelStyle, GUILayout.Width(60));
+                    GUILayout.Label("Width", headerLabelStyle, GUILayout.Width(150));
+                    GUILayout.Label("Height", headerLabelStyle, GUILayout.Width(150));
+                    EditorGUILayout.EndHorizontal();
 
-                DrawSeasonSettingRow("Winter", ref settings.winterSettings);
-                DrawSeasonSettingRow("Spring", ref settings.springSettings);
-                DrawSeasonSettingRow("Summer", ref settings.summerSettings);
-                DrawSeasonSettingRow("Autumn", ref settings.autumnSettings);
+                    GrassEditorHelper.DrawHorizontalLine(Color.gray, 1, 2);
 
-                GrassEditorHelper.DrawMinMaxSection("Season Range", ref settings.seasonRangeMin,
-                    ref settings.seasonRangeMax, 0f, 4f);
+                    if (!grassCompute || !grassCompute.GrassSetting) return;
+
+                    var settings = grassCompute.GrassSetting;
+
+                    // 각 계절별 설정 UI
+                    DrawSeasonSettingRow("Winter", ref settings.winterSettings);
+                    DrawSeasonSettingRow("Spring", ref settings.springSettings);
+                    DrawSeasonSettingRow("Summer", ref settings.summerSettings);
+                    DrawSeasonSettingRow("Autumn", ref settings.autumnSettings);
+
+                    EditorGUILayout.Space(10);
+
+                    // 전역 계절 범위 설정
+                    GrassEditorHelper.DrawMinMaxSection("Season Range",
+                        ref settings.seasonRangeMin,
+                        ref settings.seasonRangeMax,
+                        0f, 4f);
+                }
 
                 EditorGUILayout.EndVertical();
             }

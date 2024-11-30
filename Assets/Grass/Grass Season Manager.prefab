@@ -1,0 +1,642 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1256810805782735328
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5606958749986974768}
+  - component: {fileID: 3090326573100217712}
+  m_Layer: 0
+  m_Name: Grass Season Zone_2
+  m_TagString: Untagged
+  m_Icon: {fileID: 5721338939258241955, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5606958749986974768
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1256810805782735328}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 40, y: -0.5, z: 40}
+  m_LocalScale: {x: 30, y: 20, z: 30}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4542649765775544481}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3090326573100217712
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1256810805782735328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cd38aa67ba74c0ea8304a2557b57e89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showGizmos: 0
+  overrideGlobalSettings: 0
+  seasonValue: 0
+  winterSettings:
+    seasonColor: {r: 0, g: 0, b: 0, a: 0}
+    width: 1
+    height: 1
+  springSettings:
+    seasonColor: {r: 0, g: 0, b: 0, a: 0}
+    width: 1
+    height: 1
+  summerSettings:
+    seasonColor: {r: 0, g: 0, b: 0, a: 0}
+    width: 1
+    height: 1
+  autumnSettings:
+    seasonColor: {r: 0, g: 0, b: 0, a: 0}
+    width: 1
+    height: 1
+  seasonRange: {x: 0, y: 4}
+--- !u!1 &1403616704863236433
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1819646101198171350}
+  - component: {fileID: 3477943284630714973}
+  m_Layer: 0
+  m_Name: Grass Season Zone_1
+  m_TagString: Untagged
+  m_Icon: {fileID: 5721338939258241955, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1819646101198171350
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1403616704863236433}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.5, z: 40}
+  m_LocalScale: {x: 30, y: 20, z: 30}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4542649765775544481}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3477943284630714973
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1403616704863236433}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cd38aa67ba74c0ea8304a2557b57e89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showGizmos: 0
+  overrideGlobalSettings: 0
+  seasonValue: 0
+  winterSettings:
+    seasonColor: {r: 0, g: 0, b: 0, a: 0}
+    width: 1
+    height: 1
+  springSettings:
+    seasonColor: {r: 0, g: 0, b: 0, a: 0}
+    width: 1
+    height: 1
+  summerSettings:
+    seasonColor: {r: 0, g: 0, b: 0, a: 0}
+    width: 1
+    height: 1
+  autumnSettings:
+    seasonColor: {r: 0, g: 0, b: 0, a: 0}
+    width: 1
+    height: 1
+  seasonRange: {x: 0, y: 4}
+--- !u!1 &1624235188443120175
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7064663948354154434}
+  - component: {fileID: 1075647803462081266}
+  m_Layer: 0
+  m_Name: Grass Season Zone_7
+  m_TagString: Untagged
+  m_Icon: {fileID: 5721338939258241955, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7064663948354154434
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1624235188443120175}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.5, z: -40}
+  m_LocalScale: {x: 30, y: 20, z: 30}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4542649765775544481}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1075647803462081266
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1624235188443120175}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cd38aa67ba74c0ea8304a2557b57e89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showGizmos: 0
+  overrideGlobalSettings: 1
+  seasonValue: 0
+  winterSettings:
+    seasonColor: {r: 0.54143876, g: 0.49279103, b: 0.9245283, a: 0}
+    width: 2
+    height: 0.2
+  springSettings:
+    seasonColor: {r: 0.11053756, g: 0.8679245, b: 0.66880435, a: 0}
+    width: 1.5
+    height: 1
+  summerSettings:
+    seasonColor: {r: 0.9245283, g: 0.49401188, b: 0.100302614, a: 0}
+    width: 1
+    height: 2
+  autumnSettings:
+    seasonColor: {r: 1, g: 0.040395662, b: 0, a: 0}
+    width: 2
+    height: 1
+  seasonRange: {x: 0, y: 4}
+--- !u!1 &2287317727377756476
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2604669313694363588}
+  - component: {fileID: 4482997403602222953}
+  m_Layer: 0
+  m_Name: Grass Season Zone_4
+  m_TagString: Untagged
+  m_Icon: {fileID: 5721338939258241955, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2604669313694363588
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2287317727377756476}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 30, y: 20, z: 30}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4542649765775544481}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4482997403602222953
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2287317727377756476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cd38aa67ba74c0ea8304a2557b57e89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showGizmos: 0
+  overrideGlobalSettings: 1
+  seasonValue: 0
+  winterSettings:
+    seasonColor: {r: 0, g: 0.98944926, b: 1, a: 0}
+    width: 0.2
+    height: 1.5
+  springSettings:
+    seasonColor: {r: 0.4994577, g: 0.8584906, b: 0.03644534, a: 0}
+    width: 0.97
+    height: 1.01
+  summerSettings:
+    seasonColor: {r: 0.8584906, g: 0.21089128, b: 0.020247417, a: 0}
+    width: 1.46
+    height: 1.55
+  autumnSettings:
+    seasonColor: {r: 0.7173948, g: 0.13243146, b: 0.9056604, a: 0}
+    width: 1
+    height: 1
+  seasonRange: {x: 0, y: 4}
+--- !u!1 &3436801081654500853
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4737045762543214199}
+  - component: {fileID: 5294878622322524834}
+  m_Layer: 0
+  m_Name: Grass Season Zone_3
+  m_TagString: Untagged
+  m_Icon: {fileID: 5721338939258241955, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4737045762543214199
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3436801081654500853}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -40, y: -0.5, z: 0}
+  m_LocalScale: {x: 30, y: 20, z: 30}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4542649765775544481}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5294878622322524834
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3436801081654500853}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cd38aa67ba74c0ea8304a2557b57e89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showGizmos: 0
+  overrideGlobalSettings: 1
+  seasonValue: 0
+  winterSettings:
+    seasonColor: {r: 1, g: 1, b: 1, a: 0}
+    width: 0.5
+    height: 0.2
+  springSettings:
+    seasonColor: {r: 0.8301887, g: 0.79415077, b: 0.53648984, a: 0}
+    width: 1
+    height: 1
+  summerSettings:
+    seasonColor: {r: 0.39520308, g: 0.7924528, b: 0.1009256, a: 0}
+    width: 1.5
+    height: 1.5
+  autumnSettings:
+    seasonColor: {r: 1, g: 0, b: 0.09262037, a: 0}
+    width: 1
+    height: 1
+  seasonRange: {x: 0, y: 4}
+--- !u!1 &6168409826919632569
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4542649765775544481}
+  - component: {fileID: 6758699924141396931}
+  m_Layer: 0
+  m_Name: Grass Season Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4542649765775544481
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6168409826919632569}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 3430367381715039374}
+  - {fileID: 1819646101198171350}
+  - {fileID: 5606958749986974768}
+  - {fileID: 4737045762543214199}
+  - {fileID: 2604669313694363588}
+  - {fileID: 5523232519718770300}
+  - {fileID: 4173405850166314182}
+  - {fileID: 7064663948354154434}
+  - {fileID: 3949262305580440517}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6758699924141396931
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6168409826919632569}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a0b29a38183485e849341e7dd2d1e69, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  seasonVolumes:
+  - {fileID: 4566121772926198075}
+  - {fileID: 3477943284630714973}
+  - {fileID: 3090326573100217712}
+  - {fileID: 5294878622322524834}
+  - {fileID: 4482997403602222953}
+  - {fileID: 2031424964542696418}
+  - {fileID: 2320367875515886143}
+  - {fileID: 1075647803462081266}
+  - {fileID: 8184857089706292698}
+  globalSeasonValue: 0
+--- !u!1 &6568294238792541718
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3949262305580440517}
+  - component: {fileID: 8184857089706292698}
+  m_Layer: 0
+  m_Name: Grass Season Zone_8
+  m_TagString: Untagged
+  m_Icon: {fileID: 5721338939258241955, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3949262305580440517
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6568294238792541718}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 40, y: -0.5, z: -40}
+  m_LocalScale: {x: 30, y: 20, z: 30}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4542649765775544481}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8184857089706292698
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6568294238792541718}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cd38aa67ba74c0ea8304a2557b57e89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showGizmos: 0
+  overrideGlobalSettings: 0
+  seasonValue: 0
+  winterSettings:
+    seasonColor: {r: 0, g: 0, b: 0, a: 0}
+    width: 1
+    height: 1
+  springSettings:
+    seasonColor: {r: 0, g: 0, b: 0, a: 0}
+    width: 1
+    height: 1
+  summerSettings:
+    seasonColor: {r: 0, g: 0, b: 0, a: 0}
+    width: 1
+    height: 1
+  autumnSettings:
+    seasonColor: {r: 0, g: 0, b: 0, a: 0}
+    width: 1
+    height: 1
+  seasonRange: {x: 0, y: 4}
+--- !u!1 &8304152739196953991
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5523232519718770300}
+  - component: {fileID: 2031424964542696418}
+  m_Layer: 0
+  m_Name: Grass Season Zone_5
+  m_TagString: Untagged
+  m_Icon: {fileID: 5721338939258241955, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5523232519718770300
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8304152739196953991}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 40, y: -0.5, z: 0}
+  m_LocalScale: {x: 30, y: 20, z: 30}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4542649765775544481}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2031424964542696418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8304152739196953991}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cd38aa67ba74c0ea8304a2557b57e89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showGizmos: 0
+  overrideGlobalSettings: 1
+  seasonValue: 0
+  winterSettings:
+    seasonColor: {r: 1, g: 1, b: 1, a: 0}
+    width: 1.5
+    height: 0.5
+  springSettings:
+    seasonColor: {r: 1, g: 0, b: 0, a: 0}
+    width: 1
+    height: 1
+  summerSettings:
+    seasonColor: {r: 0, g: 0.39547157, b: 1, a: 0}
+    width: 2
+    height: 1.5
+  autumnSettings:
+    seasonColor: {r: 0.66874456, g: 0, b: 1, a: 0}
+    width: 1
+    height: 1
+  seasonRange: {x: 0, y: 4}
+--- !u!1 &8311127587495517522
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3430367381715039374}
+  - component: {fileID: 4566121772926198075}
+  m_Layer: 0
+  m_Name: Grass Season Zone
+  m_TagString: Untagged
+  m_Icon: {fileID: 5721338939258241955, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3430367381715039374
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8311127587495517522}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -40.4, y: -0.5, z: 40.2}
+  m_LocalScale: {x: 30, y: 20, z: 30}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4542649765775544481}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4566121772926198075
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8311127587495517522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cd38aa67ba74c0ea8304a2557b57e89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showGizmos: 0
+  overrideGlobalSettings: 1
+  seasonValue: 0
+  winterSettings:
+    seasonColor: {r: 0.5977661, g: 0.9421824, b: 0.9528302, a: 0}
+    width: 0.18
+    height: 1
+  springSettings:
+    seasonColor: {r: 0.9716981, g: 0.74712616, b: 0.19708972, a: 0}
+    width: 1
+    height: 1
+  summerSettings:
+    seasonColor: {r: 0.032707386, g: 0.990566, b: 0.14836557, a: 0}
+    width: 2
+    height: 1
+  autumnSettings:
+    seasonColor: {r: 0.7830189, g: 0.15143289, b: 0.15143289, a: 0}
+    width: 0.5
+    height: 1.5
+  seasonRange: {x: 0, y: 2}
+--- !u!1 &8683325459017940453
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4173405850166314182}
+  - component: {fileID: 2320367875515886143}
+  m_Layer: 0
+  m_Name: Grass Season Zone_6
+  m_TagString: Untagged
+  m_Icon: {fileID: 5721338939258241955, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4173405850166314182
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8683325459017940453}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -40, y: -0.5, z: -40}
+  m_LocalScale: {x: 30, y: 20, z: 30}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4542649765775544481}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2320367875515886143
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8683325459017940453}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cd38aa67ba74c0ea8304a2557b57e89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showGizmos: 0
+  overrideGlobalSettings: 1
+  seasonValue: 2
+  winterSettings:
+    seasonColor: {r: 0.5471698, g: 0.5471698, b: 0.5471698, a: 0}
+    width: 1.5
+    height: 0.2
+  springSettings:
+    seasonColor: {r: 0.9339623, g: 0.7331831, b: 0.18062477, a: 0}
+    width: 2
+    height: 2
+  summerSettings:
+    seasonColor: {r: 0, g: 1, b: 0.11228013, a: 0}
+    width: 1
+    height: 1.5
+  autumnSettings:
+    seasonColor: {r: 1, g: 0.033018887, b: 0.6039216, a: 0}
+    width: 1.5
+    height: 1
+  seasonRange: {x: 2, y: 4}

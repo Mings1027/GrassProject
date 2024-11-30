@@ -10,7 +10,7 @@ using UnityEditor;
 #endif
 
 [ExecuteInEditMode]
-public class GrassComputeScript : MonoBehaviour
+public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 {
     //
     private const int SourceVertStride = sizeof(float) * (3 + 3 + 2 + 3);
@@ -69,25 +69,29 @@ public class GrassComputeScript : MonoBehaviour
         0, // Index of the first instance to render
         0 // Not used
     };
-    private GrassSeasonController _seasonController;
+    private GrassSeasonManager _seasonManager;
 
     public List<GrassData> GrassDataList
     {
         get => grassData;
         set => grassData = value;
     }
+
     public Material InstantiatedMaterial
     {
         get => instantiatedMaterial;
         set => instantiatedMaterial = value;
     }
+    public ComputeShader InstantiatedComputeShader => _instComputeShader;
+
+#if UNITY_EDITOR
+
     public GrassSettingSO GrassSetting
     {
         get => grassSetting;
         set => grassSetting = value;
     }
 
-#if UNITY_EDITOR
     private SceneView _view;
 #endif
 
@@ -154,9 +158,6 @@ public class GrassComputeScript : MonoBehaviour
         if (grassData.Count <= 0) return;
         GetFrustumData();
         SetGrassDataUpdate();
-        
-        // 시즌 데이터 업데이트
-        ApplySeasonData(_seasonController.GetCurrentSeasonData());
 
         // Clear the draw and indirect args buffers of last frame's data
         _drawBuffer.SetCounterValue(0);
@@ -332,15 +333,15 @@ public class GrassComputeScript : MonoBehaviour
         _idGrassKernel = _instComputeShader.FindKernel("Main");
 
         // Set buffer data
-        _instComputeShader.SetBuffer(_idGrassKernel, SourceVertices, _sourceVertBuffer);
-        _instComputeShader.SetBuffer(_idGrassKernel, DrawTriangles, _drawBuffer);
-        _instComputeShader.SetBuffer(_idGrassKernel, IndirectArgsBuffer, _argsBuffer);
-        _instComputeShader.SetBuffer(_idGrassKernel, VisibleIDBuffer, _visibleIDBuffer);
-        instantiatedMaterial.SetBuffer(DrawTriangles, _drawBuffer);
+        _instComputeShader.SetBuffer(_idGrassKernel, GrassShaderPropertyID.SourceVertices, _sourceVertBuffer);
+        _instComputeShader.SetBuffer(_idGrassKernel, GrassShaderPropertyID.DrawTriangles, _drawBuffer);
+        _instComputeShader.SetBuffer(_idGrassKernel, GrassShaderPropertyID.IndirectArgsBuffer, _argsBuffer);
+        _instComputeShader.SetBuffer(_idGrassKernel, GrassShaderPropertyID.VisibleIDBuffer, _visibleIDBuffer);
+        instantiatedMaterial.SetBuffer(GrassShaderPropertyID.DrawTriangles, _drawBuffer);
         // added for cutting
-        _instComputeShader.SetBuffer(_idGrassKernel, CutBuffer, _cutBuffer);
+        _instComputeShader.SetBuffer(_idGrassKernel, GrassShaderPropertyID.CutBuffer, _cutBuffer);
         // Set vertex data
-        _instComputeShader.SetInt(NumSourceVertices, numSourceVertices);
+        _instComputeShader.SetInt(GrassShaderPropertyID.NumSourceVertices, numSourceVertices);
         // cache shader property to int id for interactivity;
         _interactorDataID = Shader.PropertyToID("_InteractorData");
 
@@ -358,7 +359,6 @@ public class GrassComputeScript : MonoBehaviour
 #endif
         SetupQuadTree(full);
         GetFrustumData();
-        InitializeSeasonSystem();
     }
 
     private void SetupQuadTree(bool full)
@@ -418,20 +418,6 @@ public class GrassComputeScript : MonoBehaviour
         }
     }
 
-    private void InitializeSeasonSystem()
-    {
-        if (_seasonController == null)
-        {
-            _seasonController = FindAnyObjectByType<GrassSeasonController>();
-        }
-
-        if (_seasonController != null)
-        {
-            _seasonController.Initialize(grassSetting);
-            ApplySeasonData(_seasonController.GetCurrentSeasonData());
-        }
-    }
-
     public void ResetFaster()
     {
         _fastMode = true;
@@ -442,7 +428,7 @@ public class GrassComputeScript : MonoBehaviour
     // Update the shader with frame specific data
     private void SetGrassDataUpdate()
     {
-        _instComputeShader.SetFloat(Time, UnityEngine.Time.time);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.Time, Time.time);
 
         if (_interactors.Count > 0)
         {
@@ -451,7 +437,7 @@ public class GrassComputeScript : MonoBehaviour
 
         if (_mainCamera)
         {
-            _instComputeShader.SetVector(CameraPositionWs, _mainCamera.transform.position);
+            _instComputeShader.SetVector(GrassShaderPropertyID.CameraPositionWs, _mainCamera.transform.position);
         }
     }
 
@@ -465,7 +451,7 @@ public class GrassComputeScript : MonoBehaviour
         }
 
         _instComputeShader.SetVectorArray(_interactorDataID, positions);
-        _instComputeShader.SetFloat(InteractorsLength, _interactors.Count);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.InteractorsLength, _interactors.Count);
     }
 
     private void UpdateCutBuffer(Vector3 hitPoint, float radius)
@@ -597,48 +583,7 @@ public class GrassComputeScript : MonoBehaviour
         _cullingTree = null;
         _bounds = new Bounds();
     }
-
-    private void ApplySeasonData(VolumeData[] volumeData)
-    {
-        var positions = new Vector4[MAX_VOLUMES];
-        var scales = new Vector4[MAX_VOLUMES];
-        var colors = new Vector4[MAX_VOLUMES];
-        var widthHeights = new Vector4[MAX_VOLUMES];
-
-        for (int i = 0; i < MAX_VOLUMES; i++)
-        {
-            if (volumeData[i].isActive)
-            {
-                positions[i] = volumeData[i].position;
-                positions[i].w = 1.0f; // 활성화 상태를 w에 저장
-                scales[i] = volumeData[i].scale;
-                colors[i] = volumeData[i].color;
-                widthHeights[i] = new Vector4(volumeData[i].width, volumeData[i].height, 0, 0);
-            }
-            else
-            {
-                positions[i].w = 0.0f; // 비활성화 상태
-            }
-        }
-
-        if (_instComputeShader != null)
-        {
-            _instComputeShader.SetVectorArray(ZonePositions, positions);
-            _instComputeShader.SetVectorArray(ZoneScales, scales);
-            _instComputeShader.SetVectorArray(ZoneColors, colors);
-            _instComputeShader.SetVectorArray(ZoneWidthHeights, widthHeights);
-            _instComputeShader.SetInt(ZoneCount, MAX_VOLUMES);
-        }
-
-        if (instantiatedMaterial != null)
-        {
-            instantiatedMaterial.SetVectorArray(ZonePositions, positions);
-            instantiatedMaterial.SetVectorArray(ZoneScales, scales);
-            instantiatedMaterial.SetVectorArray(ZoneColors, colors);
-            instantiatedMaterial.SetVectorArray(ZoneWidthHeights, widthHeights);
-            instantiatedMaterial.SetInt(ZoneCount, MAX_VOLUMES);
-        }
-    }
+    
     /*=======================================================================================
      *                              Setup Shader Data
      =======================================================================================*/
@@ -646,117 +591,55 @@ public class GrassComputeScript : MonoBehaviour
     private void SetShaderData()
     {
         // Send things to compute shader that dont need to be set every frame
-        _instComputeShader.SetFloat(Time, UnityEngine.Time.time);
-        _instComputeShader.SetFloat(GrassRandomHeightMin, grassSetting.randomHeightMin);
-        _instComputeShader.SetFloat(GrassRandomHeightMax, grassSetting.randomHeightMax);
-        _instComputeShader.SetFloat(WindSpeed, grassSetting.windSpeed);
-        _instComputeShader.SetFloat(WindStrength, grassSetting.windStrength);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.Time, Time.time);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.GrassRandomHeightMin, grassSetting.randomHeightMin);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.GrassRandomHeightMax, grassSetting.randomHeightMax);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.WindSpeed, grassSetting.windSpeed);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.WindStrength, grassSetting.windStrength);
 
-        _instComputeShader.SetFloat(InteractorStrength, grassSetting.interactorStrength);
-        _instComputeShader.SetFloat(BladeRadius, grassSetting.bladeRadius);
-        _instComputeShader.SetFloat(BladeForward, grassSetting.bladeForward);
-        _instComputeShader.SetFloat(BladeCurve, Mathf.Max(0, grassSetting.bladeCurve));
-        _instComputeShader.SetFloat(BottomWidth, grassSetting.bottomWidth);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.InteractorStrength, grassSetting.interactorStrength);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.BladeRadius, grassSetting.bladeRadius);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.BladeForward, grassSetting.bladeForward);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.BladeCurve, Mathf.Max(0, grassSetting.bladeCurve));
+        _instComputeShader.SetFloat(GrassShaderPropertyID.BottomWidth, grassSetting.bottomWidth);
 
-        _instComputeShader.SetInt(MaxBladesPerVertex, grassSetting.bladesPerVertex);
-        _instComputeShader.SetInt(MaxSegmentsPerBlade, grassSetting.segmentsPerBlade);
+        _instComputeShader.SetInt(GrassShaderPropertyID.MaxBladesPerVertex, grassSetting.bladesPerVertex);
+        _instComputeShader.SetInt(GrassShaderPropertyID.MaxSegmentsPerBlade, grassSetting.segmentsPerBlade);
 
-        _instComputeShader.SetFloat(MinHeight, grassSetting.minHeight);
-        _instComputeShader.SetFloat(MinWidth, grassSetting.minWidth);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.MinHeight, grassSetting.minHeight);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.MinWidth, grassSetting.minWidth);
 
-        _instComputeShader.SetFloat(MaxHeight, grassSetting.maxHeight);
-        _instComputeShader.SetFloat(MaxWidth, grassSetting.maxWidth);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.MaxHeight, grassSetting.maxHeight);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.MaxWidth, grassSetting.maxWidth);
 
-        _instComputeShader.SetFloat(MinFadeDist, grassSetting.minFadeDistance);
-        _instComputeShader.SetFloat(MaxFadeDist, grassSetting.maxFadeDistance);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.MinFadeDist, grassSetting.minFadeDistance);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.MaxFadeDist, grassSetting.maxFadeDistance);
 
-        instantiatedMaterial.SetColor(TopTint, grassSetting.topTint);
-        instantiatedMaterial.SetColor(BottomTint, grassSetting.bottomTint);
+        instantiatedMaterial.SetColor(GrassShaderPropertyID.TopTint, grassSetting.topTint);
+        instantiatedMaterial.SetColor(GrassShaderPropertyID.BottomTint, grassSetting.bottomTint);
     }
 
-    public void UpdateSeasonData(VolumeData[] volumeData)
+    public void UpdateSeasonData(Vector4[] positions, Vector4[] scales, Vector4[] colors, Vector4[] widthHeights,
+                                 int zoneCount)
     {
-        var positions = new Vector4[MAX_VOLUMES];
-        var scales = new Vector4[MAX_VOLUMES];
-        var colors = new Vector4[MAX_VOLUMES];
-        var widthHeights = new Vector4[MAX_VOLUMES];
-
-        for (int i = 0; i < MAX_VOLUMES; i++)
-        {
-            if (volumeData[i].isActive)
-            {
-                positions[i] = volumeData[i].position;
-                scales[i] = volumeData[i].scale;
-                colors[i] = volumeData[i].color;
-                widthHeights[i] = new Vector4(volumeData[i].width, volumeData[i].height, 0, 0);
-                // 활성 상태를 Vector4의 w 컴포넌트에 저장
-                positions[i].w = 1.0f;
-            }
-            else
-            {
-                // 비활성 상태를 w = 0으로 표시
-                positions[i].w = 0.0f;
-            }
-        }
-
         if (_instComputeShader != null)
         {
-            _instComputeShader.SetVectorArray(ZonePositions, positions);
-            _instComputeShader.SetVectorArray(ZoneScales, scales);
-            _instComputeShader.SetVectorArray(ZoneColors, colors);
-            _instComputeShader.SetVectorArray(ZoneWidthHeights, widthHeights);
-            _instComputeShader.SetInt(ZoneCount, MAX_VOLUMES);
+            _instComputeShader.SetVectorArray(GrassShaderPropertyID.ZonePositions, positions);
+            _instComputeShader.SetVectorArray(GrassShaderPropertyID.ZoneScales, scales);
+            _instComputeShader.SetVectorArray(GrassShaderPropertyID.ZoneColors, colors);
+            _instComputeShader.SetVectorArray(GrassShaderPropertyID.ZoneWidthHeights, widthHeights);
+            _instComputeShader.SetInt(GrassShaderPropertyID.ZoneCount, zoneCount);
         }
 
         if (instantiatedMaterial != null)
         {
-            instantiatedMaterial.SetVectorArray(ZonePositions, positions);
-            instantiatedMaterial.SetVectorArray(ZoneScales, scales);
-            instantiatedMaterial.SetVectorArray(ZoneColors, colors);
-            instantiatedMaterial.SetVectorArray(ZoneWidthHeights, widthHeights);
-            instantiatedMaterial.SetInt(ZoneCount, MAX_VOLUMES);
+            instantiatedMaterial.SetVectorArray(GrassShaderPropertyID.ZonePositions, positions);
+            instantiatedMaterial.SetVectorArray(GrassShaderPropertyID.ZoneScales, scales);
+            instantiatedMaterial.SetVectorArray(GrassShaderPropertyID.ZoneColors, colors);
+            instantiatedMaterial.SetVectorArray(GrassShaderPropertyID.ZoneWidthHeights, widthHeights);
+            instantiatedMaterial.SetInt(GrassShaderPropertyID.ZoneCount, zoneCount);
         }
     }
-
-    private static readonly int SourceVertices = Shader.PropertyToID("_SourceVertices");
-    private static readonly int DrawTriangles = Shader.PropertyToID("_DrawTriangles");
-    private static readonly int IndirectArgsBuffer = Shader.PropertyToID("_IndirectArgsBuffer");
-    private static readonly int NumSourceVertices = Shader.PropertyToID("_NumSourceVertices");
-
-    // For culling
-    private static readonly int VisibleIDBuffer = Shader.PropertyToID("_VisibleIDBuffer");
-
-    private static readonly int CutBuffer = Shader.PropertyToID("_CutBuffer");
-    private static readonly int Time = Shader.PropertyToID("_Time");
-    private static readonly int GrassRandomHeightMin = Shader.PropertyToID("_GrassRandomHeightMin");
-    private static readonly int GrassRandomHeightMax = Shader.PropertyToID("_GrassRandomHeightMax");
-    private static readonly int WindSpeed = Shader.PropertyToID("_WindSpeed");
-    private static readonly int WindStrength = Shader.PropertyToID("_WindStrength");
-    private static readonly int MinFadeDist = Shader.PropertyToID("_MinFadeDist");
-    private static readonly int MaxFadeDist = Shader.PropertyToID("_MaxFadeDist");
-    private static readonly int InteractorStrength = Shader.PropertyToID("_InteractorStrength");
-    private static readonly int InteractorsLength = Shader.PropertyToID("_InteractorsLength");
-    private static readonly int BladeRadius = Shader.PropertyToID("_BladeRadius");
-    private static readonly int BladeForward = Shader.PropertyToID("_BladeForward");
-    private static readonly int BladeCurve = Shader.PropertyToID("_BladeCurve");
-    private static readonly int BottomWidth = Shader.PropertyToID("_BottomWidth");
-    private static readonly int MaxBladesPerVertex = Shader.PropertyToID("_MaxBladesPerVertex");
-    private static readonly int MaxSegmentsPerBlade = Shader.PropertyToID("_MaxSegmentsPerBlade");
-    private static readonly int MinHeight = Shader.PropertyToID("_MinHeight");
-    private static readonly int MinWidth = Shader.PropertyToID("_MinWidth");
-    private static readonly int MaxHeight = Shader.PropertyToID("_MaxHeight");
-    private static readonly int MaxWidth = Shader.PropertyToID("_MaxWidth");
-
-    private static readonly int CameraPositionWs = Shader.PropertyToID("_CameraPositionWS");
-
-    private static readonly int TopTint = Shader.PropertyToID("_TopTint");
-    private static readonly int BottomTint = Shader.PropertyToID("_BottomTint");
-
-    private static readonly int ZonePositions = Shader.PropertyToID("_ZonePositions");
-    private static readonly int ZoneScales = Shader.PropertyToID("_ZoneScales");
-    private static readonly int ZoneColors = Shader.PropertyToID("_ZoneColors");
-    private static readonly int ZoneWidthHeights = Shader.PropertyToID("_ZoneWidthHeights");
-    private static readonly int ZoneCount = Shader.PropertyToID("_ZoneCount");
 
 #if UNITY_EDITOR
 

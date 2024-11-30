@@ -230,21 +230,35 @@ namespace Grass.Editor
 
         public static void DrawMinMaxSection(string label, ref float min, ref float max, float minLimit, float maxLimit)
         {
+            DrawMinMaxSection(label, "", ref min, ref max, minLimit, maxLimit);
+        }
+
+        public static void DrawMinMaxSection(string label, string tooltip, ref float min, ref float max, float minLimit,
+                                             float maxLimit)
+        {
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.MinMaxSlider(label, ref min, ref max, minLimit, maxLimit);
+            EditorGUILayout.MinMaxSlider(new GUIContent(label, tooltip), ref min, ref max, minLimit, maxLimit);
 
             var roundedMin = (float)Math.Round(min, 2);
             var roundedMax = (float)Math.Round(max, 2);
 
             EditorGUI.BeginChangeCheck();
-            var newMin = EditorGUILayout.FloatField(roundedMin, GUILayout.Width(50));
+            var newMin = EditorGUILayout.FloatField(
+                new GUIContent("", $"Min value for {label}"),
+                roundedMin,
+                GUILayout.Width(50)
+            );
             if (EditorGUI.EndChangeCheck())
             {
                 min = Mathf.Clamp(newMin, minLimit, max);
             }
 
             EditorGUI.BeginChangeCheck();
-            var newMax = EditorGUILayout.FloatField(roundedMax, GUILayout.Width(50));
+            var newMax = EditorGUILayout.FloatField(
+                new GUIContent("", $"Max value for {label}"),
+                roundedMax,
+                GUILayout.Width(50)
+            );
             if (EditorGUI.EndChangeCheck())
             {
                 max = Mathf.Clamp(newMax, min, maxLimit);
