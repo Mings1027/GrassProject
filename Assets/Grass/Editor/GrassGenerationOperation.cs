@@ -166,7 +166,7 @@ namespace Grass.Editor
                 var triIndex = random.Next(0, triangles.Length / 3) * 3;
 
                 // 삼각형의 랜덤한 점 계산
-                var baryCoords = GrassPainterHelper.GetRandomBarycentricCoordWithSeed(random);
+                var baryCoords = GrassEditorHelper.GetRandomBarycentricCoordWithSeed(random);
                 var localPos = baryCoords.x * vertices[triangles[triIndex]] +
                                baryCoords.y * vertices[triangles[triIndex + 1]] +
                                baryCoords.z * vertices[triangles[triIndex + 2]];

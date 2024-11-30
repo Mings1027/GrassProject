@@ -1,6 +1,7 @@
 #pragma kernel Main
 
 #define TWO_PI      6.28318530717958647693
+#define MAX_ZONES 9
 
 // Structure representing vertices of the source mesh
 struct SourceVertex
@@ -51,8 +52,6 @@ RWStructuredBuffer<IndirectArgs> _IndirectArgsBuffer; // Read-write buffer
 #define GRASS_SEGMENTS 3 // Number of segments per blade
 #define GRASS_NUM_VERTICES_PER_BLADE (GRASS_SEGMENTS * 2)+ 1 // Number of vertices per blade
 
-// ----------------------------------------
-
 /* ==========================================================================================
                             Values passed from GrassCompute - Start
 ===========================================================================================*/
@@ -86,20 +85,35 @@ float _InteractorStrength; // 인터랙터의 강도
 uniform float4 _InteractorData[100]; // Positions of moving objects
 uniform float _InteractorsLength; // Length of the interactors
 uniform float3 _CameraPositionWS; // Camera position in world space
+
+// Season Zone Data
+float4 _ZonePositions[MAX_ZONES];    // w 컴포넌트는 활성상태 (1 = 활성, 0 = 비활성)
+float4 _ZoneScales[MAX_ZONES];
+float4 _ZoneColors[MAX_ZONES];
+float4 _ZoneWidthHeights[MAX_ZONES];
+int _ZoneCount;
+
+float grassWidth, grassHeight;
 /* ==========================================================================================
                             Values passed from GrassCompute - End
 ===========================================================================================*/
 
-float grassWidth, grassHeight;
-float _SeasonWidth, _SeasonHeight;
-float3 _ZonePosData;
-float3 _ZoneScaleData;
-// ----------------------------------------
 // Helper Functions
-bool IsInZone(float3 position)
+bool IsInAnyZone(float3 position, out int zoneIndex)
 {
-    float3 delta = abs(position - _ZonePosData);
-    return all(delta <= _ZoneScaleData * 0.5);
+    zoneIndex = -1;
+    for (int i = _ZoneCount - 1; i >= 0; i--)
+    {
+        if (_ZonePositions[i].w < 0.5) continue;  // w < 0.5이면 비활성 존
+        
+        float3 delta = abs(position - _ZonePositions[i].xyz);
+        if (all(delta <= _ZoneScales[i].xyz * 0.5))
+        {
+            zoneIndex = i;
+            return true;
+        }
+    }
+    return false;
 }
 
 // Random generation function
@@ -306,10 +320,11 @@ void Main(uint id : SV_DispatchThreadID)
     grassHeight = clamp(grassHeight + randomOffset, _MinHeight, _MaxHeight);
     grassWidth = clamp(grassWidth, _MinWidth, _MaxWidth);
 
-    if (IsInZone(sv.positionWS))
+    int zoneIndex;
+    if (IsInAnyZone(sv.positionWS, zoneIndex))
     {
-        grassHeight *= _SeasonHeight;
-        grassWidth *= _SeasonWidth;
+        grassHeight *= _ZoneWidthHeights[zoneIndex].y;
+        grassWidth *= _ZoneWidthHeights[zoneIndex].x;
     }
 
     grassWidth *= saturate(distanceFade);

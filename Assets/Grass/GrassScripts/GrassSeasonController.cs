@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Grass.GrassScripts
@@ -5,108 +6,188 @@ namespace Grass.GrassScripts
     [ExecuteInEditMode]
     public class GrassSeasonController : MonoBehaviour
     {
-        private GrassComputeScript _grassCompute;
-        private SeasonEffectVolume _seasonEffectVolume;
-        [SerializeField] private float currentSeasonValue;
+        private const int MAX_VOLUMES = 9;
+        
+        [SerializeField, HideInInspector] private List<SeasonEffectVolume> seasonVolumes = new();
+        private readonly Dictionary<SeasonEffectVolume, Vector3> lastPositions = new();
+        private readonly Dictionary<SeasonEffectVolume, Vector3> lastScales = new();
+        private readonly VolumeData[] volumeData = new VolumeData[MAX_VOLUMES];
+        private bool isDirty;
+        private GrassSettingSO grassSetting;
 
-        private Vector3 _lastZonePosition;
-        private Vector3 _lastZoneScale;
+        // public IReadOnlyList<SeasonEffectVolume> Volumes => seasonVolumes;
 
 #if UNITY_EDITOR
-        public GrassComputeScript GrassCompute => _grassCompute;
+        private void OnValidate()
+        {
+            if (!Application.isPlaying)
+            {
+                UpdateSeasonVolumes();
+            }
+        }
 #endif
+
         private void OnEnable()
         {
-            _grassCompute = FindAnyObjectByType<GrassComputeScript>();
-            _seasonEffectVolume = GetComponentInChildren<SeasonEffectVolume>();
-            _lastZonePosition = Vector3.zero;
-            _lastZoneScale = Vector3.zero;
-
-            UpdateSeasonEffects(currentSeasonValue);
+            UpdateSeasonVolumes();
         }
 
         private void Update()
         {
-            CheckZoneTransform();
-        }
-
-        private void CheckZoneTransform()
-        {
-            if (!_seasonEffectVolume) return;
-
-            var currentPosition = _seasonEffectVolume.transform.position;
-            var currentScale = _seasonEffectVolume.transform.localScale;
-
-            if (currentPosition != _lastZonePosition || currentScale != _lastZoneScale)
+            if (isDirty || CheckVolumeTransforms())
             {
-                UpdateSeasonEffects(currentSeasonValue);
-                _lastZonePosition = currentPosition;
-                _lastZoneScale = currentScale;
+                UpdateAllSeasonEffects();
+                isDirty = false;
             }
         }
 
-        public void UpdateSeasonEffects(float sliderValue)
+        public void Initialize(GrassSettingSO setting)
         {
-            if (!_grassCompute || !_grassCompute.InstantiatedMaterial) return;
-
-            currentSeasonValue = sliderValue;
-            var settings = _grassCompute.GrassSetting;
-
-            var normalizedValue = NormalizeSeasonValue(sliderValue, settings);
-            var (seasonColor, seasonWidth, seasonHeight) = CalculateSeasonSettings(normalizedValue, settings);
-
-            _grassCompute.UpdateSeasonData(
-                _seasonEffectVolume.transform.position,
-                _seasonEffectVolume.transform.localScale,
-                seasonColor,
-                seasonWidth,
-                seasonHeight
-            );
+            grassSetting = setting;
+            UpdateSeasonVolumes();
         }
 
-        private static float NormalizeSeasonValue(float sliderValue, GrassSettingSO settings)
+        public void UpdateSeasonVolumes()
         {
-            var normalizedT = Mathf.InverseLerp(settings.seasonRangeMin, settings.seasonRangeMax, sliderValue);
-            var seasonRange = settings.seasonRangeMax - settings.seasonRangeMin;
-            return settings.seasonRangeMin + (normalizedT * seasonRange);
+            var updatedVolumes = new List<SeasonEffectVolume>();
+            var foundVolumes = GetComponentsInChildren<SeasonEffectVolume>();
+
+            // 최대 MAX_VOLUMES개까지만 처리
+            for (int i = 0; i < Mathf.Min(foundVolumes.Length, MAX_VOLUMES); i++)
+            {
+                if (foundVolumes[i] != null)
+                {
+                    updatedVolumes.Add(foundVolumes[i]);
+                }
+            }
+
+            // 이전에 있던 볼륨들 정리
+            foreach (var volume in seasonVolumes)
+            {
+                if (volume != null && !updatedVolumes.Contains(volume))
+                {
+                    RemoveVolumeData(volume);
+                }
+            }
+
+            // 새로운 볼륨들 추가
+            foreach (var volume in updatedVolumes)
+            {
+                if (!seasonVolumes.Contains(volume))
+                {
+                    AddVolumeData(volume);
+                }
+            }
+
+            seasonVolumes = updatedVolumes;
+            isDirty = true;
         }
 
-        private static (Color color, float width, float height) CalculateSeasonSettings(
-            float seasonValue, GrassSettingSO settings)
+        private void AddVolumeData(SeasonEffectVolume volume)
         {
-            SeasonSettings from, to;
-            float t;
+            lastPositions[volume] = volume.transform.position;
+            lastScales[volume] = volume.transform.localScale;
+        }
 
-            if (seasonValue < 1f)
+        private void RemoveVolumeData(SeasonEffectVolume volume)
+        {
+            lastPositions.Remove(volume);
+            lastScales.Remove(volume);
+        }
+
+        private bool CheckVolumeTransforms()
+        {
+            bool needsUpdate = false;
+
+            foreach (var volume in seasonVolumes)
             {
-                from = settings.winterSettings;
-                to = settings.springSettings;
-                t = seasonValue;
-            }
-            else if (seasonValue < 2f)
-            {
-                from = settings.springSettings;
-                to = settings.summerSettings;
-                t = seasonValue - 1f;
-            }
-            else if (seasonValue < 3f)
-            {
-                from = settings.summerSettings;
-                to = settings.autumnSettings;
-                t = seasonValue - 2f;
-            }
-            else
-            {
-                from = settings.autumnSettings;
-                to = settings.winterSettings;
-                t = seasonValue - 3f;
+                if (!volume) continue;
+
+                // 새로 추가된 볼륨이면 딕셔너리에 추가
+                if (!lastPositions.ContainsKey(volume) || !lastScales.ContainsKey(volume))
+                {
+                    AddVolumeData(volume);
+                    needsUpdate = true;
+                    continue;
+                }
+
+                var currentPosition = volume.transform.position;
+                var currentScale = volume.transform.localScale;
+
+                if (currentPosition != lastPositions[volume] || currentScale != lastScales[volume])
+                {
+                    lastPositions[volume] = currentPosition;
+                    lastScales[volume] = currentScale;
+                    needsUpdate = true;
+                }
             }
 
-            return (
-                Color.Lerp(from.seasonColor, to.seasonColor, t),
-                Mathf.Lerp(from.width, to.width, t),
-                Mathf.Lerp(from.height, to.height, t)
-            );
+            return needsUpdate;
+        }
+
+        private void UpdateAllSeasonEffects()
+        {
+            // VolumeData 배열 초기화
+            for (int i = 0; i < MAX_VOLUMES; i++)
+            {
+                volumeData[i] = new VolumeData { isActive = false };
+            }
+
+            // 활성화된 볼륨 데이터만 업데이트
+            for (int i = 0; i < seasonVolumes.Count; i++)
+            {
+                var volume = seasonVolumes[i];
+                if (!volume) continue;
+
+                var (color, width, height) = volume.CalculateCurrentSeasonSettings(grassSetting);
+
+                volumeData[i] = new VolumeData
+                {
+                    position = volume.transform.position,
+                    scale = volume.transform.localScale,
+                    color = color,
+                    width = width,
+                    height = height,
+                    isActive = true
+                };
+            }
+        }
+
+        public void SetGlobalSeasonValue(float globalValue)
+        {
+            foreach (var volume in seasonVolumes)
+            {
+                if (!volume) continue;
+
+                if (volume.OverrideGlobalSettings)
+                {
+                    float normalizedValue = globalValue / 4f;
+                    float rangeValue = Mathf.Lerp(volume.SeasonRange.x, volume.SeasonRange.y, normalizedValue);
+                    volume.SetSeasonValue(Mathf.Clamp(rangeValue, volume.SeasonRange.x, volume.SeasonRange.y));
+                }
+                else
+                {
+                    volume.SetSeasonValue(globalValue);
+                }
+            }
+
+            UpdateSeasonVolumes();
+        }
+
+        public VolumeData[] GetCurrentSeasonData()
+        {
+            if (isDirty)
+            {
+                UpdateAllSeasonEffects();
+                isDirty = false;
+            }
+
+            return volumeData;
+        }
+
+        private void OnTransformChildrenChanged()
+        {
+            UpdateSeasonVolumes();
         }
     }
 }

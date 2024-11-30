@@ -11,14 +11,20 @@ half CalculateVerticalFade(half2 uv)
 
 half4 CalculateZoneTint(half3 diffuseColor, half verticalFade, float3 worldPos)
 {
-    half3 delta = abs(worldPos - _ZonePosData);
-    half inZone = all(delta <= _ZoneScaleData * 0.5);
+    for (int i = _ZoneCount - 1; i >= 0; i--)
+    {
+        if (_ZonePositions[i].w < 0.5) continue; // w < 0.5이면 비활성 존
 
-    // verticalFade를 기반으로 한번만 보간 계산
-    half4 baseTint = lerp(_BottomTint, inZone ? _SeasonTint : _TopTint, verticalFade);
+        half3 delta = abs(worldPos - _ZonePositions[i].xyz);
+        if (all(delta <= _ZoneScales[i].xyz * 0.5))
+        {
+            half4 baseTint = lerp(half4(0, 0, 0, 0), _ZoneColors[i], verticalFade);
+            return baseTint * half4(1, 1, 1, 1);
+        }
+    }
 
-    // 영역 안일 때는 흰색에 tint 적용, 밖일 때는 diffuseColor에 tint 적용
-    return baseTint * (inZone ? half4(1, 1, 1, 1) : half4(diffuseColor, 0));
+    half4 baseTint = lerp(_BottomTint, _TopTint, verticalFade);
+    return baseTint * half4(diffuseColor, 0);
 }
 
 void CalculateCutOff(half extraBufferX, half worldPosY)

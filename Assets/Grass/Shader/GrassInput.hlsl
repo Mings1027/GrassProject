@@ -16,6 +16,8 @@ struct FragmentData
     float4 extraBuffer : TEXCOORD4;
 };
 
+#define MAX_ZONES 9
+
 CBUFFER_START(UnityPerMaterial)
     float4 _TopTint;
     float4 _BottomTint;
@@ -33,10 +35,10 @@ CBUFFER_START(UnityPerMaterial)
     // Blend
     float _BlendMult, _BlendOff;
 
-    float3 _ZonePosData;
-    float3 _ZoneScaleData;
-
-    float4 _SeasonTint;
-    float _SeasonWidth;
-    float _SeasonHeight;
+    // Zone Settings
+    float4 _ZonePositions[MAX_ZONES]; // w 컴포넌트는 활성상태 (1 = 활성, 0 = 비활성)
+    float4 _ZoneScales[MAX_ZONES];
+    float4 _ZoneColors[MAX_ZONES];
+    float4 _ZoneWidthHeights[MAX_ZONES];
+    int _ZoneCount;
 CBUFFER_END

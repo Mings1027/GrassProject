@@ -16,6 +16,7 @@ public class GrassComputeScript : MonoBehaviour
     private const int SourceVertStride = sizeof(float) * (3 + 3 + 2 + 3);
     private const int DrawStride = sizeof(float) * (3 + 3 + 1 + (3 + 2) * 3);
     private const int MaxBufferSize = 2500000;
+    private const int MAX_VOLUMES = 9;
 
     //
     [SerializeField, HideInInspector] private List<GrassData> grassData = new(); // base data lists
@@ -68,6 +69,7 @@ public class GrassComputeScript : MonoBehaviour
         0, // Index of the first instance to render
         0 // Not used
     };
+    private GrassSeasonController _seasonController;
 
     public List<GrassData> GrassDataList
     {
@@ -152,6 +154,9 @@ public class GrassComputeScript : MonoBehaviour
         if (grassData.Count <= 0) return;
         GetFrustumData();
         SetGrassDataUpdate();
+        
+        // 시즌 데이터 업데이트
+        ApplySeasonData(_seasonController.GetCurrentSeasonData());
 
         // Clear the draw and indirect args buffers of last frame's data
         _drawBuffer.SetCounterValue(0);
@@ -353,6 +358,7 @@ public class GrassComputeScript : MonoBehaviour
 #endif
         SetupQuadTree(full);
         GetFrustumData();
+        InitializeSeasonSystem();
     }
 
     private void SetupQuadTree(bool full)
@@ -409,6 +415,20 @@ public class GrassComputeScript : MonoBehaviour
             _mainCamera.farClipPlane = grassSetting.maxFadeDistance;
             UpdateCulling(_cameraFrustumPlanes);
             _visibleIDBuffer.SetData(_grassVisibleIDList);
+        }
+    }
+
+    private void InitializeSeasonSystem()
+    {
+        if (_seasonController == null)
+        {
+            _seasonController = FindAnyObjectByType<GrassSeasonController>();
+        }
+
+        if (_seasonController != null)
+        {
+            _seasonController.Initialize(grassSetting);
+            ApplySeasonData(_seasonController.GetCurrentSeasonData());
         }
     }
 
@@ -578,6 +598,47 @@ public class GrassComputeScript : MonoBehaviour
         _bounds = new Bounds();
     }
 
+    private void ApplySeasonData(VolumeData[] volumeData)
+    {
+        var positions = new Vector4[MAX_VOLUMES];
+        var scales = new Vector4[MAX_VOLUMES];
+        var colors = new Vector4[MAX_VOLUMES];
+        var widthHeights = new Vector4[MAX_VOLUMES];
+
+        for (int i = 0; i < MAX_VOLUMES; i++)
+        {
+            if (volumeData[i].isActive)
+            {
+                positions[i] = volumeData[i].position;
+                positions[i].w = 1.0f; // 활성화 상태를 w에 저장
+                scales[i] = volumeData[i].scale;
+                colors[i] = volumeData[i].color;
+                widthHeights[i] = new Vector4(volumeData[i].width, volumeData[i].height, 0, 0);
+            }
+            else
+            {
+                positions[i].w = 0.0f; // 비활성화 상태
+            }
+        }
+
+        if (_instComputeShader != null)
+        {
+            _instComputeShader.SetVectorArray(ZonePositions, positions);
+            _instComputeShader.SetVectorArray(ZoneScales, scales);
+            _instComputeShader.SetVectorArray(ZoneColors, colors);
+            _instComputeShader.SetVectorArray(ZoneWidthHeights, widthHeights);
+            _instComputeShader.SetInt(ZoneCount, MAX_VOLUMES);
+        }
+
+        if (instantiatedMaterial != null)
+        {
+            instantiatedMaterial.SetVectorArray(ZonePositions, positions);
+            instantiatedMaterial.SetVectorArray(ZoneScales, scales);
+            instantiatedMaterial.SetVectorArray(ZoneColors, colors);
+            instantiatedMaterial.SetVectorArray(ZoneWidthHeights, widthHeights);
+            instantiatedMaterial.SetInt(ZoneCount, MAX_VOLUMES);
+        }
+    }
     /*=======================================================================================
      *                              Setup Shader Data
      =======================================================================================*/
@@ -605,43 +666,55 @@ public class GrassComputeScript : MonoBehaviour
 
         _instComputeShader.SetFloat(MaxHeight, grassSetting.maxHeight);
         _instComputeShader.SetFloat(MaxWidth, grassSetting.maxWidth);
-        instantiatedMaterial.SetColor(TopTint, grassSetting.topTint);
-        instantiatedMaterial.SetColor(BottomTint, grassSetting.bottomTint);
 
         _instComputeShader.SetFloat(MinFadeDist, grassSetting.minFadeDistance);
         _instComputeShader.SetFloat(MaxFadeDist, grassSetting.maxFadeDistance);
 
-        _instComputeShader.SetVector(ZonePosData, Vector3.zero);
-        _instComputeShader.SetVector(ZoneScaleData, Vector3.one);
-        _instComputeShader.SetFloat(SeasonWidth, 1.0f);
-        _instComputeShader.SetFloat(SeasonHeight, 1.0f);
-
-        if (instantiatedMaterial != null)
-        {
-            instantiatedMaterial.SetVector(ZonePosData, Vector3.zero);
-            instantiatedMaterial.SetVector(ZoneScaleData, Vector3.one);
-            instantiatedMaterial.SetFloat(SeasonWidth, 1.0f);
-            instantiatedMaterial.SetFloat(SeasonHeight, 1.0f);
-        }
+        instantiatedMaterial.SetColor(TopTint, grassSetting.topTint);
+        instantiatedMaterial.SetColor(BottomTint, grassSetting.bottomTint);
     }
 
-    public void UpdateSeasonData(Vector3 zonePosition, Vector3 zoneScale, Color seasonColor, float width, float height)
+    public void UpdateSeasonData(VolumeData[] volumeData)
     {
+        var positions = new Vector4[MAX_VOLUMES];
+        var scales = new Vector4[MAX_VOLUMES];
+        var colors = new Vector4[MAX_VOLUMES];
+        var widthHeights = new Vector4[MAX_VOLUMES];
+
+        for (int i = 0; i < MAX_VOLUMES; i++)
+        {
+            if (volumeData[i].isActive)
+            {
+                positions[i] = volumeData[i].position;
+                scales[i] = volumeData[i].scale;
+                colors[i] = volumeData[i].color;
+                widthHeights[i] = new Vector4(volumeData[i].width, volumeData[i].height, 0, 0);
+                // 활성 상태를 Vector4의 w 컴포넌트에 저장
+                positions[i].w = 1.0f;
+            }
+            else
+            {
+                // 비활성 상태를 w = 0으로 표시
+                positions[i].w = 0.0f;
+            }
+        }
+
         if (_instComputeShader != null)
         {
-            _instComputeShader.SetVector(ZonePosData, zonePosition);
-            _instComputeShader.SetVector(ZoneScaleData, zoneScale);
-            _instComputeShader.SetFloat(SeasonWidth, width);
-            _instComputeShader.SetFloat(SeasonHeight, height);
+            _instComputeShader.SetVectorArray(ZonePositions, positions);
+            _instComputeShader.SetVectorArray(ZoneScales, scales);
+            _instComputeShader.SetVectorArray(ZoneColors, colors);
+            _instComputeShader.SetVectorArray(ZoneWidthHeights, widthHeights);
+            _instComputeShader.SetInt(ZoneCount, MAX_VOLUMES);
         }
 
         if (instantiatedMaterial != null)
         {
-            instantiatedMaterial.SetVector(ZonePosData, zonePosition);
-            instantiatedMaterial.SetVector(ZoneScaleData, zoneScale);
-            instantiatedMaterial.SetFloat(SeasonWidth, width);
-            instantiatedMaterial.SetFloat(SeasonHeight, height);
-            instantiatedMaterial.SetColor(SeasonTint, seasonColor);
+            instantiatedMaterial.SetVectorArray(ZonePositions, positions);
+            instantiatedMaterial.SetVectorArray(ZoneScales, scales);
+            instantiatedMaterial.SetVectorArray(ZoneColors, colors);
+            instantiatedMaterial.SetVectorArray(ZoneWidthHeights, widthHeights);
+            instantiatedMaterial.SetInt(ZoneCount, MAX_VOLUMES);
         }
     }
 
@@ -679,11 +752,11 @@ public class GrassComputeScript : MonoBehaviour
     private static readonly int TopTint = Shader.PropertyToID("_TopTint");
     private static readonly int BottomTint = Shader.PropertyToID("_BottomTint");
 
-    private static readonly int SeasonWidth = Shader.PropertyToID("_SeasonWidth");
-    private static readonly int SeasonHeight = Shader.PropertyToID("_SeasonHeight");
-    private static readonly int ZonePosData = Shader.PropertyToID("_ZonePosData");
-    private static readonly int ZoneScaleData = Shader.PropertyToID("_ZoneScaleData");
-    private static readonly int SeasonTint = Shader.PropertyToID("_SeasonTint");
+    private static readonly int ZonePositions = Shader.PropertyToID("_ZonePositions");
+    private static readonly int ZoneScales = Shader.PropertyToID("_ZoneScales");
+    private static readonly int ZoneColors = Shader.PropertyToID("_ZoneColors");
+    private static readonly int ZoneWidthHeights = Shader.PropertyToID("_ZoneWidthHeights");
+    private static readonly int ZoneCount = Shader.PropertyToID("_ZoneCount");
 
 #if UNITY_EDITOR
 

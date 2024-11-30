@@ -50,7 +50,7 @@ namespace Grass.Editor
                                                   int totalObjects, List<int> tempIndices,
                                                   HashSet<Vector3> positionsToRemove)
         {
-            var bound = GrassPainterHelper.GetObjectBounds(obj);
+            var bound = GrassEditorHelper.GetObjectBounds(obj);
             if (!bound.HasValue) return;
 
             await CollectGrassPositionsInBounds(bound.Value, tempIndices, positionsToRemove);

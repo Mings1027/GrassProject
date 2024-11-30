@@ -26,7 +26,7 @@ namespace Grass.Editor
             _currentBrushRadiusSqr = radius * radius;
             var minMoveSqr = _currentBrushRadiusSqr * MinRemoveDistanceFactor;
 
-            if (GrassPainterHelper.SqrDistance(hitPoint, _lastBrushPosition) < minMoveSqr)
+            if (GrassEditorHelper.SqrDistance(hitPoint, _lastBrushPosition) < minMoveSqr)
                 return;
 
             _lastBrushPosition = hitPoint;
@@ -54,7 +54,7 @@ namespace Grass.Editor
                 if (index >= 0 && index < currentGrassCount)
                 {
                     var grassPosition = grassList[index].position;
-                    if (GrassPainterHelper.SqrDistance(grassPosition, hitPoint) <= _currentBrushRadiusSqr)
+                    if (GrassEditorHelper.SqrDistance(grassPosition, hitPoint) <= _currentBrushRadiusSqr)
                     {
                         _grassIndicesToDelete.Add(index);
                     }
