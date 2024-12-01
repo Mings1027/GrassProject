@@ -1,188 +1,185 @@
-using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Grass.GrassScripts;
 using UnityEngine;
 
-namespace Grass.GrassScripts
+[DisallowMultipleComponent]
+public class GrassSeasonZone : MonoBehaviour
 {
-    [DisallowMultipleComponent]
-    public class GrassSeasonZone : MonoBehaviour
+    [SerializeField] private bool showGizmos = true;
+
+    [Header("Season Settings")] [SerializeField]
+    private bool overrideGlobalSettings;
+    [SerializeField] private float seasonValue;
+    [SerializeField] private SeasonRange seasonRange = new();
+    [SerializeField] private SeasonSettings winterSettings = new();
+    [SerializeField] private SeasonSettings springSettings = new();
+    [SerializeField] private SeasonSettings summerSettings = new();
+    [SerializeField] private SeasonSettings autumnSettings = new();
+
+    public SeasonType StartSeason => seasonRange.From;
+    public SeasonType EndSeason => seasonRange.To;
+    public bool OverrideGlobalSettings => overrideGlobalSettings;
+
+    public float MinRange => overrideGlobalSettings ? seasonRange.GetRange().min : 0f;
+    public float MaxRange => overrideGlobalSettings ? seasonRange.GetRange().max : 4f;
+
+    private void OnEnable()
     {
-        [SerializeField] private bool showGizmos = true;
-
-        [Header("Season Settings")] [SerializeField]
-        private bool overrideGlobalSettings;
-        [SerializeField] private float seasonValue;
-        [SerializeField] private SeasonSettings winterSettings = new();
-        [SerializeField] private SeasonSettings springSettings = new();
-        [SerializeField] private SeasonSettings summerSettings = new();
-        [SerializeField] private SeasonSettings autumnSettings = new();
-        [SerializeField] private Vector2 seasonRange = new(0f, 4f);
-
-        public bool OverrideGlobalSettings => overrideGlobalSettings;
-        public Vector2 SeasonRange => seasonRange;
-
-        public float MinRange => overrideGlobalSettings ? seasonRange.x : 0f;
-        public float MaxRange => overrideGlobalSettings ? seasonRange.y : 4f;
-
-        private void OnEnable()
+        var controller = GrassSeasonManager.Instance;
+        if (controller != null)
         {
-            var controller = GrassSeasonManager.Instance;
-            if (controller != null)
-            {
-                controller.RegisterVolume(this);
-            }
+            controller.RegisterZone(this);
         }
+    }
 
-        private void OnDisable()
+    private void OnDisable()
+    {
+        var controller = GrassSeasonManager.Instance;
+        if (controller != null)
         {
-            var controller = GrassSeasonManager.Instance;
-            if (controller != null)
-            {
-                controller.UnregisterVolume(this);
-            }
+            controller.UnregisterZone(this);
         }
+    }
 
 #if UNITY_EDITOR
-        private void OnValidate()
+    private void OnValidate()
+    {
+        if (overrideGlobalSettings)
         {
-            if (overrideGlobalSettings)
-            {
-                seasonValue = Mathf.Clamp(seasonValue, seasonRange.x, seasonRange.y);
-            }
-
-            UpdateController();
+            seasonValue = Mathf.Clamp(seasonValue, MinRange, MaxRange);
         }
 
-        private void OnDrawGizmosSelected()
-        {
-            if (!showGizmos) return;
+        UpdateController();
+    }
 
-            Gizmos.color = new Color(1, 1, 0, 0.3f);
-            Gizmos.matrix = transform.localToWorldMatrix;
-            Gizmos.DrawCube(Vector3.zero, Vector3.one);
+    private void OnDrawGizmosSelected()
+    {
+        if (!showGizmos) return;
 
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireCube(Vector3.zero, Vector3.one);
-        }
+        Gizmos.color = new Color(1, 1, 0, 0.3f);
+        Gizmos.matrix = transform.localToWorldMatrix;
+        Gizmos.DrawCube(Vector3.zero, Vector3.one);
+
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireCube(Vector3.zero, Vector3.one);
+    }
 #endif
 
-        public void SetSeasonValueOverTime(float targetValue, float duration)
+    public void SetSeasonValueOverTime(float targetValue, float duration)
+    {
+        if (duration <= 0f)
         {
-            if (duration <= 0f)
-            {
-                SetSeasonValue(targetValue);
-                return;
-            }
-
-            var currentRange = GetMinMaxSeasonRange();
-            float clampedTarget = Mathf.Clamp(targetValue, currentRange.min, currentRange.max);
-
-            SetSeasonValueAsync(seasonValue, clampedTarget, duration, destroyCancellationToken).Forget();
+            SetSeasonValue(targetValue);
+            return;
         }
 
-        public void SetSeasonValueOverTime(float startValue, float endValue, float duration)
+        var currentRange = GetMinMaxSeasonRange();
+        float clampedTarget = Mathf.Clamp(targetValue, currentRange.min, currentRange.max);
+
+        SetSeasonValueAsync(seasonValue, clampedTarget, duration, destroyCancellationToken).Forget();
+    }
+
+    public void SetSeasonValueOverTime(float startValue, float endValue, float duration)
+    {
+        if (duration <= 0f)
         {
-            if (duration <= 0f)
-            {
-                SetSeasonValue(endValue);
-                return;
-            }
-
-            var currentRange = GetMinMaxSeasonRange();
-            float clampedStart = Mathf.Clamp(startValue, currentRange.min, currentRange.max);
-            float clampedEnd = Mathf.Clamp(endValue, currentRange.min, currentRange.max);
-
-            SetSeasonValueAsync(clampedStart, clampedEnd, duration, destroyCancellationToken).Forget();
-        }
-
-        private async UniTask SetSeasonValueAsync(float startValue, float endValue, float duration,
-                                                  CancellationToken cancellationToken)
-        {
-            var elapsed = 0f;
-
-            while (elapsed < duration)
-            {
-                if (cancellationToken.IsCancellationRequested) return;
-
-                elapsed += Time.deltaTime;
-                var t = elapsed / duration;
-                var currentValue = Mathf.Lerp(startValue, endValue, t);
-                SetSeasonValue(currentValue);
-                await UniTask.Yield(cancellationToken);
-            }
-
             SetSeasonValue(endValue);
+            return;
         }
 
-        private void UpdateController()
+        var currentRange = GetMinMaxSeasonRange();
+        float clampedStart = Mathf.Clamp(startValue, currentRange.min, currentRange.max);
+        float clampedEnd = Mathf.Clamp(endValue, currentRange.min, currentRange.max);
+
+        SetSeasonValueAsync(clampedStart, clampedEnd, duration, destroyCancellationToken).Forget();
+    }
+
+    private async UniTask SetSeasonValueAsync(float startValue, float endValue, float duration,
+                                              CancellationToken cancellationToken)
+    {
+        var elapsed = 0f;
+
+        while (elapsed < duration)
         {
-            var controller = GrassSeasonManager.Instance;
-            if (controller != null)
-            {
-                controller.UpdateSingleVolume(this);
-            }
+            if (cancellationToken.IsCancellationRequested) return;
+
+            elapsed += Time.deltaTime;
+            var t = elapsed / duration;
+            var currentValue = Mathf.Lerp(startValue, endValue, t);
+            SetSeasonValue(currentValue);
+            await UniTask.Yield(cancellationToken);
         }
 
-        public void SetSeasonValue(float value)
+        SetSeasonValue(endValue);
+    }
+
+    private void UpdateController()
+    {
+        var controller = GrassSeasonManager.Instance;
+        if (controller != null)
         {
-            if (overrideGlobalSettings)
-            {
-                value = Mathf.Clamp(value, seasonRange.x, seasonRange.y);
-            }
-
-            if (Mathf.Approximately(seasonValue, value)) return;
-            seasonValue = value;
-            UpdateController();
+            controller.UpdateSingleZone(this);
         }
+    }
 
-        public (float min, float max) GetMinMaxSeasonRange()
+    public void SetSeasonValue(float value)
+    {
+        if (overrideGlobalSettings)
         {
-            if (overrideGlobalSettings)
-            {
-                return (seasonRange.x, seasonRange.y);
-            }
-
-            return (0f, 4f);
+            var (min, max) = seasonRange.GetRange();
+            value = Mathf.Clamp(value, min, max);
         }
 
-        public (Color color, float width, float height) CalculateCurrentSeasonSettings(GrassSettingSO grassSetting)
+        if (Mathf.Approximately(seasonValue, value)) return;
+        seasonValue = value;
+        UpdateController();
+    }
+
+    public (float min, float max) GetMinMaxSeasonRange()
+    {
+        if (overrideGlobalSettings)
         {
-            if (!overrideGlobalSettings && grassSetting == null)
-            {
-                return (Color.white, 1f, 1f);
-            }
-
-            seasonValue = overrideGlobalSettings ? Mathf.Clamp(seasonValue, seasonRange.x, seasonRange.y) : seasonValue;
-
-            float seasonSection = seasonValue % 4;
-            int seasonIndex = Mathf.FloorToInt(seasonSection);
-            float t = seasonSection - seasonIndex;
-
-            SeasonSettings from, to;
-            if (overrideGlobalSettings)
-            {
-                var settings = new[] { winterSettings, springSettings, summerSettings, autumnSettings, winterSettings };
-                from = settings[seasonIndex];
-                to = settings[seasonIndex + 1];
-            }
-            else
-            {
-                var settings = new[]
-                {
-                    grassSetting.winterSettings, grassSetting.springSettings,
-                    grassSetting.summerSettings, grassSetting.autumnSettings,
-                    grassSetting.winterSettings
-                };
-                from = settings[seasonIndex];
-                to = settings[seasonIndex + 1];
-            }
-
-            return (
-                Color.Lerp(from.seasonColor, to.seasonColor, t),
-                Mathf.Lerp(from.width, to.width, t),
-                Mathf.Lerp(from.height, to.height, t)
-            );
+            return seasonRange.GetRange();
         }
+
+        return (0f, 4f);
+    }
+
+    public (Color color, float width, float height) CalculateCurrentSeasonSettings(GrassSettingSO grassSetting)
+    {
+        if (!overrideGlobalSettings && grassSetting == null)
+        {
+            return (Color.white, 1f, 1f);
+        }
+
+        float normalizedValue = seasonValue % 4f;
+        int seasonIndex = Mathf.FloorToInt(normalizedValue);
+        float t = normalizedValue - seasonIndex;
+
+        SeasonSettings from, to;
+        if (overrideGlobalSettings)
+        {
+            var settings = new[] { winterSettings, springSettings, summerSettings, autumnSettings, winterSettings };
+            from = settings[seasonIndex];
+            to = settings[seasonIndex + 1];
+        }
+        else
+        {
+            var settings = new[]
+            {
+                grassSetting.winterSettings, grassSetting.springSettings,
+                grassSetting.summerSettings, grassSetting.autumnSettings,
+                grassSetting.winterSettings
+            };
+            from = settings[seasonIndex];
+            to = settings[seasonIndex + 1];
+        }
+
+        return (
+            Color.Lerp(from.seasonColor, to.seasonColor, t),
+            Mathf.Lerp(from.width, to.width, t),
+            Mathf.Lerp(from.height, to.height, t)
+        );
     }
 }

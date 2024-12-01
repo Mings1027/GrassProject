@@ -77,20 +77,12 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         set => grassData = value;
     }
 
-    public Material InstantiatedMaterial
-    {
-        get => instantiatedMaterial;
-        set => instantiatedMaterial = value;
-    }
-    public ComputeShader InstantiatedComputeShader => _instComputeShader;
-
-#if UNITY_EDITOR
-
     public GrassSettingSO GrassSetting
     {
         get => grassSetting;
         set => grassSetting = value;
     }
+#if UNITY_EDITOR
 
     private SceneView _view;
 #endif
@@ -583,7 +575,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         _cullingTree = null;
         _bounds = new Bounds();
     }
-    
+
     /*=======================================================================================
      *                              Setup Shader Data
      =======================================================================================*/

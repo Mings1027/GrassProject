@@ -335,6 +335,18 @@ namespace Grass.Editor
         private void Init()
         {
             UpdateGrassData();
+            UpdateSeasonEffects();
+            InitPainters();
+        }
+
+        private void UpdateSeasonEffects()
+        {
+            var seasonManager = FindAnyObjectByType<GrassSeasonManager>();
+            if (seasonManager != null) seasonManager.UpdateSeasonZones();
+        }
+
+        private void InitPainters()
+        {
             _grassAddPainter = new GrassAddPainter(grassCompute, _spatialGrid);
             _grassRemovePainter = new GrassRemovePainter(grassCompute, _spatialGrid);
             _grassEditPainter = new GrassEditPainter(grassCompute, _spatialGrid);
@@ -1016,10 +1028,16 @@ namespace Grass.Editor
 
             EditorGUILayout.BeginVertical(headerStyle);
 
+            var globalContent = new GUIContent(EditorIcons.Settings)
+            {
+                text = "Global Season Settings",
+                tooltip = "Global season settings that apply to all Grass Season Zones\n\n" +
+                          "• From/To Seasons: Define default season transitions\n" +
+                          "• Season Settings: Set default colors, width, and height\n" +
+                          "• Base Control: Changes affect all volumes unless overridden"
+            };
             // Season Settings 토글 버튼
-            if (GrassEditorHelper.DrawToggleButton("Global Season Settings",
-                    "Configure season-specific settings and ranges",
-                    _seasonSettingsExpanded,
+            if (GrassEditorHelper.DrawToggleButton(globalContent, _seasonSettingsExpanded,
                     out var expanded))
             {
                 _seasonSettingsExpanded = expanded;
@@ -1032,34 +1050,36 @@ namespace Grass.Editor
                 var seasonController = FindAnyObjectByType<GrassSeasonManager>();
                 if (seasonController == null)
                 {
-                    EditorGUILayout.HelpBox("No GrassSeasonManager found in scene. Season effects are disabled.", MessageType.Info);
+                    EditorGUILayout.HelpBox("No GrassSeasonManager found in scene. Season effects are disabled.",
+                        MessageType.Info);
                     if (GUILayout.Button("Create Season Controller"))
                     {
-                        // Create Season Controller
-                        var controllerObject = new GameObject("Grass Season Manager");
-                        seasonController = controllerObject.AddComponent<GrassSeasonManager>();
-
-                        // Create Season Effect Volume as child
-                        var volumeObject = new GameObject("Season Effect Volume");
-                        volumeObject.transform.SetParent(controllerObject.transform);
-                        var volume = volumeObject.AddComponent<GrassSeasonZone>();
-                
-                        // Set initial transform values for volume
-                        volumeObject.transform.localPosition = Vector3.zero;
-                        volumeObject.transform.localScale = new Vector3(10f, 10f, 10f); // 적당한 초기 크기
-
-                        if (grassCompute != null && grassCompute.GrassSetting != null)
-                        {
-                            seasonController.Initialize(grassCompute.GrassSetting);
-                        }
-
-                        // Register both objects for undo
-                        Undo.RegisterCreatedObjectUndo(controllerObject, "Create Season Controller");
-                        Selection.activeGameObject = controllerObject; // 생성 후 선택
+                        CreateSeasonController();
                     }
                 }
                 else
                 {
+                    EditorGUILayout.Space(10);
+                    EditorGUILayout.LabelField("Season Range Settings", EditorStyles.boldLabel);
+                    var curPresets = grassCompute.GrassSetting;
+
+                    SerializedObject serializedSettings = new SerializedObject(curPresets);
+                    var seasonRange = serializedSettings.FindProperty("seasonRange");
+
+                    EditorGUI.BeginChangeCheck();
+                    EditorGUILayout.PropertyField(seasonRange);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        serializedSettings.ApplyModifiedProperties();
+                        EditorUtility.SetDirty(curPresets);
+                        if (seasonController != null)
+                        {
+                            seasonController.UpdateSeasonZones();
+                        }
+                    }
+
+                    EditorGUILayout.Space(10);
+
                     // 컬럼 헤더
                     EditorGUILayout.BeginHorizontal();
                     GUILayout.Space(80); // Season 라벨 공간
@@ -1074,29 +1094,44 @@ namespace Grass.Editor
 
                     GrassEditorHelper.DrawHorizontalLine(Color.gray, 1, 2);
 
-                    if (!grassCompute || !grassCompute.GrassSetting) return;
-
-                    var settings = grassCompute.GrassSetting;
+                    if (!grassCompute || !curPresets) return;
 
                     // 각 계절별 설정 UI
-                    DrawSeasonSettingRow("Winter", ref settings.winterSettings);
-                    DrawSeasonSettingRow("Spring", ref settings.springSettings);
-                    DrawSeasonSettingRow("Summer", ref settings.summerSettings);
-                    DrawSeasonSettingRow("Autumn", ref settings.autumnSettings);
-
-                    EditorGUILayout.Space(10);
-
-                    // 전역 계절 범위 설정
-                    GrassEditorHelper.DrawMinMaxSection("Season Range",
-                        ref settings.seasonRangeMin,
-                        ref settings.seasonRangeMax,
-                        0f, 4f);
+                    DrawSeasonSettingRow("Winter", ref curPresets.winterSettings);
+                    DrawSeasonSettingRow("Spring", ref curPresets.springSettings);
+                    DrawSeasonSettingRow("Summer", ref curPresets.summerSettings);
+                    DrawSeasonSettingRow("Autumn", ref curPresets.autumnSettings);
                 }
 
                 EditorGUILayout.EndVertical();
             }
 
             EditorGUILayout.EndVertical();
+        }
+
+        private void CreateSeasonController()
+        {
+            // Create Season Controller
+            var controllerObject = new GameObject("Grass Season Manager");
+            var seasonController = controllerObject.AddComponent<GrassSeasonManager>();
+
+            // Create Grass Season Zone as child
+            var zoneObject = new GameObject("Grass Season Zone");
+            zoneObject.transform.SetParent(controllerObject.transform);
+            zoneObject.AddComponent<GrassSeasonZone>();
+
+            // Set initial transform values for zone
+            zoneObject.transform.localPosition = Vector3.zero;
+            zoneObject.transform.localScale = new Vector3(10f, 10f, 10f);
+
+            if (grassCompute != null && grassCompute.GrassSetting != null)
+            {
+                seasonController.Initialize(grassCompute.GrassSetting);
+            }
+
+            // Register both objects for undo
+            Undo.RegisterCreatedObjectUndo(controllerObject, "Create Season Controller");
+            Selection.activeGameObject = controllerObject;
         }
 
         private void DrawSeasonSettingRow(string seasonName, ref SeasonSettings seasonSettings)

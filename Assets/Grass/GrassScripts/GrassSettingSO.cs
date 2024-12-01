@@ -65,13 +65,11 @@ public class GrassSettingSO : ScriptableObject
     public Color bottomTint = new(0, 0, 1);
 
     [Header("Season Settings")]
+    public SeasonRange seasonRange = new();
     public SeasonSettings winterSettings = new();
     public SeasonSettings springSettings = new();
     public SeasonSettings summerSettings = new();
     public SeasonSettings autumnSettings = new();
-
-    [Header("Season Range")] public float seasonRangeMin = 0f;
-    public float seasonRangeMax = 4f;
 
     [Header("LOD/ Culling")] public bool drawBounds;
     public float minFadeDistance = 40;

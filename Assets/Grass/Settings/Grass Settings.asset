@@ -30,7 +30,11 @@ MonoBehaviour:
   segmentsPerBlade: 2
   interactorStrength: 1.5
   topTint: {r: 1, g: 1, b: 1, a: 1}
-  bottomTint: {r: 0.8301887, g: 0.46004966, b: 0.19971518, a: 1}
+  bottomTint: {r: 0.1981132, g: 0.18970273, b: 0.18409576, a: 1}
+  seasonRange:
+    from: 1
+    to: 0
+    isFullCycle: 1
   winterSettings:
     seasonColor: {r: 0.9254902, g: 0.8862745, b: 0.8666667, a: 0}
     width: 0.2
@@ -47,11 +51,9 @@ MonoBehaviour:
     seasonColor: {r: 1, g: 0.16862746, b: 0, a: 0}
     width: 1
     height: 1
-  seasonRangeMin: 0
-  seasonRangeMax: 4
-  drawBounds: 0
+  drawBounds: 1
   minFadeDistance: 20
-  maxFadeDistance: 300
+  maxFadeDistance: 126
   cullingTreeDepth: 5
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}
   castShadow: 0

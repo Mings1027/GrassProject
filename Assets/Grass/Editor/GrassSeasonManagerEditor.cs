@@ -56,7 +56,8 @@ namespace Grass.Editor
         {
             EditorGUILayout.LabelField("Global Season Control", EditorStyles.boldLabel);
 
-            var (min, max) = manager.GetSeasonValueRange();
+            var min = manager.GlobalMinRange;
+            var max = manager.GlobalMaxRange;
 
             EditorGUI.BeginChangeCheck();
 
@@ -67,6 +68,10 @@ namespace Grass.Editor
             _sliderValue = GUILayout.HorizontalSlider(_sliderValue, min, max);
             EditorGUILayout.EndVertical();
 
+            // 현재 계절 정보 표시
+            // string currentSeason = GetSeasonName((_sliderValue + 4f) % 4f);
+            // EditorGUILayout.LabelField($"Current: {currentSeason} ({_sliderValue:F2})", EditorStyles.miniLabel);
+
             if (EditorGUI.EndChangeCheck())
             {
                 _sliderValue = Mathf.Clamp(_sliderValue, min, max);
@@ -74,6 +79,19 @@ namespace Grass.Editor
                 SceneView.RepaintAll();
             }
         }
+
+        // private string GetSeasonName(float value)
+        // {
+        //     int seasonIndex = Mathf.FloorToInt(value);
+        //     return seasonIndex switch
+        //     {
+        //         0 => "Winter",
+        //         1 => "Spring",
+        //         2 => "Summer",
+        //         3 => "Autumn",
+        //         _ => "Winter"
+        //     };
+        // }
 
         private bool AreAllGizmosEnabled(GrassSeasonZone[] volumes)
         {

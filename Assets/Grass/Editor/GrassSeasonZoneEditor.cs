@@ -10,15 +10,15 @@ namespace Grass.Editor
     {
         private SerializedProperty _showGizmos;
         private SerializedProperty _overrideGlobalSettings;
-        private SerializedProperty _seasonValue;
         private SerializedProperty _winterSettings;
         private SerializedProperty _springSettings;
         private SerializedProperty _summerSettings;
         private SerializedProperty _autumnSettings;
-        private SerializedProperty _seasonRange; // 추가: 계절 범위 프로퍼티
+
+        private SerializedProperty _seasonValue;
+        private SerializedProperty _seasonRange;
 
         private bool _seasonSettingsExpanded;
-
         private GrassComputeScript _grassCompute;
 
         private readonly GUIContent[] _seasonLabels =
@@ -33,12 +33,13 @@ namespace Grass.Editor
         {
             _showGizmos = serializedObject.FindProperty("showGizmos");
             _overrideGlobalSettings = serializedObject.FindProperty("overrideGlobalSettings");
-            _seasonValue = serializedObject.FindProperty("seasonValue");
             _winterSettings = serializedObject.FindProperty("winterSettings");
             _springSettings = serializedObject.FindProperty("springSettings");
             _summerSettings = serializedObject.FindProperty("summerSettings");
             _autumnSettings = serializedObject.FindProperty("autumnSettings");
-            _seasonRange = serializedObject.FindProperty("seasonRange"); // 추가: 계절 범위 초기화
+
+            _seasonValue = serializedObject.FindProperty("seasonValue");
+            _seasonRange = serializedObject.FindProperty("seasonRange");
 
             _grassCompute = FindAnyObjectByType<GrassComputeScript>();
         }
@@ -73,7 +74,15 @@ namespace Grass.Editor
 
         private void DrawOverrideSettingsSection()
         {
-            var overrideContent = new GUIContent(EditorIcons.Settings) { text = "Override Global Settings" };
+            var overrideContent = new GUIContent(EditorIcons.Settings)
+            {
+                text = "Override Global Season Settings",
+                tooltip =
+                    "When enabled, this zone will use its own season settings instead of the global settings\n\n" +
+                    "• From/To Seasons: Define custom season transitions\n" +
+                    "• Season Settings: Set unique colors, width, and height\n" +
+                    "• Independent Control: Changes only affect this specific zone"
+            };
 
             if (_overrideGlobalSettings.boolValue)
             {
@@ -89,7 +98,7 @@ namespace Grass.Editor
             {
                 DrawOverrideToggle(overrideContent);
                 DrawSeasonValueControl();
-                EditorGUILayout.Space(5);
+                EditorGUILayout.Space(15);
                 EditorGUILayout.HelpBox("Using global settings from GrassSettingSO", MessageType.Info);
             }
         }
@@ -106,19 +115,17 @@ namespace Grass.Editor
 
         private void DrawSeasonSettingsSection()
         {
+            const string tooltip = "Customize how grass looks in each season\n\n" +
+                                   "• Colors: Set unique grass colors for each season\n" +
+                                   "• Width Scale: Set grass blade width for each season\n" +
+                                   "• Height Scale: Set grass blade height for each season\n\n" +
+                                   "Changes here only apply when 'Override Global Settings' is enabled";
+
             if (_seasonSettingsExpanded)
             {
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 {
-                    if (GrassEditorHelper.DrawToggleButton(
-                            "Season Settings",
-                            "Configure grass behavior and appearance for each season",
-                            _seasonSettingsExpanded,
-                            out var expanded))
-                    {
-                        _seasonSettingsExpanded = expanded;
-                    }
-
+                    DrawSeasonSettingsHeader(tooltip);
                     EditorGUILayout.Space(5);
                     DrawAllSeasonSettings();
                 }
@@ -126,14 +133,16 @@ namespace Grass.Editor
             }
             else
             {
-                if (GrassEditorHelper.DrawToggleButton(
-                        "Season Settings",
-                        "Configure grass behavior and appearance for each season",
-                        _seasonSettingsExpanded,
-                        out var expanded))
-                {
-                    _seasonSettingsExpanded = expanded;
-                }
+                DrawSeasonSettingsHeader(tooltip);
+            }
+        }
+
+        private void DrawSeasonSettingsHeader(string tooltip)
+        {
+            if (GrassEditorHelper.DrawToggleButton("Season Settings", tooltip, _seasonSettingsExpanded,
+                    out var expanded))
+            {
+                _seasonSettingsExpanded = expanded;
             }
         }
 
@@ -152,34 +161,28 @@ namespace Grass.Editor
                 var grassSettings = _grassCompute?.GrassSetting;
                 if (!grassSettings) return;
 
-                DrawSeasonSlider(grassSettings.seasonRangeMin, grassSettings.seasonRangeMax);
+                var (minRange, maxRange) = GetGlobalSeasonRange(grassSettings);
+                DrawSeasonSlider(minRange, maxRange);
             }
             else
             {
-                // Season Range
-                var rangeMin = _seasonRange.vector2Value.x;
-                var rangeMax = _seasonRange.vector2Value.y;
-
-                EditorGUI.BeginChangeCheck();
-                GrassEditorHelper.DrawMinMaxSection("Season Range",
-                    "Set the minimum and maximum values for the season range", ref rangeMin, ref rangeMax, 0f, 4f);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    _seasonRange.vector2Value = new Vector2(rangeMin, rangeMax);
-                    UpdateController();
-                }
-
+                EditorGUILayout.PropertyField(_seasonRange);
                 EditorGUILayout.Space(5);
 
-                // Season Value Slider
-                DrawSeasonSlider(rangeMin, rangeMax);
+                var seasonZone = (GrassSeasonZone)target;
+                DrawSeasonSlider(seasonZone.MinRange, seasonZone.MaxRange);
             }
+        }
+
+        private (float min, float max) GetGlobalSeasonRange(GrassSettingSO settings)
+        {
+            return settings.seasonRange.GetRange();
         }
 
         private void DrawSeasonSlider(float minRange, float maxRange)
         {
             EditorGUI.BeginChangeCheck();
-            var roundedValue = (float)System.Math.Round(_seasonValue.floatValue, 2); // 소수점 둘째자리까지 반올림
+            var roundedValue = (float)System.Math.Round(_seasonValue.floatValue, 2);
             var newValue = EditorGUILayout.FloatField("Season Value", roundedValue);
             if (EditorGUI.EndChangeCheck())
             {
@@ -187,7 +190,6 @@ namespace Grass.Editor
                 UpdateController();
             }
 
-            // Slider
             EditorGUI.BeginChangeCheck();
             newValue = GUILayout.HorizontalSlider(_seasonValue.floatValue, minRange, maxRange);
             if (EditorGUI.EndChangeCheck())
@@ -196,30 +198,24 @@ namespace Grass.Editor
                 UpdateController();
             }
 
-            // Add more space before season labels
             EditorGUILayout.Space(8);
-
-            // Season Labels
-            var rect = GUILayoutUtility.GetRect(EditorGUIUtility.currentViewWidth, EditorGUIUtility.singleLineHeight);
-            DrawSeasonLabels(rect, minRange, maxRange);
-
-            // Add space after labels
+            DrawSeasonProgressLabels();
             EditorGUILayout.Space(5);
         }
 
-        private static void DrawSeasonLabels(Rect rect, float minRange, float maxRange)
+        private void DrawSeasonProgressLabels()
         {
-            var visibleSeasons = new List<(string label, float position)>();
+            var zone = (GrassSeasonZone)target;
+            var grassSettings = _grassCompute?.GrassSetting;
 
-            // 표시할 계절 결정
-            if (minRange <= 1f && maxRange >= 0f) visibleSeasons.Add(("Winter", 0f));
-            if (minRange <= 2f && maxRange >= 1f) visibleSeasons.Add(("Spring", 1f));
-            if (minRange <= 3f && maxRange >= 2f) visibleSeasons.Add(("Summer", 2f));
-            if (minRange <= 4f && maxRange >= 3f) visibleSeasons.Add(("Autumn", 3f));
-            if (maxRange >= 4f && minRange <= 4f) visibleSeasons.Add(("Winter", 4f));
+            if (!zone.OverrideGlobalSettings && grassSettings != null)
+            {
+                DrawGlobalSeasonLabels(grassSettings);
+                return;
+            }
 
-            if (visibleSeasons.Count == 0) return;
-
+            // Override된 경우 From -> To 진행 상황 표시
+            var rect = GUILayoutUtility.GetRect(EditorGUIUtility.currentViewWidth, EditorGUIUtility.singleLineHeight);
             var style = new GUIStyle(EditorStyles.miniLabel)
             {
                 fontSize = 10,
@@ -227,22 +223,105 @@ namespace Grass.Editor
                 normal = { textColor = new Color(0.7f, 0.7f, 0.7f) }
             };
 
-            // 계절 수에 따른 위치 조정
-            for (var i = 0; i < visibleSeasons.Count; i++)
-            {
-                float xPosition;
-                if (visibleSeasons.Count == 1)
-                {
-                    xPosition = rect.center.x - 20; // 중앙
-                }
-                else
-                {
-                    var ratio = (float)i / (visibleSeasons.Count - 1);
-                    xPosition = Mathf.Lerp(rect.x, rect.x + rect.width - 40, ratio);
-                }
+            // float progress = Mathf.InverseLerp(minRange, maxRange, _seasonValue.floatValue);
+            string currentSeason = GetSeasonName((_seasonValue.floatValue + 4f) % 4f);
 
-                var labelRect = new Rect(xPosition, rect.y, 40, rect.height);
-                EditorGUI.LabelField(labelRect, visibleSeasons[i].label, style);
+            var labelRect = new Rect(rect.x, rect.y, rect.width, rect.height);
+            EditorGUI.LabelField(labelRect, $"Current: {currentSeason}", style);
+        }
+
+        private void DrawGlobalSeasonLabels(GrassSettingSO settings)
+        {
+            float verticalOffset = 10f; // 위치 조정을 위한 오프셋
+            var rect = GUILayoutUtility.GetRect(EditorGUIUtility.currentViewWidth, EditorGUIUtility.singleLineHeight);
+            var style = new GUIStyle(EditorStyles.miniLabel)
+            {
+                fontSize = 10,
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = new Color(0.7f, 0.7f, 0.7f) }
+            };
+
+            // Get the season range from global settings
+            var (minRange, maxRange) = settings.seasonRange.GetRange();
+            var fromSeason = settings.seasonRange.From;
+            var toSeason = settings.seasonRange.To;
+            var isFullCycle = settings.seasonRange.IsFullCycle;
+
+            // Calculate current season progress
+            // float normalizedValue = (_seasonValue.floatValue - minRange) / (maxRange - minRange);
+            float currentValue = (_seasonValue.floatValue + 4f) % 4f;
+            string currentSeason = GetSeasonName(currentValue);
+
+            // Draw season transition label
+            string transitionLabel;
+            if (isFullCycle && fromSeason == toSeason)
+            {
+                transitionLabel = $"{fromSeason} → {fromSeason} (Full Cycle)";
+            }
+            else if (fromSeason == toSeason)
+            {
+                transitionLabel = fromSeason.ToString();
+            }
+            else
+            {
+                transitionLabel = $"{fromSeason} → {toSeason}";
+            }
+
+            // Draw labels
+            var valueRect = new Rect(rect.x, rect.y, rect.width, rect.height);
+            EditorGUI.LabelField(valueRect,
+                $"Current: {currentSeason} ({_seasonValue.floatValue:F2}) | Range: {transitionLabel}",
+                style);
+
+            // Draw season markers
+            DrawSeasonMarkers(rect, minRange, maxRange, fromSeason, toSeason, isFullCycle);
+        }
+
+        private void DrawSeasonMarkers(Rect rect, float minRange, float maxRange,
+                                       SeasonType fromSeason, SeasonType toSeason, bool isFullCycle)
+        {
+            var style = new GUIStyle(EditorStyles.miniLabel)
+            {
+                fontSize = 9,
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = new Color(0.6f, 0.6f, 0.6f) }
+            };
+
+            float totalRange = maxRange - minRange;
+            if (totalRange <= 0) return;
+
+            // Calculate visible seasons based on the range
+            var visibleSeasons = new List<(string name, float position)>();
+
+            if (isFullCycle && fromSeason == toSeason)
+            {
+                // Show all seasons for full cycle
+                for (int i = 0; i <= 4; i++)
+                {
+                    if (i >= minRange && i <= maxRange)
+                    {
+                        visibleSeasons.Add((GetSeasonName(i), i));
+                    }
+                }
+            }
+            else
+            {
+                // Show only seasons in the specified range
+                float current = minRange;
+                while (current <= maxRange)
+                {
+                    visibleSeasons.Add((GetSeasonName(current), current));
+                    current += 1f;
+                }
+            }
+
+            // Draw season markers
+            foreach (var season in visibleSeasons)
+            {
+                float normalizedPos = (season.position - minRange) / totalRange;
+                float xPos = Mathf.Lerp(rect.x + 20, rect.x + rect.width - 60, normalizedPos);
+                var markerRect = new Rect(xPos, rect.y + rect.height + 2, 40, rect.height);
+                EditorGUI.LabelField(markerRect, season.name, style);
             }
         }
 
@@ -265,10 +344,26 @@ namespace Grass.Editor
             EditorGUILayout.Space(5);
         }
 
+        private string GetSeasonName(float value)
+        {
+            int seasonIndex = Mathf.FloorToInt(value);
+            return seasonIndex switch
+            {
+                0 => "Winter",
+                1 => "Spring",
+                2 => "Summer",
+                3 => "Autumn",
+                _ => "Winter"
+            };
+        }
+
         private void UpdateController()
         {
             var controller = FindAnyObjectByType<GrassSeasonManager>();
-            controller.UpdateSeasonVolumes();
+            if (controller != null)
+            {
+                controller.UpdateSeasonZones();
+            }
         }
     }
 }
