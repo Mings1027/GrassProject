@@ -125,6 +125,11 @@ namespace Grass.Editor
                 return;
             }
 
+            if (grassCompute != null && _enableGrass != grassCompute.enabled)
+            {
+                _enableGrass = grassCompute.enabled;
+            }
+
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
 
             DrawBasicControls();
@@ -154,6 +159,11 @@ namespace Grass.Editor
                 toolSettings = AssetDatabase.LoadAssetAtPath<GrassToolSettingSo>(
                     "Assets/Grass/Settings/Grass Tool Settings.asset"
                 );
+            }
+
+            if (grassCompute != null)
+            {
+                _enableGrass = grassCompute.enabled;
             }
         }
 
@@ -951,67 +961,70 @@ namespace Grass.Editor
             EditorGUILayout.Space(10);
 
             EditorGUILayout.LabelField("Blade Min/Max Settings", EditorStyles.boldLabel);
-            var curPresets = grassCompute.GrassSetting;
+            var grassSetting = grassCompute.GrassSetting;
 
-            GrassEditorHelper.DrawMinMaxSection("Blade Width", ref curPresets.minWidth, ref curPresets.maxWidth,
-                curPresets.MinWidthLimit, curPresets.MaxWidthLimit);
-            GrassEditorHelper.DrawMinMaxSection("Blade Height", ref curPresets.minHeight, ref curPresets.maxHeight,
-                curPresets.MinHeightLimit, curPresets.MaxHeightLimit);
-            GrassEditorHelper.DrawMinMaxSection("Random Height", ref curPresets.randomHeightMin,
-                ref curPresets.randomHeightMax, 0, 1);
+            GrassEditorHelper.DrawMinMaxSection("Blade Width", ref grassSetting.minWidth, ref grassSetting.maxWidth,
+                grassSetting.MinWidthLimit, grassSetting.MaxWidthLimit);
+            GrassEditorHelper.DrawMinMaxSection("Blade Height", ref grassSetting.minHeight, ref grassSetting.maxHeight,
+                grassSetting.MinHeightLimit, grassSetting.MaxHeightLimit);
+            GrassEditorHelper.DrawMinMaxSection("Random Height", ref grassSetting.randomHeightMin,
+                ref grassSetting.randomHeightMax, 0, 1);
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Blade Shape Settings", EditorStyles.boldLabel);
-            DrawSliderRow("Blade Radius", ref curPresets.bladeRadius, curPresets.MinBladeRadius,
-                curPresets.MaxBladeRadius);
-            DrawSliderRow("Blade Forward", ref curPresets.bladeForward, curPresets.MinBladeForward,
-                curPresets.MaxBladeForward);
-            DrawSliderRow("Blade Curve", ref curPresets.bladeCurve, curPresets.MinBladeCurve, curPresets.MaxBladeCurve);
-            DrawSliderRow("Bottom Width", ref curPresets.bottomWidth, curPresets.MinBottomWidth,
-                curPresets.MaxBottomWidth);
+            DrawSliderRow("Blade Radius", ref grassSetting.bladeRadius, grassSetting.MinBladeRadius,
+                grassSetting.MaxBladeRadius);
+            DrawSliderRow("Blade Forward", ref grassSetting.bladeForward, grassSetting.MinBladeForward,
+                grassSetting.MaxBladeForward);
+            DrawSliderRow("Blade Curve", ref grassSetting.bladeCurve, grassSetting.MinBladeCurve,
+                grassSetting.MaxBladeCurve);
+            DrawSliderRow("Bottom Width", ref grassSetting.bottomWidth, grassSetting.MinBottomWidth,
+                grassSetting.MaxBottomWidth);
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Blade Amount Settings", EditorStyles.boldLabel);
-            curPresets.bladesPerVertex = EditorGUILayout.IntSlider("Blades Per Vertex",
-                curPresets.bladesPerVertex, curPresets.MinBladesPerVertex, curPresets.MaxBladesPerVertex);
-            curPresets.segmentsPerBlade = EditorGUILayout.IntSlider("Segments Per Blade",
-                curPresets.segmentsPerBlade, curPresets.MinSegmentsPerBlade, curPresets.MaxSegmentsPerBlade);
+            grassSetting.bladesPerVertex = EditorGUILayout.IntSlider("Blades Per Vertex",
+                grassSetting.bladesPerVertex, grassSetting.MinBladesPerVertex, grassSetting.MaxBladesPerVertex);
+            grassSetting.segmentsPerBlade = EditorGUILayout.IntSlider("Segments Per Blade",
+                grassSetting.segmentsPerBlade, grassSetting.MinSegmentsPerBlade, grassSetting.MaxSegmentsPerBlade);
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Wind Settings", EditorStyles.boldLabel);
-            curPresets.windSpeed = EditorGUILayout.Slider("Wind Speed",
-                curPresets.windSpeed, curPresets.MinWindSpeed, curPresets.MaxWindSpeed);
-            curPresets.windStrength = EditorGUILayout.Slider("Wind Strength",
-                curPresets.windStrength, curPresets.MinWindStrength, curPresets.MaxWindStrength);
+            grassSetting.windSpeed = EditorGUILayout.Slider("Wind Speed",
+                grassSetting.windSpeed, grassSetting.MinWindSpeed, grassSetting.MaxWindSpeed);
+            grassSetting.windStrength = EditorGUILayout.Slider("Wind Strength",
+                grassSetting.windStrength, grassSetting.MinWindStrength, grassSetting.MaxWindStrength);
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Tinting Settings", EditorStyles.boldLabel);
-            curPresets.topTint = EditorGUILayout.ColorField("Top Tint", curPresets.topTint);
-            curPresets.bottomTint = EditorGUILayout.ColorField("Bottom Tint", curPresets.bottomTint);
+            grassSetting.topTint = EditorGUILayout.ColorField("Top Tint", grassSetting.topTint);
+            grassSetting.bottomTint = EditorGUILayout.ColorField("Bottom Tint", grassSetting.bottomTint);
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("LOD/Culling Settings", EditorStyles.boldLabel);
             if (GrassEditorHelper.DrawToggleButton(
                     "Show Culling Bounds",
                     "Display bounding boxes used for grass culling optimization in Scene view",
-                    curPresets.drawBounds,
+                    grassSetting.drawBounds,
                     out var newState))
             {
-                curPresets.drawBounds = newState;
+                grassSetting.drawBounds = newState;
             }
 
-            DrawFadeDistanceSlider("Min Fade Distance", ref curPresets.minFadeDistance, 0, curPresets.maxFadeDistance);
-            DrawFadeDistanceSlider("Max Fade Distance", ref curPresets.maxFadeDistance, curPresets.minFadeDistance,
+            DrawFadeDistanceSlider("Min Fade Distance", ref grassSetting.minFadeDistance, 0,
+                grassSetting.maxFadeDistance);
+            DrawFadeDistanceSlider("Max Fade Distance", ref grassSetting.maxFadeDistance, grassSetting.minFadeDistance,
                 300);
 
-            curPresets.cullingTreeDepth = EditorGUILayout.IntField("Culling Tree Depth", curPresets.cullingTreeDepth);
+            grassSetting.cullingTreeDepth =
+                EditorGUILayout.IntField("Culling Tree Depth", grassSetting.cullingTreeDepth);
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Other Settings", EditorStyles.boldLabel);
-            curPresets.interactorStrength =
-                EditorGUILayout.FloatField("Interactor Strength", curPresets.interactorStrength);
-            curPresets.castShadow = (UnityEngine.Rendering.ShadowCastingMode)EditorGUILayout.EnumPopup(
-                "Shadow Settings", curPresets.castShadow);
+            grassSetting.interactorStrength =
+                EditorGUILayout.FloatField("Interactor Strength", grassSetting.interactorStrength);
+            grassSetting.castShadow = (UnityEngine.Rendering.ShadowCastingMode)EditorGUILayout.EnumPopup(
+                "Shadow Settings", grassSetting.castShadow);
         }
 
         private bool _seasonSettingsExpanded;

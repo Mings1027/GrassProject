@@ -8,6 +8,7 @@ namespace Grass.GrassScripts
         UpdateCutBuffer,
         AddInteractor,
         RemoveInteractor,
+        TryGetGrassColor,
         TotalGrassCount,
         VisibleGrassCount,
     }
@@ -94,7 +95,23 @@ namespace Grass.GrassScripts
             FuncDictionary[grassEvent] = Delegate.Combine(FuncDictionary[grassEvent], func);
         }
 
+        // 매개변수가 있는 Func 지원을 위한 새로운 메서드
+        public static void AddEvent<TParam, TResult>(GrassEvent grassEvent, Func<TParam, TResult> func)
+        {
+            if (FuncDictionary.TryAdd(grassEvent, func)) return;
+            FuncDictionary[grassEvent] = Delegate.Combine(FuncDictionary[grassEvent], func);
+        }
+
         public static void RemoveEvent<T>(GrassEvent grassEvent, Func<T> func)
+        {
+            if (FuncDictionary.ContainsKey(grassEvent))
+            {
+                FuncDictionary[grassEvent] = Delegate.Remove(FuncDictionary[grassEvent], func);
+            }
+        }
+
+        // 매개변수가 있는 Func 제거를 위한 새로운 메서드
+        public static void RemoveEvent<TParam, TResult>(GrassEvent grassEvent, Func<TParam, TResult> func)
         {
             if (FuncDictionary.ContainsKey(grassEvent))
             {
@@ -109,6 +126,50 @@ namespace Grass.GrassScripts
                 if (func is Func<T> typedFunc)
                 {
                     return typedFunc();
+                }
+            }
+
+            return default;
+        }
+
+        // 매개변수가 있는 Func 실행을 위한 새로운 메서드
+        public static TResult TriggerEvent<TParam, TResult>(GrassEvent grassEvent, TParam param)
+        {
+            if (FuncDictionary.TryGetValue(grassEvent, out var func))
+            {
+                if (func is Func<TParam, TResult> typedFunc)
+                {
+                    return typedFunc(param);
+                }
+            }
+
+            return default;
+        }
+
+        // 튜플을 위한 새로운 메서드들
+        public static void AddEvent<TParam, TResult1, TResult2>(GrassEvent grassEvent,
+                                                                Func<TParam, (TResult1, TResult2)> func)
+        {
+            if (FuncDictionary.TryAdd(grassEvent, func)) return;
+            FuncDictionary[grassEvent] = Delegate.Combine(FuncDictionary[grassEvent], func);
+        }
+
+        public static void RemoveEvent<TParam, TResult1, TResult2>(GrassEvent grassEvent,
+                                                                   Func<TParam, (TResult1, TResult2)> func)
+        {
+            if (FuncDictionary.ContainsKey(grassEvent))
+            {
+                FuncDictionary[grassEvent] = Delegate.Remove(FuncDictionary[grassEvent], func);
+            }
+        }
+
+        public static (TResult1, TResult2) TriggerEvent<TParam, TResult1, TResult2>(GrassEvent grassEvent, TParam param)
+        {
+            if (FuncDictionary.TryGetValue(grassEvent, out var func))
+            {
+                if (func is Func<TParam, (TResult1, TResult2)> typedFunc)
+                {
+                    return typedFunc(param);
                 }
             }
 

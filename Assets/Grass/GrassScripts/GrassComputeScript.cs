@@ -16,7 +16,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
     private const int SourceVertStride = sizeof(float) * (3 + 3 + 2 + 3);
     private const int DrawStride = sizeof(float) * (3 + 3 + 1 + (3 + 2) * 3);
     private const int MaxBufferSize = 2500000;
-    private const int MAX_VOLUMES = 9;
 
     //
     [SerializeField, HideInInspector] private List<GrassData> grassData = new(); // base data lists
@@ -95,8 +94,9 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         MainSetup(true);
     }
 
-    private void OnDestroy()
+    protected override void OnDestroy()
     {
+        base.OnDestroy();
         SceneView.duringSceneGui -= OnScene;
     }
 
@@ -292,6 +292,9 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
             Debug.LogWarning("Missing Cut Particles in grass Settings", this);
         }
 
+        var seasonManager = FindAnyObjectByType<GrassSeasonManager>();
+        if (seasonManager != null) seasonManager.Initialize(grassSetting);
+
         // Instantiate the shaders so they can point to their own buffers
         _instComputeShader = Instantiate(grassSetting.shaderToUse);
         instantiatedMaterial = Instantiate(grassSetting.materialToUse);
@@ -474,8 +477,20 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
                     if (_cutIDs[currentIndex] - 0.1f > hitPointY ||
                         Mathf.Approximately(_cutIDs[currentIndex], -1))
                     {
-                        SpawnCuttingParticle(grassPosition, new Color(grassData[currentIndex].color.x,
-                            grassData[currentIndex].color.y, grassData[currentIndex].color.z));
+                        var (zoneColor, isInZone) =
+                            GrassFuncManager.TriggerEvent<Vector3, (Color, bool)>(GrassEvent.TryGetGrassColor,
+                                grassPosition);
+                        
+                        // zone 안이면 zone 색상, 밖이면 원래 색상 사용
+                        var particleColor = isInZone
+                            ? zoneColor
+                            : new Color(
+                                grassData[currentIndex].color.x,
+                                grassData[currentIndex].color.y,
+                                grassData[currentIndex].color.z
+                            );
+
+                        SpawnCuttingParticle(grassPosition, particleColor);
                     }
 
                     _cutIDs[currentIndex] = hitPointY;

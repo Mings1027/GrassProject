@@ -13,7 +13,7 @@ half4 CalculateZoneTint(half3 diffuseColor, half verticalFade, float3 worldPos)
 {
     for (int i = _ZoneCount - 1; i >= 0; i--)
     {
-        if (_ZonePositions[i].w < 0.5) continue; // w < 0.5이면 비활성 존
+        if (_ZonePositions[i].w < 0.5) continue;
 
         half3 delta = abs(worldPos - _ZonePositions[i].xyz);
         if (all(delta <= _ZoneScales[i].xyz * 0.5))
@@ -56,12 +56,10 @@ half3 CalculateAdditionalLight(float3 worldPos, float3 worldNormal)
     uint pixelLightCount = GetAdditionalLightsCount();
     InputData inputData;
 
-    // shadowmask를 위해 아래 과정이 필요
-    float4 positionsCS = TransformWorldToHClip(worldPos); // 월드 좌표 -> 클립 공간 변환
-    float3 ndc = positionsCS.xyz / positionsCS.w; // 클립 공간에서 NDC로 변환
-    float2 screenUV = float2(ndc.x, ndc.y) * 0.5 + 0.5; // NDC를 [0,1] 범위의 스크린 UV로 변환
+    float4 positionsCS = TransformWorldToHClip(worldPos);
+    float3 ndc = positionsCS.xyz / positionsCS.w;
+    float2 screenUV = float2(ndc.x, ndc.y) * 0.5 + 0.5;
 
-    // DirectX/OpenGL 차이 보정
     #if UNITY_UV_STARTS_AT_TOP
     screenUV.y = 1.0 - screenUV.y;
     #endif
@@ -80,11 +78,9 @@ half3 CalculateAdditionalLight(float3 worldPos, float3 worldNormal)
         if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
         #endif
         {
-            // 기본 라이팅 계산
             half3 lightColor = light.color * light.distanceAttenuation * _AdditionalLightIntensity;
             half3 lighting = LightingLambert(lightColor, light.direction, worldNormal);
 
-            // 그림자 계산
             half shadowAtten = light.shadowAttenuation;
             half calculatedShadowStrength = _AdditionalLightShadowStrength * (1 - shadowAtten);
 
@@ -110,6 +106,33 @@ half3 AdjustSaturation(half3 color, half saturation)
     return lerp(grey.xxx, color, saturation);
 }
 
+half4 GetSimpleLighting(half3 diffuseColor)
+{
+    return half4(diffuseColor * _OverallIntensity, 1);
+}
+
+half4 GetMediumDistanceLighting(half2 uv, half3 diffuseColor, half3 normalWS, half3 worldPos)
+{
+    half verticalFade = CalculateVerticalFade(uv);
+    half4 baseColor = CalculateZoneTint(diffuseColor, verticalFade, worldPos);
+    half3 mainLighting = CalculateMainLight(baseColor.rgb, normalWS, worldPos);
+    half3 finalColor = mainLighting * _OverallIntensity;
+    finalColor = CustomNeutralToneMapping(finalColor, _Exposure);
+    return half4(finalColor, baseColor.a);
+}
+
+half4 GetDetailedLighting(half2 uv, half3 diffuseColor, half3 normalWS, half3 worldPos)
+{
+    half verticalFade = CalculateVerticalFade(uv);
+    half4 baseColor = CalculateZoneTint(diffuseColor, verticalFade, worldPos);
+    half3 mainLighting = CalculateMainLight(baseColor.rgb, normalWS, worldPos);
+    half3 additionalLight = CalculateAdditionalLight(worldPos, normalWS);
+    half3 finalColor = (mainLighting + additionalLight) * _OverallIntensity;
+    finalColor = CustomNeutralToneMapping(finalColor, _Exposure);
+    finalColor = AdjustSaturation(finalColor, _Saturation);
+    return half4(finalColor, baseColor.a);
+}
+
 FragmentData Vertex(VertexData input)
 {
     FragmentData output;
@@ -123,20 +146,23 @@ FragmentData Vertex(VertexData input)
 
 half4 Fragment(FragmentData input) : SV_Target
 {
-    half verticalFade = CalculateVerticalFade(input.uv);
-
-    half4 baseColor = CalculateZoneTint(input.diffuseColor, verticalFade, input.worldPos);
-
+    // Early-Z 최적화를 위해 가장 먼저 clip 수행
     CalculateCutOff(input.extraBuffer.x, input.worldPos.y);
 
-    half3 mainLighting = CalculateMainLight(baseColor.rgb, input.normalWS, input.worldPos);
-    half3 additionalLight = CalculateAdditionalLight(input.worldPos, input.normalWS);
+    // distanceFade는 compute shader에서 전달받은 값 사용 (extraBuffer.y)
+    half distanceFade = input.extraBuffer.y;
 
-    half3 finalColor = mainLighting + additionalLight;
+    // 멀리 있는 픽셀은 간단한 계산만 수행
+    if (distanceFade < 0.3)
+    {
+        return GetSimpleLighting(input.diffuseColor);
+    }
 
-    finalColor *= _OverallIntensity;
-    finalColor = CustomNeutralToneMapping(finalColor, _Exposure);
-    finalColor = AdjustSaturation(finalColor, _Saturation);
+    // 중간 거리는 메인 라이트만 계산
+    if (distanceFade < 0.7)
+    {
+        return GetMediumDistanceLighting(input.uv, input.diffuseColor, input.normalWS, input.worldPos);
+    }
 
-    return half4(finalColor, baseColor.a);
+    return GetDetailedLighting(input.uv, input.diffuseColor, input.normalWS, input.worldPos);
 }

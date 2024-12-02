@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -14,9 +15,9 @@ namespace Grass.GrassScripts
         private readonly Dictionary<GrassSeasonZone, Vector3> lastPositions = new();
         private readonly Dictionary<GrassSeasonZone, Vector3> lastScales = new();
         private readonly ZoneData[] zoneData = new ZoneData[MAX_ZONES];
+        private Color[] zoneColors;
         private bool isDirty;
         private GrassSettingSO grassSetting;
-
         private GrassComputeScript grassCompute;
 
         [SerializeField] private float globalSeasonValue;
@@ -26,24 +27,12 @@ namespace Grass.GrassScripts
 
 #if UNITY_EDITOR
         public float GlobalSeasonValue => globalSeasonValue;
-
-        private void OnValidate()
-        {
-            if (!Application.isPlaying)
-            {
-                if (grassSetting != null)
-                {
-                    var (min, max) = grassSetting.seasonRange.GetRange();
-                    globalSeasonValue = Mathf.Clamp(globalSeasonValue, min, max);
-                }
-
-                UpdateSeasonZones();
-            }
-        }
 #endif
 
         private void OnEnable()
         {
+            zoneColors = new Color[zoneData.Length];
+
             if (grassCompute == null)
             {
                 grassCompute = FindAnyObjectByType<GrassComputeScript>();
@@ -68,6 +57,12 @@ namespace Grass.GrassScripts
             }
 
             UpdateSeasonZones();
+            GrassFuncManager.AddEvent<Vector3, (Color, bool)>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
+        }
+
+        private void OnDisable()
+        {
+            GrassFuncManager.RemoveEvent<Vector3, (Color, bool)>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
         }
 
         private void Update()
@@ -147,7 +142,7 @@ namespace Grass.GrassScripts
 
         private void UpdateShaderData()
         {
-            var zoneCount=seasonZones.Count;
+            var zoneCount = seasonZones.Count;
             var positions = new Vector4[zoneCount];
             var scales = new Vector4[zoneCount];
             var colors = new Vector4[zoneCount];
@@ -162,17 +157,44 @@ namespace Grass.GrassScripts
                     scales[i] = zoneData[i].scale;
                     colors[i] = zoneData[i].color;
                     widthHeights[i] = new Vector4(zoneData[i].width, zoneData[i].height, 0, 0);
+                    zoneColors[i] = zoneData[i].color;
                 }
                 else
                 {
                     positions[i].w = 0.0f;
+                    zoneColors[i] = Color.white;
                 }
+
+                zoneColors[i].a = 1;
             }
 
             if (grassCompute != null)
             {
                 grassCompute.UpdateSeasonData(positions, scales, colors, widthHeights, zoneCount);
             }
+        }
+
+        private (Color color, bool isInZone) TryGetGrassColor(Vector3 position)
+        {
+            // 위치가 어떤 zone 안에 있는지 확인
+            for (int i = 0; i < seasonZones.Count; i++)
+            {
+                var zone = seasonZones[i];
+                if (!zone || !zone.gameObject.activeInHierarchy) continue;
+
+                // zone의 bounds 체크
+                var worldBounds = new Bounds(
+                    zone.transform.position,
+                    Vector3.Scale(Vector3.one, zone.transform.localScale)
+                );
+
+                if (worldBounds.Contains(position))
+                {
+                    return (zoneColors[i], true);
+                }
+            }
+
+            return (default, false);
         }
 
         public void UpdateSingleZone(GrassSeasonZone zone)

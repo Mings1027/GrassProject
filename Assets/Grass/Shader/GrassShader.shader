@@ -1,4 +1,4 @@
-Shader "Custom/TestGrass"
+Shader "Custom/GrassShader"
 {
 	Properties
 	{

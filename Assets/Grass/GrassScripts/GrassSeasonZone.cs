@@ -43,15 +43,15 @@ public class GrassSeasonZone : MonoBehaviour
     }
 
 #if UNITY_EDITOR
-    private void OnValidate()
-    {
-        if (overrideGlobalSettings)
-        {
-            seasonValue = Mathf.Clamp(seasonValue, MinRange, MaxRange);
-        }
-
-        UpdateController();
-    }
+    // private void OnValidate()
+    // {
+    //     if (overrideGlobalSettings)
+    //     {
+    //         seasonValue = Mathf.Clamp(seasonValue, MinRange, MaxRange);
+    //     }
+    //
+    //     UpdateController();
+    // }
 
     private void OnDrawGizmosSelected()
     {

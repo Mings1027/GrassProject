@@ -2,7 +2,7 @@ using Grass.GrassScripts;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class TestCutting : MonoBehaviour
+public class GrassCutter : MonoBehaviour
 {
     [SerializeField] private InputActionReference cutAction;
     [SerializeField] private float radius = 1f;

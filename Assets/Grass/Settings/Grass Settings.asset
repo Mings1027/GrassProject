@@ -16,8 +16,8 @@ MonoBehaviour:
   materialToUse: {fileID: 2100000, guid: 7725493650b5a4b4d9c0d612493ca34d, type: 2}
   bladeRadius: 1.5
   bladeForward: 1.428
-  bladeCurve: 2
-  bottomWidth: 0.32
+  bladeCurve: 1.602
+  bottomWidth: 0.164
   minWidth: 0.2
   maxWidth: 0.5
   minHeight: 0.1
@@ -26,7 +26,7 @@ MonoBehaviour:
   randomHeightMax: 0.2
   windSpeed: 1
   windStrength: 0.2
-  bladesPerVertex: 15
+  bladesPerVertex: 3
   segmentsPerBlade: 2
   interactorStrength: 1.5
   topTint: {r: 1, g: 1, b: 1, a: 1}
@@ -53,7 +53,7 @@ MonoBehaviour:
     height: 1
   drawBounds: 1
   minFadeDistance: 20
-  maxFadeDistance: 126
+  maxFadeDistance: 150
   cullingTreeDepth: 5
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}
   castShadow: 0
