@@ -21,7 +21,7 @@ struct DrawTriangle
 {
     float3 normalOS;
     float3 diffuseColor;
-    float4 extraBuffer;
+    float4 extraBuffer; // x: cut, y: distanceFade
     DrawVertex vertices[3];
 };
 
@@ -48,6 +48,7 @@ float _Time;
 float _GrassRandomHeightMin, _GrassRandomHeightMax;
 float _WindSpeed;
 float _WindStrength;
+float2 _WindDirection;
 float _BladeRadius;
 float _BladeForward;
 float _BladeCurve;
@@ -155,18 +156,10 @@ float3x3 CreateTangentToWorld(float3 normal)
     );
 }
 
-float2 GetSimpleBladePosition(float index, float totalBlades, float2 randValues)
+float2 GetSimpleBladePosition(float randValue)
 {
-    float gridSize = sqrt(totalBlades);
-    float2 gridPos;
-    gridPos.x = fmod(index, gridSize) / gridSize;
-    gridPos.y = floor(index / gridSize) / gridSize;
-    gridPos = gridPos - 0.5;
-    float2 randomOffset = (randValues - 0.5) * 0.8;
-    float distanceFromCenter = length(gridPos);
-    float maxOffset = 0.8 * (1.0 - distanceFromCenter);
-    randomOffset *= maxOffset;
-    return gridPos + randomOffset;
+    float2 randomValues = float2(randValue, frac(randValue * 1.61803)); // 황금비를 사용하여 다른 랜덤값 생성
+    return randomValues - 0.5;
 }
 
 DrawVertex GrassVertex(float3 positionWS, float width, float height,
@@ -182,17 +175,14 @@ DrawVertex GrassVertex(float3 positionWS, float width, float height,
     return output;
 }
 
+
 half3 CalculationWind(half3 positionWS, half grassHeight)
 {
     half timeWind = _Time.x * _WindSpeed;
-    half posX = positionWS.x;
-    half posZ = positionWS.z;
-    half3 wind = half3(
-        sin(timeWind + posX) + sin(timeWind + posZ * 2) + sin(timeWind * 0.1 + posX),
-        0,
-        cos(timeWind + posX * 2) + cos(timeWind + posZ * 2));
-    wind *= grassHeight * _WindStrength;
-    return wind;
+    half randomOffset = random(positionWS.xyz) * 4.0 - 2.0; // 현재 -2~2 범위임. * 2.0 - 1.0 이면 -1~1 범위임. 이 값은 바람 속도에 랜덤함을 위해 넣어봤는데 테스트하면서 빼던지 값을 더 키우던지 하면될듯 
+    half windValue = sin(timeWind + dot(positionWS.xz, _WindDirection) + randomOffset);
+    half3 wind = half3(_WindDirection.x * windValue, 0, _WindDirection.y * windValue);
+    return wind * grassHeight * _WindStrength;
 }
 
 float3 CalculateInteraction(float3 grassPosition)
@@ -236,12 +226,12 @@ void Main(uint id : SV_DispatchThreadID)
     half numSegmentsPerBlade = min(GRASS_SEGMENTS, _MaxSegmentsPerBlade);
     half numTrianglesPerBlade = (numSegmentsPerBlade - 1) * 2 + 1;
 
-    // 거리에 따른 blade 수 조절
-    half lodBladeCount = lerp(_MaxBladesPerVertex, 1, saturate(distanceFromCamera / (_MaxFadeDist * 0.7)));
+    half normalizedDistance = saturate(distanceFromCamera / _MaxFadeDist);
+    half lodBladeCount = lerp(_MaxBladesPerVertex, 2, normalizedDistance); // 최소 2개의 blade 유지
     half numBladesPerVertex = ceil(lodBladeCount * distanceFade);
 
     if (numBladesPerVertex <= 0) return;
-    
+
     half3 grassNormal = normalize(sv.normalOS);
 
     grassWidth = sv.uv.x;
@@ -262,12 +252,15 @@ void Main(uint id : SV_DispatchThreadID)
         grassWidth *= _ZoneWidthHeights[zoneIndex].x;
     }
 
-    // 거리에 따른 크기 감소
-    half sizeFade = saturate(1 - (distanceFromCamera - _MinFadeDist) / (_MaxFadeDist - _MinFadeDist));
-    grassWidth *= sizeFade * sizeFade;
-    grassHeight *= sizeFade;
+    // 거리에 따른 크기 감소 (최소 크기 제한 추가)
+    const half MIN_SIZE_MULTIPLIER = 0.3; // 최소 30%까지만 감소
+    half finalSizeFade = lerp(MIN_SIZE_MULTIPLIER, 1, distanceFade);
+
+    grassWidth *= finalSizeFade * finalSizeFade;
+    grassHeight *= finalSizeFade;
 
     _BladeForward *= grassHeight;
+
 
     half3 wind = CalculationWind(sv.positionWS, grassHeight);
     half3 interaction = CalculateInteraction(sv.positionWS);
@@ -279,7 +272,7 @@ void Main(uint id : SV_DispatchThreadID)
         uint baseHash = Hash3Pos(sv.positionWS, j);
         float randVar1 = HashToFloat01(FastHash(baseHash));
 
-        float2 bladePos = GetSimpleBladePosition(j, numBladesPerVertex, float2(randVar1, randVar1));
+        float2 bladePos = GetSimpleBladePosition(randVar1);
         float offset = _BladeRadius * length(bladePos) * (0.5 + randVar1 * 0.5);
         half3x3 facingRotationMatrix = AngleAxis3x3(randVar1 * TWO_PI, grassNormal);
 
@@ -313,7 +306,7 @@ void Main(uint id : SV_DispatchThreadID)
             DrawTriangle tri = (DrawTriangle)0;
             tri.normalOS = grassNormal;
             tri.diffuseColor = sv.color;
-            tri.extraBuffer = half4(cut, distanceFade, 0, 0); // distanceFade 값을 전달
+            tri.extraBuffer = half4(cut, distanceFade, 0, 0);
 
             tri.vertices[0] = drawVertices[k];
             tri.vertices[1] = drawVertices[k + 1];

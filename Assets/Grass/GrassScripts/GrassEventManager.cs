@@ -9,8 +9,6 @@ namespace Grass.GrassScripts
         AddInteractor,
         RemoveInteractor,
         TryGetGrassColor,
-        TotalGrassCount,
-        VisibleGrassCount,
     }
 
     public static class GrassEventManager

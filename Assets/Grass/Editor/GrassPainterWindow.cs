@@ -287,7 +287,8 @@ namespace Grass.Editor
                 grassCompute.enabled = newEnagleGrass;
             }
 
-            if (GrassEditorHelper.DrawToggleButton("Auto Update", _autoUpdate, out var newAutoUpdate))
+            if (GrassEditorHelper.DrawToggleButton("Auto Update", "Slow but always update",
+                    _autoUpdate, out var newAutoUpdate))
             {
                 _autoUpdate = newAutoUpdate;
                 if (_autoUpdate)
@@ -957,169 +958,134 @@ namespace Grass.Editor
 
         private void ShowMainSettingsPanel()
         {
-            DrawSeasonSettings();
-            EditorGUILayout.Space(10);
-
-            EditorGUILayout.LabelField("Blade Min/Max Settings", EditorStyles.boldLabel);
             var grassSetting = grassCompute.GrassSetting;
 
-            GrassEditorHelper.DrawMinMaxSection("Blade Width", ref grassSetting.minWidth, ref grassSetting.maxWidth,
-                grassSetting.MinWidthLimit, grassSetting.MaxWidthLimit);
-            GrassEditorHelper.DrawMinMaxSection("Blade Height", ref grassSetting.minHeight, ref grassSetting.maxHeight,
-                grassSetting.MinHeightLimit, grassSetting.MaxHeightLimit);
-            GrassEditorHelper.DrawMinMaxSection("Random Height", ref grassSetting.randomHeightMin,
-                ref grassSetting.randomHeightMax, 0, 1);
+            GrassEditorHelper.DrawFoldoutSection("Global Season Settings", () => DrawSeasonSettings(grassSetting));
 
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Blade Shape Settings", EditorStyles.boldLabel);
-            DrawSliderRow("Blade Radius", ref grassSetting.bladeRadius, grassSetting.MinBladeRadius,
-                grassSetting.MaxBladeRadius);
-            DrawSliderRow("Blade Forward", ref grassSetting.bladeForward, grassSetting.MinBladeForward,
-                grassSetting.MaxBladeForward);
-            DrawSliderRow("Blade Curve", ref grassSetting.bladeCurve, grassSetting.MinBladeCurve,
-                grassSetting.MaxBladeCurve);
-            DrawSliderRow("Bottom Width", ref grassSetting.bottomWidth, grassSetting.MinBottomWidth,
-                grassSetting.MaxBottomWidth);
-
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Blade Amount Settings", EditorStyles.boldLabel);
-            grassSetting.bladesPerVertex = EditorGUILayout.IntSlider("Blades Per Vertex",
-                grassSetting.bladesPerVertex, grassSetting.MinBladesPerVertex, grassSetting.MaxBladesPerVertex);
-            grassSetting.segmentsPerBlade = EditorGUILayout.IntSlider("Segments Per Blade",
-                grassSetting.segmentsPerBlade, grassSetting.MinSegmentsPerBlade, grassSetting.MaxSegmentsPerBlade);
-
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Wind Settings", EditorStyles.boldLabel);
-            grassSetting.windSpeed = EditorGUILayout.Slider("Wind Speed",
-                grassSetting.windSpeed, grassSetting.MinWindSpeed, grassSetting.MaxWindSpeed);
-            grassSetting.windStrength = EditorGUILayout.Slider("Wind Strength",
-                grassSetting.windStrength, grassSetting.MinWindStrength, grassSetting.MaxWindStrength);
-
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Tinting Settings", EditorStyles.boldLabel);
-            grassSetting.topTint = EditorGUILayout.ColorField("Top Tint", grassSetting.topTint);
-            grassSetting.bottomTint = EditorGUILayout.ColorField("Bottom Tint", grassSetting.bottomTint);
-
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("LOD/Culling Settings", EditorStyles.boldLabel);
-            if (GrassEditorHelper.DrawToggleButton(
-                    "Show Culling Bounds",
-                    "Display bounding boxes used for grass culling optimization in Scene view",
-                    grassSetting.drawBounds,
-                    out var newState))
+            GrassEditorHelper.DrawFoldoutSection("Blade Min/Max Settings", () =>
             {
-                grassSetting.drawBounds = newState;
-            }
+                GrassEditorHelper.DrawMinMaxSection("Blade Width", ref grassSetting.minWidth,
+                    ref grassSetting.maxWidth,
+                    grassSetting.MinWidthLimit, grassSetting.MaxWidthLimit);
+                GrassEditorHelper.DrawMinMaxSection("Blade Height", ref grassSetting.minHeight,
+                    ref grassSetting.maxHeight,
+                    grassSetting.MinHeightLimit, grassSetting.MaxHeightLimit);
+                GrassEditorHelper.DrawMinMaxSection("Random Height", ref grassSetting.randomHeightMin,
+                    ref grassSetting.randomHeightMax, 0, 1);
+            });
+            GrassEditorHelper.DrawFoldoutSection("Blade Shape Settings", () =>
+            {
+                DrawSliderRow("Blade Radius", ref grassSetting.bladeRadius, grassSetting.MinBladeRadius,
+                    grassSetting.MaxBladeRadius);
+                DrawSliderRow("Blade Forward", ref grassSetting.bladeForward, grassSetting.MinBladeForward,
+                    grassSetting.MaxBladeForward);
+                DrawSliderRow("Blade Curve", ref grassSetting.bladeCurve, grassSetting.MinBladeCurve,
+                    grassSetting.MaxBladeCurve);
+                DrawSliderRow("Bottom Width", ref grassSetting.bottomWidth, grassSetting.MinBottomWidth,
+                    grassSetting.MaxBottomWidth);
+            });
+            GrassEditorHelper.DrawFoldoutSection("Blade Amount Settings", () =>
+            {
+                grassSetting.bladesPerVertex = EditorGUILayout.IntSlider("Blades Per Vertex",
+                    grassSetting.bladesPerVertex, grassSetting.MinBladesPerVertex, grassSetting.MaxBladesPerVertex);
+                grassSetting.segmentsPerBlade = EditorGUILayout.IntSlider("Segments Per Blade",
+                    grassSetting.segmentsPerBlade, grassSetting.MinSegmentsPerBlade, grassSetting.MaxSegmentsPerBlade);
+            });
+            GrassEditorHelper.DrawFoldoutSection("Wind Settings", () =>
+            {
+                grassSetting.windSpeed = EditorGUILayout.Slider("Wind Speed",
+                    grassSetting.windSpeed, grassSetting.MinWindSpeed, grassSetting.MaxWindSpeed);
+                grassSetting.windStrength = EditorGUILayout.Slider("Wind Strength",
+                    grassSetting.windStrength, grassSetting.MinWindStrength, grassSetting.MaxWindStrength);
+                grassSetting.WindDirection =
+                    EditorGUILayout.Slider("Wind Direction", grassSetting.WindDirection, 0f, 360f);
+            });
+            GrassEditorHelper.DrawFoldoutSection("Tinting Settings", () =>
+            {
+                grassSetting.topTint = EditorGUILayout.ColorField("Top Tint", grassSetting.topTint);
+                grassSetting.bottomTint = EditorGUILayout.ColorField("Bottom Tint", grassSetting.bottomTint);
+            });
+            GrassEditorHelper.DrawFoldoutSection("LOD & Culling Settings", () =>
+            {
+                var gizmosContent = new GUIContent(EditorIcons.Gizmos)
+                {
+                    text = "Show Culling Bounds",
+                    tooltip = "Display bounding boxes used for grass culling optimization in Scene view"
+                };
+                if (GrassEditorHelper.DrawToggleButton(gizmosContent, grassSetting.drawBounds,
+                        out var newState))
+                {
+                    grassSetting.drawBounds = newState;
+                }
 
-            DrawFadeDistanceSlider("Min Fade Distance", ref grassSetting.minFadeDistance, 0,
-                grassSetting.maxFadeDistance);
-            DrawFadeDistanceSlider("Max Fade Distance", ref grassSetting.maxFadeDistance, grassSetting.minFadeDistance,
-                300);
+                grassSetting.cullingTreeDepth =
+                    EditorGUILayout.IntField("Culling Tree Depth", grassSetting.cullingTreeDepth);
 
-            grassSetting.cullingTreeDepth =
-                EditorGUILayout.IntField("Culling Tree Depth", grassSetting.cullingTreeDepth);
+                EditorGUILayout.Space(5);
+                GrassEditorHelper.DrawHorizontalLine(Color.gray);
 
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Other Settings", EditorStyles.boldLabel);
-            grassSetting.interactorStrength =
-                EditorGUILayout.FloatField("Interactor Strength", grassSetting.interactorStrength);
-            grassSetting.castShadow = (UnityEngine.Rendering.ShadowCastingMode)EditorGUILayout.EnumPopup(
-                "Shadow Settings", grassSetting.castShadow);
+                EditorGUILayout.LabelField("Distance Fade", EditorStyles.boldLabel);
+                DrawFadeDistanceSlider("Min Fade Distance", ref grassSetting.minFadeDistance, 0,
+                    grassSetting.maxFadeDistance);
+                DrawFadeDistanceSlider("Max Fade Distance", ref grassSetting.maxFadeDistance,
+                    grassSetting.minFadeDistance, 300);
+
+                EditorGUILayout.Space(5);
+                GrassEditorHelper.DrawHorizontalLine(Color.gray);
+
+                EditorGUILayout.HelpBox("Drag handles to adjust LOD transition thresholds", MessageType.Info);
+
+                GrassEditorHelper.DrawLODPreview(grassSetting.simpleLodThreshold,
+                    grassSetting.mediumLodThreshold,
+                    out var newSimple, out var newMedium);
+
+                if (Math.Abs(newSimple - grassSetting.simpleLodThreshold) > float.Epsilon ||
+                    Math.Abs(newMedium - grassSetting.mediumLodThreshold) > float.Epsilon)
+                {
+                    Undo.RecordObject(grassSetting, "Change LOD Thresholds");
+                    grassSetting.simpleLodThreshold = newSimple;
+                    grassSetting.mediumLodThreshold = newMedium;
+                    EditorUtility.SetDirty(grassSetting);
+                }
+            });
+            GrassEditorHelper.DrawFoldoutSection("Other Settings", () =>
+            {
+                grassSetting.interactorStrength =
+                    EditorGUILayout.FloatField("Interactor Strength", grassSetting.interactorStrength);
+                grassSetting.castShadow = (UnityEngine.Rendering.ShadowCastingMode)EditorGUILayout.EnumPopup(
+                    "Shadow Settings", grassSetting.castShadow);
+            });
         }
-
-        private bool _seasonSettingsExpanded;
-
-        private void DrawSeasonSettings()
+        
+        private void DrawSeasonSettings(GrassSettingSO grassSetting) 
         {
-            var headerStyle = new GUIStyle(EditorStyles.helpBox)
+            var seasonController = FindAnyObjectByType<GrassSeasonManager>();
+            if (seasonController == null)
             {
-                fontSize = 12,
-                fontStyle = FontStyle.Bold,
-                padding = new RectOffset(5, 5, 10, 10),
-                margin = new RectOffset(0, 0, 10, 10)
-            };
-
-            EditorGUILayout.BeginVertical(headerStyle);
-
-            var globalContent = new GUIContent(EditorIcons.Settings)
-            {
-                text = "Global Season Settings",
-                tooltip = "Global season settings that apply to all Grass Season Zones\n\n" +
-                          "• From/To Seasons: Define default season transitions\n" +
-                          "• Season Settings: Set default colors, width, and height\n" +
-                          "• Base Control: Changes affect all volumes unless overridden"
-            };
-            // Season Settings 토글 버튼
-            if (GrassEditorHelper.DrawToggleButton(globalContent, _seasonSettingsExpanded,
-                    out var expanded))
-            {
-                _seasonSettingsExpanded = expanded;
+                EditorGUILayout.HelpBox("No GrassSeasonManager found in scene. Season effects are disabled.", MessageType.Info);
+                if (GUILayout.Button("Create Season Controller"))
+                {
+                    CreateSeasonController();
+                }
+                return;
             }
 
-            if (_seasonSettingsExpanded)
+            SerializedObject serializedSettings = new SerializedObject(grassSetting);
+            var seasonRange = serializedSettings.FindProperty("seasonRange");
+
+            EditorGUI.BeginChangeCheck();
+            EditorGUILayout.PropertyField(seasonRange);
+            if (EditorGUI.EndChangeCheck())
             {
-                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-
-                var seasonController = FindAnyObjectByType<GrassSeasonManager>();
-                if (seasonController == null)
-                {
-                    EditorGUILayout.HelpBox("No GrassSeasonManager found in scene. Season effects are disabled.",
-                        MessageType.Info);
-                    if (GUILayout.Button("Create Season Controller"))
-                    {
-                        CreateSeasonController();
-                    }
-                }
-                else
-                {
-                    EditorGUILayout.Space(10);
-                    EditorGUILayout.LabelField("Season Range Settings", EditorStyles.boldLabel);
-                    var curPresets = grassCompute.GrassSetting;
-
-                    SerializedObject serializedSettings = new SerializedObject(curPresets);
-                    var seasonRange = serializedSettings.FindProperty("seasonRange");
-
-                    EditorGUI.BeginChangeCheck();
-                    EditorGUILayout.PropertyField(seasonRange);
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        serializedSettings.ApplyModifiedProperties();
-                        EditorUtility.SetDirty(curPresets);
-                        if (seasonController != null)
-                        {
-                            seasonController.UpdateSeasonZones();
-                        }
-                    }
-
-                    EditorGUILayout.Space(10);
-
-                    // 컬럼 헤더
-                    EditorGUILayout.BeginHorizontal();
-                    GUILayout.Space(80); // Season 라벨 공간
-                    var headerLabelStyle = new GUIStyle(GUI.skin.label)
-                    {
-                        alignment = TextAnchor.MiddleCenter
-                    };
-                    GUILayout.Label("Color", headerLabelStyle, GUILayout.Width(60));
-                    GUILayout.Label("Width", headerLabelStyle, GUILayout.Width(150));
-                    GUILayout.Label("Height", headerLabelStyle, GUILayout.Width(150));
-                    EditorGUILayout.EndHorizontal();
-
-                    GrassEditorHelper.DrawHorizontalLine(Color.gray, 1, 2);
-
-                    if (!grassCompute || !curPresets) return;
-
-                    // 각 계절별 설정 UI
-                    DrawSeasonSettingRow("Winter", ref curPresets.winterSettings);
-                    DrawSeasonSettingRow("Spring", ref curPresets.springSettings);
-                    DrawSeasonSettingRow("Summer", ref curPresets.summerSettings);
-                    DrawSeasonSettingRow("Autumn", ref curPresets.autumnSettings);
-                }
-
-                EditorGUILayout.EndVertical();
+                serializedSettings.ApplyModifiedProperties();
+                EditorUtility.SetDirty(grassSetting);
+                seasonController.UpdateSeasonZones();
             }
 
-            EditorGUILayout.EndVertical();
+            EditorGUILayout.Space(10);
+
+            var rect = GUILayoutUtility.GetRect(GUIContent.none, EditorStyles.helpBox, GUILayout.Height(100));
+            GrassEditorHelper.DrawSeasonSettingsTable(rect, grassSetting);
         }
 
         private void CreateSeasonController()

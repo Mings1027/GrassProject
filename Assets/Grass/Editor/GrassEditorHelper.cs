@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Grass.GrassScripts;
 using UnityEditor;
 using UnityEngine;
@@ -45,6 +46,9 @@ namespace Grass.Editor
 
     public static class GrassEditorHelper
     {
+        // Add to existing class
+        private static Dictionary<string, bool> _foldoutStates = new();
+
         public static Bounds? GetObjectBounds(GameObject obj)
         {
             if (obj.TryGetComponent(out MeshFilter meshFilter))
@@ -152,6 +156,14 @@ namespace Grass.Editor
             rect.y += (float)padding / 2;
             rect.x -= 2;
             rect.width += 6;
+            EditorGUI.DrawRect(rect, color);
+        }
+
+        public static void DrawVerticalLine(Color color, int thickness = 1, int padding = 0)
+        {
+            var rect = EditorGUILayout.GetControlRect(GUILayout.Width(thickness + padding * 2));
+            rect.width = thickness;
+            rect.x += padding;
             EditorGUI.DrawRect(rect, color);
         }
 
@@ -421,6 +433,218 @@ namespace Grass.Editor
             Handles.DrawLine(points[1], points[5]);
             Handles.DrawLine(points[2], points[6]);
             Handles.DrawLine(points[3], points[7]);
+        }
+
+        public static void DrawLODPreview(float simpleLodThreshold, float mediumLodThreshold, out float newSimple,
+                                          out float newMedium)
+        {
+            newSimple = simpleLodThreshold;
+            newMedium = mediumLodThreshold;
+
+            var rect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(40));
+            var padding = 20f;
+            rect.x += padding;
+            rect.width -= padding * 2;
+
+            // 배경
+            EditorGUI.DrawRect(rect, new Color(0.2f, 0.2f, 0.2f));
+
+            // LOD 영역
+            var width = rect.width;
+            var simpleWidth = width * simpleLodThreshold;
+            var mediumWidth = width * (mediumLodThreshold - simpleLodThreshold);
+            var detailedWidth = width * (1 - mediumLodThreshold);
+
+            var simpleRect = new Rect(rect.x, rect.y, simpleWidth, rect.height);
+            var mediumRect = new Rect(rect.x + simpleWidth, rect.y, mediumWidth, rect.height);
+            var detailedRect = new Rect(rect.x + simpleWidth + mediumWidth, rect.y, detailedWidth, rect.height);
+
+            EditorGUI.DrawRect(simpleRect, new Color(0.8f, 0.3f, 0.3f, 0.8f));
+            EditorGUI.DrawRect(mediumRect, new Color(0.3f, 0.8f, 0.3f, 0.8f));
+            EditorGUI.DrawRect(detailedRect, new Color(0.3f, 0.3f, 0.8f, 0.8f));
+
+            // 드래그 핸들
+            var handleWidth = 10f;
+            var handleHeight = rect.height;
+
+            var simpleHandle = new Rect(rect.x + simpleWidth - handleWidth / 2, rect.y, handleWidth, handleHeight);
+            var mediumHandle = new Rect(rect.x + simpleWidth + mediumWidth - handleWidth / 2, rect.y, handleWidth,
+                handleHeight);
+
+            EditorGUI.DrawRect(simpleHandle, new Color(1f, 1f, 1f, 0.5f));
+            EditorGUI.DrawRect(mediumHandle, new Color(1f, 1f, 1f, 0.5f));
+
+            // 드래그 처리
+            var controlID = GUIUtility.GetControlID(FocusType.Passive);
+            var evt = Event.current;
+
+            switch (evt.GetTypeForControl(controlID))
+            {
+                case EventType.MouseDown when evt.button == 0:
+                    if (simpleHandle.Contains(evt.mousePosition) || mediumHandle.Contains(evt.mousePosition))
+                    {
+                        GUIUtility.hotControl = controlID;
+                        evt.Use();
+                    }
+
+                    break;
+
+                case EventType.MouseDrag when GUIUtility.hotControl == controlID:
+                    var normalizedX = (evt.mousePosition.x - rect.x) / rect.width;
+
+                    if (Vector2.Distance(evt.mousePosition, simpleHandle.center) <
+                        Vector2.Distance(evt.mousePosition, mediumHandle.center))
+                    {
+                        newSimple = Mathf.Clamp(normalizedX, 0, newMedium);
+                    }
+                    else
+                    {
+                        newMedium = Mathf.Clamp(normalizedX, newSimple, 1);
+                    }
+
+                    GUI.changed = true;
+                    evt.Use();
+                    break;
+
+                case EventType.MouseUp:
+                    if (GUIUtility.hotControl == controlID)
+                    {
+                        GUIUtility.hotControl = 0;
+                        evt.Use();
+                    }
+
+                    break;
+            }
+
+            var style = new GUIStyle(EditorStyles.label)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = Color.white }
+            };
+
+            EditorGUI.LabelField(simpleRect, "Simple", style);
+            EditorGUI.LabelField(mediumRect, "Medium", style);
+            EditorGUI.LabelField(detailedRect, "Detailed", style);
+
+            var percentStyle = new GUIStyle(EditorStyles.miniLabel)
+            {
+                alignment = TextAnchor.LowerCenter,
+                normal = { textColor = Color.white }
+            };
+
+            EditorGUI.LabelField(simpleRect, $"{simpleLodThreshold:P0}", percentStyle);
+            EditorGUI.LabelField(mediumRect, $"{mediumLodThreshold:P0}", percentStyle);
+        }
+
+        public static bool DrawFoldoutSection(string title, Action drawContent)
+        {
+            _foldoutStates.TryAdd(title, true);
+
+            var headerStyle = new GUIStyle(GUI.skin.button)
+            {
+                fontSize = 12,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleLeft,
+                padding = new RectOffset(35, 10, 5, 5),
+                margin = new RectOffset(0, 0, 5, 0)
+            };
+
+            var contentStyle = new GUIStyle(EditorStyles.helpBox)
+            {
+                padding = new RectOffset(15, 15, 10, 10),
+                margin = new RectOffset(0, 0, 0, 10)
+            };
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+
+            // Draw header with arrow icon
+            var rect = GUILayoutUtility.GetRect(new GUIContent(title), headerStyle, GUILayout.Height(25));
+            var arrowRect = new Rect(rect.x + 10, rect.y + 5, 20, 20);
+
+            if (GUI.Button(rect, title, headerStyle))
+            {
+                _foldoutStates[title] = !_foldoutStates[title];
+                GUI.changed = true;
+            }
+
+            // Draw arrow
+            var arrowContent = EditorGUIUtility.IconContent(_foldoutStates[title] ? "d_dropdown" : "d_forward");
+            GUI.Label(arrowRect, arrowContent);
+
+            // Draw content if expanded
+            if (_foldoutStates[title])
+            {
+                EditorGUILayout.BeginVertical(contentStyle);
+                drawContent?.Invoke();
+                EditorGUILayout.EndVertical();
+            }
+
+            EditorGUILayout.EndVertical();
+            return _foldoutStates[title];
+        }
+
+        public static void DrawSeasonSettingsTable(Rect position, GrassSettingSO grassSetting)
+        {
+            var labelWidth = 40f;
+            var cellWidth = (position.width - labelWidth) / 4;
+            var rowHeight = EditorGUIUtility.singleLineHeight;
+            var padding = 5f;
+            var fieldWidth = cellWidth - padding;
+            var valueFieldWidth = 35f; // 값 필드의 너비
+            var sliderWidth = fieldWidth - valueFieldWidth - 2f; // 슬라이더 너비
+
+            // Headers (기존 코드와 동일)
+            var seasonLabels = new[] { "Winter", "Spring", "Summer", "Autumn" };
+            for (int i = 0; i < seasonLabels.Length; i++)
+            {
+                var rect = new Rect(position.x + labelWidth + (cellWidth * i), position.y, fieldWidth, rowHeight);
+                EditorGUI.LabelField(rect, seasonLabels[i], EditorStyles.boldLabel);
+            }
+
+            var y = position.y + rowHeight + padding;
+            var settings = new[]
+            {
+                grassSetting.winterSettings, grassSetting.springSettings,
+                grassSetting.summerSettings, grassSetting.autumnSettings
+            };
+
+            // Color row (기존 코드와 동일)
+            EditorGUI.LabelField(new Rect(position.x, y, labelWidth, rowHeight), "Color", EditorStyles.boldLabel);
+            for (int i = 0; i < settings.Length; i++)
+            {
+                var rect = new Rect(position.x + labelWidth + (cellWidth * i) + padding, y, fieldWidth, rowHeight);
+                settings[i].seasonColor = EditorGUI.ColorField(rect, settings[i].seasonColor);
+            }
+
+            y += rowHeight + padding;
+
+            // Width row (커스텀 슬라이더)
+            EditorGUI.LabelField(new Rect(position.x, y, labelWidth, rowHeight), "Width", EditorStyles.boldLabel);
+            for (int i = 0; i < settings.Length; i++)
+            {
+                var startX = position.x + labelWidth + (cellWidth * i) + padding;
+                var sliderRect = new Rect(startX, y, sliderWidth, rowHeight);
+                var fieldRect = new Rect(startX + sliderWidth + 2f, y, valueFieldWidth, rowHeight);
+
+                settings[i].width = GUI.HorizontalSlider(sliderRect, settings[i].width, 0.1f, 2f);
+                settings[i].width = EditorGUI.FloatField(fieldRect, settings[i].width);
+                settings[i].width = Mathf.Clamp(settings[i].width, 0.1f, 2f);
+            }
+
+            y += rowHeight + padding;
+
+            // Height row (커스텀 슬라이더)
+            EditorGUI.LabelField(new Rect(position.x, y, labelWidth, rowHeight), "Height", EditorStyles.boldLabel);
+            for (int i = 0; i < settings.Length; i++)
+            {
+                var startX = position.x + labelWidth + (cellWidth * i) + padding;
+                var sliderRect = new Rect(startX, y, sliderWidth, rowHeight);
+                var fieldRect = new Rect(startX + sliderWidth + 2f, y, valueFieldWidth, rowHeight);
+
+                settings[i].height = GUI.HorizontalSlider(sliderRect, settings[i].height, 0.1f, 2f);
+                settings[i].height = EditorGUI.FloatField(fieldRect, settings[i].height);
+                settings[i].height = Mathf.Clamp(settings[i].height, 0.1f, 2f);
+            }
         }
     }
 }

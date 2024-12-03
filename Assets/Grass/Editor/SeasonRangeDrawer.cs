@@ -19,49 +19,44 @@ namespace Grass.Editor
         {
             EditorGUI.BeginProperty(position, label, property);
 
-            float lineHeight = EditorGUIUtility.singleLineHeight;
-            float spacing = EditorGUIUtility.standardVerticalSpacing;
+            var lineHeight = EditorGUIUtility.singleLineHeight;
+            var spacing = EditorGUIUtility.standardVerticalSpacing;
 
             var from = (SeasonType)property.FindPropertyRelative("from").enumValueIndex;
             var to = (SeasonType)property.FindPropertyRelative("to").enumValueIndex;
             var isFullCycleProp = property.FindPropertyRelative("isFullCycle");
 
-            float totalHeight = (from == to) ? lineHeight * 3 + spacing * 2 : lineHeight * 2 + spacing;
-
-            // From/To 라인 (첫 번째 줄)
+            // From/To line
             var seasonRect = position;
             seasonRect.height = lineHeight;
 
-            // Layout 계산
-            float totalWidth = seasonRect.width;
-            float enumWidth = (totalWidth - 90) / 2;
-            float labelWidth = 40f;
-            float padding = 10f;
+            // Dynamic width calculation
+            var availableWidth = seasonRect.width;
+            var labelWidth = EditorGUIUtility.labelWidth * 0.5f;
+            var enumWidth = (availableWidth - (labelWidth * 2) - 20) * 0.5f;
 
-            // From 레이블
+            // From section
             var fromLabelRect = seasonRect;
             fromLabelRect.width = labelWidth;
             EditorGUI.LabelField(fromLabelRect, "From");
 
-            // From enum
             var fromEnumRect = fromLabelRect;
             fromEnumRect.x += labelWidth;
             fromEnumRect.width = enumWidth;
             EditorGUI.PropertyField(fromEnumRect, property.FindPropertyRelative("from"), GUIContent.none);
 
-            // To 레이블
+            // To section
             var toLabelRect = fromEnumRect;
-            toLabelRect.x += enumWidth + padding;
+            toLabelRect.x += enumWidth + 10;
             toLabelRect.width = labelWidth;
             EditorGUI.LabelField(toLabelRect, "To");
 
-            // To enum
             var toEnumRect = toLabelRect;
             toEnumRect.x += labelWidth;
             toEnumRect.width = enumWidth;
             EditorGUI.PropertyField(toEnumRect, property.FindPropertyRelative("to"), GUIContent.none);
 
-            // Full Cycle 토글 (From과 To가 같을 때만)
+            // Full Cycle toggle
             if (from == to)
             {
                 var cycleRect = position;
@@ -70,11 +65,12 @@ namespace Grass.Editor
                 EditorGUI.PropertyField(cycleRect, isFullCycleProp, FullCycleContent);
             }
 
-            // Sequence 정보 (마지막 줄)
+            // Sequence info
+            var totalHeight = (from == to) ? lineHeight * 3 + spacing * 2 : lineHeight * 2 + spacing;
             var infoRect = position;
             infoRect.y += totalHeight - lineHeight;
             infoRect.height = lineHeight;
-            string rangeInfo = GetSeasonRangeInfo(from, to, isFullCycleProp.boolValue);
+            var rangeInfo = GetSeasonRangeInfo(from, to, isFullCycleProp.boolValue);
             EditorGUI.LabelField(infoRect, "Sequence: " + rangeInfo, EditorStyles.miniLabel);
 
             EditorGUI.EndProperty();

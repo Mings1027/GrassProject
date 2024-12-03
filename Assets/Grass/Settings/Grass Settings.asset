@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shaderToUse: {fileID: 7200000, guid: 11036af5f2d1499c8845585fb5fadb4c, type: 3}
   materialToUse: {fileID: 2100000, guid: 7725493650b5a4b4d9c0d612493ca34d, type: 2}
-  bladeRadius: 1.5
+  bladeRadius: 1
   bladeForward: 1.428
   bladeCurve: 1.602
   bottomWidth: 0.164
@@ -24,9 +24,11 @@ MonoBehaviour:
   maxHeight: 3
   randomHeightMin: 0.01
   randomHeightMax: 0.2
-  windSpeed: 1
-  windStrength: 0.2
-  bladesPerVertex: 3
+  windSpeed: 3.56
+  windStrength: 0.936
+  windDirection: 45
+  windDirectionVector: {x: 0.70710677, y: 0.70710677}
+  bladesPerVertex: 1
   segmentsPerBlade: 2
   interactorStrength: 1.5
   topTint: {r: 1, g: 1, b: 1, a: 1}
@@ -51,9 +53,11 @@ MonoBehaviour:
     seasonColor: {r: 1, g: 0.16862746, b: 0, a: 0}
     width: 1
     height: 1
-  drawBounds: 1
-  minFadeDistance: 20
-  maxFadeDistance: 150
+  drawBounds: 0
   cullingTreeDepth: 5
+  minFadeDistance: 20
+  maxFadeDistance: 100
+  simpleLodThreshold: 0.3933518
+  mediumLodThreshold: 0.69529086
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}
   castShadow: 0

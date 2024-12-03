@@ -229,9 +229,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         GrassEventManager.AddEvent<Vector3, float>(GrassEvent.UpdateCutBuffer, UpdateCutBuffer);
         GrassEventManager.AddEvent<GrassInteractor>(GrassEvent.AddInteractor, AddInteractor);
         GrassEventManager.AddEvent<GrassInteractor>(GrassEvent.RemoveInteractor, RemoveInteractor);
-
-        GrassFuncManager.AddEvent(GrassEvent.TotalGrassCount, () => grassData.Count);
-        GrassFuncManager.AddEvent(GrassEvent.VisibleGrassCount, () => _grassVisibleIDList.Count);
     }
 
     private void UnregisterEvents()
@@ -239,9 +236,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         GrassEventManager.RemoveEvent<Vector3, float>(GrassEvent.UpdateCutBuffer, UpdateCutBuffer);
         GrassEventManager.RemoveEvent<GrassInteractor>(GrassEvent.AddInteractor, AddInteractor);
         GrassEventManager.RemoveEvent<GrassInteractor>(GrassEvent.RemoveInteractor, RemoveInteractor);
-
-        GrassFuncManager.RemoveEvent(GrassEvent.TotalGrassCount, () => grassData.Count);
-        GrassFuncManager.RemoveEvent(GrassEvent.VisibleGrassCount, () => _grassVisibleIDList.Count);
     }
 
     private void ReleaseBuffer()
@@ -603,6 +597,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         _instComputeShader.SetFloat(GrassShaderPropertyID.GrassRandomHeightMax, grassSetting.randomHeightMax);
         _instComputeShader.SetFloat(GrassShaderPropertyID.WindSpeed, grassSetting.windSpeed);
         _instComputeShader.SetFloat(GrassShaderPropertyID.WindStrength, grassSetting.windStrength);
+        _instComputeShader.SetVector(GrassShaderPropertyID.WindDirection, grassSetting.windDirectionVector);
 
         _instComputeShader.SetFloat(GrassShaderPropertyID.InteractorStrength, grassSetting.interactorStrength);
         _instComputeShader.SetFloat(GrassShaderPropertyID.BladeRadius, grassSetting.bladeRadius);
@@ -621,6 +616,9 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
         _instComputeShader.SetFloat(GrassShaderPropertyID.MinFadeDist, grassSetting.minFadeDistance);
         _instComputeShader.SetFloat(GrassShaderPropertyID.MaxFadeDist, grassSetting.maxFadeDistance);
+
+        instantiatedMaterial.SetFloat(GrassShaderPropertyID.SimpleLodThreshold, grassSetting.simpleLodThreshold);
+        instantiatedMaterial.SetFloat(GrassShaderPropertyID.MediumLodThreshold, grassSetting.mediumLodThreshold);
 
         instantiatedMaterial.SetColor(GrassShaderPropertyID.TopTint, grassSetting.topTint);
         instantiatedMaterial.SetColor(GrassShaderPropertyID.BottomTint, grassSetting.bottomTint);

@@ -108,7 +108,7 @@ half3 AdjustSaturation(half3 color, half saturation)
 
 half4 GetSimpleLighting(half3 diffuseColor)
 {
-    return half4(diffuseColor * _OverallIntensity, 1);
+    return half4(diffuseColor, 1);
 }
 
 half4 GetMediumDistanceLighting(half2 uv, half3 diffuseColor, half3 normalWS, half3 worldPos)
@@ -153,13 +153,13 @@ half4 Fragment(FragmentData input) : SV_Target
     half distanceFade = input.extraBuffer.y;
 
     // 멀리 있는 픽셀은 간단한 계산만 수행
-    if (distanceFade < 0.3)
+    if (distanceFade < _SimpleLodThreshold)
     {
         return GetSimpleLighting(input.diffuseColor);
     }
 
     // 중간 거리는 메인 라이트만 계산
-    if (distanceFade < 0.7)
+    if (distanceFade < _MediumLodThreshold)
     {
         return GetMediumDistanceLighting(input.uv, input.diffuseColor, input.normalWS, input.worldPos);
     }

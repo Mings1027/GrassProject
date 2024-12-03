@@ -7,9 +7,8 @@ namespace Grass.Editor
     [CustomEditor(typeof(GrassSeasonManager))]
     public class GrassSeasonManagerEditor : UnityEditor.Editor
     {
+        private SerializedProperty _globalSeasonValueProp;
         private bool _showAllGizmos;
-        private float _sliderValue;
-        private bool _initialized;
 
         private void OnEnable()
         {
@@ -17,11 +16,7 @@ namespace Grass.Editor
             var volumes = controller.GetComponentsInChildren<GrassSeasonZone>();
             _showAllGizmos = AreAllGizmosEnabled(volumes);
 
-            if (!_initialized)
-            {
-                _sliderValue = controller.GlobalSeasonValue;
-                _initialized = true;
-            }
+            _globalSeasonValueProp = serializedObject.FindProperty("globalSeasonValue");
         }
 
         public override void OnInspectorGUI()
@@ -61,37 +56,20 @@ namespace Grass.Editor
 
             EditorGUI.BeginChangeCheck();
 
-            var roundedValue = (float)System.Math.Round(_sliderValue, 2);
-            _sliderValue = EditorGUILayout.FloatField("Season Value", roundedValue);
+            var roundedValue = (float)System.Math.Round(_globalSeasonValueProp.floatValue, 2);
+            float newValue = EditorGUILayout.FloatField("Season Value", roundedValue);
 
             EditorGUILayout.BeginVertical(GUILayout.Height(20));
-            _sliderValue = GUILayout.HorizontalSlider(_sliderValue, min, max);
+            newValue = GUILayout.HorizontalSlider(newValue, min, max);
             EditorGUILayout.EndVertical();
-
-            // 현재 계절 정보 표시
-            // string currentSeason = GetSeasonName((_sliderValue + 4f) % 4f);
-            // EditorGUILayout.LabelField($"Current: {currentSeason} ({_sliderValue:F2})", EditorStyles.miniLabel);
 
             if (EditorGUI.EndChangeCheck())
             {
-                _sliderValue = Mathf.Clamp(_sliderValue, min, max);
-                manager.SetGlobalSeasonValue(_sliderValue);
+                _globalSeasonValueProp.floatValue = Mathf.Clamp(newValue, min, max);
+                manager.SetGlobalSeasonValue(newValue);
                 SceneView.RepaintAll();
             }
         }
-
-        // private string GetSeasonName(float value)
-        // {
-        //     int seasonIndex = Mathf.FloorToInt(value);
-        //     return seasonIndex switch
-        //     {
-        //         0 => "Winter",
-        //         1 => "Spring",
-        //         2 => "Summer",
-        //         3 => "Autumn",
-        //         _ => "Winter"
-        //     };
-        // }
 
         private bool AreAllGizmosEnabled(GrassSeasonZone[] volumes)
         {

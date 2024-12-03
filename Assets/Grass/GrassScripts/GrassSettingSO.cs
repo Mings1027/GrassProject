@@ -48,6 +48,19 @@ public class GrassSettingSO : ScriptableObject
     public float MinWindStrength => 0f;
     public float MaxWindStrength => 2f;
 
+    [Range(0, 360)] [SerializeField] private float windDirection = 0f;
+    public Vector2 windDirectionVector;
+    public float WindDirection
+    {
+        get => windDirection;
+        set
+        {
+            windDirection = value;
+            var angleRad = windDirection * Mathf.Deg2Rad;
+            windDirectionVector = new Vector2(Mathf.Cos(angleRad), Mathf.Sin(angleRad));
+        }
+    }
+
     //Grass
     [Header("Grass")] public int bladesPerVertex = 4;
     public int MinBladesPerVertex => 1;
@@ -64,17 +77,19 @@ public class GrassSettingSO : ScriptableObject
     [Header("Material")] public Color topTint = new(1, 1, 1);
     public Color bottomTint = new(0, 0, 1);
 
-    [Header("Season Settings")]
-    public SeasonRange seasonRange = new();
+    [Header("Season Settings")] public SeasonRange seasonRange = new();
     public SeasonSettings winterSettings = new();
     public SeasonSettings springSettings = new();
     public SeasonSettings summerSettings = new();
     public SeasonSettings autumnSettings = new();
 
-    [Header("LOD/ Culling")] public bool drawBounds;
-    public float minFadeDistance = 40;
-    public float maxFadeDistance = 125;
+    [Header("LOD")] public bool drawBounds;
     public int cullingTreeDepth = 1;
+
+    [Header("LOD Quality Settings")] public float minFadeDistance = 40;
+    public float maxFadeDistance = 125;
+    [Range(0, 1)] public float simpleLodThreshold = 0.3f;
+    [Range(0, 1)] public float mediumLodThreshold = 0.7f;
 
     [Header("Particles")] public GameObject cuttingParticles;
 

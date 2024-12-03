@@ -39,6 +39,9 @@ CBUFFER_START(UnityPerMaterial)
     float4 _ZonePositions[MAX_ZONES]; // w 컴포넌트는 활성상태 (1 = 활성, 0 = 비활성)
     float4 _ZoneScales[MAX_ZONES];
     float4 _ZoneColors[MAX_ZONES];
-    // float4 _ZoneWidthHeights[MAX_ZONES];
     int _ZoneCount;
+
+    // LOD
+    float _SimpleLodThreshold;
+    float _MediumLodThreshold;
 CBUFFER_END

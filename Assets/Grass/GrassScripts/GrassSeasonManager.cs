@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -17,17 +16,13 @@ namespace Grass.GrassScripts
         private readonly ZoneData[] zoneData = new ZoneData[MAX_ZONES];
         private Color[] zoneColors;
         private bool isDirty;
-        private GrassSettingSO grassSetting;
-        private GrassComputeScript grassCompute;
-
+        
+        [SerializeField] private GrassSettingSO grassSetting;
+        [SerializeField] private GrassComputeScript grassCompute;
         [SerializeField] private float globalSeasonValue;
 
         public float GlobalMinRange => grassSetting != null ? grassSetting.seasonRange.GetRange().min : 0f;
         public float GlobalMaxRange => grassSetting != null ? grassSetting.seasonRange.GetRange().max : 4f;
-
-#if UNITY_EDITOR
-        public float GlobalSeasonValue => globalSeasonValue;
-#endif
 
         private void OnEnable()
         {
@@ -51,12 +46,10 @@ namespace Grass.GrassScripts
                     Debug.LogWarning("GrassSetting not assigned in GrassComputeScript", this);
                     return;
                 }
-
-                var (min, max) = grassSetting.seasonRange.GetRange();
-                globalSeasonValue = Mathf.Clamp(globalSeasonValue, min, max);
             }
 
             UpdateSeasonZones();
+            SetGlobalSeasonValue(globalSeasonValue);
             GrassFuncManager.AddEvent<Vector3, (Color, bool)>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
         }
 
