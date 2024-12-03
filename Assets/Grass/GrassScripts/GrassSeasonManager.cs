@@ -50,12 +50,12 @@ namespace Grass.GrassScripts
 
             UpdateSeasonZones();
             SetGlobalSeasonValue(globalSeasonValue);
-            GrassFuncManager.AddEvent<Vector3, (Color, bool)>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
+            GrassFuncManager.AddEvent<Vector3, Color>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
         }
 
         private void OnDisable()
         {
-            GrassFuncManager.RemoveEvent<Vector3, (Color, bool)>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
+            GrassFuncManager.RemoveEvent<Vector3, Color>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
         }
 
         private void Update()
@@ -167,7 +167,7 @@ namespace Grass.GrassScripts
             }
         }
 
-        private (Color color, bool isInZone) TryGetGrassColor(Vector3 position)
+        private Color TryGetGrassColor(Vector3 position)
         {
             // 위치가 어떤 zone 안에 있는지 확인
             for (int i = 0; i < seasonZones.Count; i++)
@@ -183,11 +183,11 @@ namespace Grass.GrassScripts
 
                 if (worldBounds.Contains(position))
                 {
-                    return (zoneColors[i], true);
+                    return zoneColors[i];
                 }
             }
 
-            return (default, false);
+            return Color.white;
         }
 
         public void UpdateSingleZone(GrassSeasonZone zone)

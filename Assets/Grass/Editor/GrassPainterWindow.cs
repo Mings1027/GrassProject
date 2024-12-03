@@ -1035,16 +1035,16 @@ namespace Grass.Editor
 
                 EditorGUILayout.HelpBox("Drag handles to adjust LOD transition thresholds", MessageType.Info);
 
-                GrassEditorHelper.DrawLODPreview(grassSetting.simpleLodThreshold,
-                    grassSetting.mediumLodThreshold,
+                GrassEditorHelper.DrawLODPreview(grassSetting.lowQualityDistance,
+                    grassSetting.mediumQualityDistance,
                     out var newSimple, out var newMedium);
 
-                if (Math.Abs(newSimple - grassSetting.simpleLodThreshold) > float.Epsilon ||
-                    Math.Abs(newMedium - grassSetting.mediumLodThreshold) > float.Epsilon)
+                if (Math.Abs(newSimple - grassSetting.lowQualityDistance) > float.Epsilon ||
+                    Math.Abs(newMedium - grassSetting.mediumQualityDistance) > float.Epsilon)
                 {
                     Undo.RecordObject(grassSetting, "Change LOD Thresholds");
-                    grassSetting.simpleLodThreshold = newSimple;
-                    grassSetting.mediumLodThreshold = newMedium;
+                    grassSetting.lowQualityDistance = newSimple;
+                    grassSetting.mediumQualityDistance = newMedium;
                     EditorUtility.SetDirty(grassSetting);
                 }
             });

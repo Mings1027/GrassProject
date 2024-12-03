@@ -155,7 +155,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         _drawBuffer.SetCounterValue(0);
         _argsBuffer.SetData(_argsBufferReset);
 
-        // _dispatchSize = Mathf.CeilToInt((int)(_grassVisibleIDList.Count / _threadGroupSize));
         _dispatchSize = (_grassVisibleIDList.Count + (int)_threadGroupSize - 1) >>
                         (int)Math.Log(_threadGroupSize, 2);
         if (_grassVisibleIDList.Count > 0)
@@ -250,6 +249,21 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
     private void MainSetup(bool full)
     {
+        SetupCamera();
+        if (ValidateSetup()) return;
+        SetSeasonManager();
+        InitializeShader();
+        InitializeBuffers();
+        SetupComputeShader();
+        SetupQuadTree(full);
+        GetFrustumData();
+#if UNITY_EDITOR
+        _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
+#endif
+    }
+
+    private void SetupCamera()
+    {
 #if UNITY_EDITOR
         SceneView.duringSceneGui -= OnScene;
         SceneView.duringSceneGui += OnScene;
@@ -266,88 +280,80 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         {
             _mainCamera = Camera.main;
         }
+    }
 
+    private bool ValidateSetup()
+    {
         // Don't do anything if resources are not found,
         // or no vertex is put on the mesh.
         if (grassData.Count == 0)
         {
             _boundsListVis.Clear();
-            return;
+            return true;
         }
 
         if (!grassSetting.shaderToUse || !grassSetting.materialToUse)
         {
             Debug.LogWarning("Missing Compute Shader/Material in grass Settings", this);
-            return;
+            return true;
         }
 
         if (!grassSetting.cuttingParticles)
         {
             Debug.LogWarning("Missing Cut Particles in grass Settings", this);
+            return true;
         }
 
+        return false;
+    }
+
+    private void SetSeasonManager()
+    {
         var seasonManager = FindAnyObjectByType<GrassSeasonManager>();
         if (seasonManager != null) seasonManager.Initialize(grassSetting);
+    }
 
-        // Instantiate the shaders so they can point to their own buffers
+    private void InitializeShader()
+    {
         _instComputeShader = Instantiate(grassSetting.shaderToUse);
         instantiatedMaterial = Instantiate(grassSetting.materialToUse);
+        _idGrassKernel = _instComputeShader.FindKernel("Main");
+        _instComputeShader.GetKernelThreadGroupSizes(_idGrassKernel, out _threadGroupSize, out _, out _);
+    }
 
-        var numSourceVertices = grassData.Count;
-
-        // Create compute buffers
-        // The stride is the size, in bytes, each object in the buffer takes up
-        _sourceVertBuffer = new ComputeBuffer(numSourceVertices, SourceVertStride, ComputeBufferType.Structured);
+    private void InitializeBuffers()
+    {
+        _sourceVertBuffer = new ComputeBuffer(grassData.Count, SourceVertStride, ComputeBufferType.Structured);
         _sourceVertBuffer.SetData(grassData);
 
         _drawBuffer = new ComputeBuffer(MaxBufferSize, DrawStride, ComputeBufferType.Append);
-
-        // _argsBuffer = new ComputeBuffer(1, _argsBufferReset.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
         _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1,
             _argsBufferReset.Length * sizeof(uint));
-
-        //uint only, per visible grass
         _visibleIDBuffer = new ComputeBuffer(grassData.Count, sizeof(uint), ComputeBufferType.Structured);
-
-        // added for cutting
-        //uint only, per visible grass
         _cutBuffer = new ComputeBuffer(grassData.Count, sizeof(float), ComputeBufferType.Structured);
 
         // added for cutting
         InitializeCutData();
 
         _cutBuffer.SetData(_cutIDs);
+    }
 
-        // Cache the kernel IDs we will be dispatching
-        _idGrassKernel = _instComputeShader.FindKernel("Main");
-
-        // Set buffer data
+    private void SetupComputeShader()
+    {
         _instComputeShader.SetBuffer(_idGrassKernel, GrassShaderPropertyID.SourceVertices, _sourceVertBuffer);
         _instComputeShader.SetBuffer(_idGrassKernel, GrassShaderPropertyID.DrawTriangles, _drawBuffer);
         _instComputeShader.SetBuffer(_idGrassKernel, GrassShaderPropertyID.IndirectArgsBuffer, _argsBuffer);
         _instComputeShader.SetBuffer(_idGrassKernel, GrassShaderPropertyID.VisibleIDBuffer, _visibleIDBuffer);
-        instantiatedMaterial.SetBuffer(GrassShaderPropertyID.DrawTriangles, _drawBuffer);
-        // added for cutting
         _instComputeShader.SetBuffer(_idGrassKernel, GrassShaderPropertyID.CutBuffer, _cutBuffer);
-        // Set vertex data
-        _instComputeShader.SetInt(GrassShaderPropertyID.NumSourceVertices, numSourceVertices);
-        // cache shader property to int id for interactivity;
-        _interactorDataID = Shader.PropertyToID("_InteractorData");
+        _instComputeShader.SetInt(GrassShaderPropertyID.NumSourceVertices, grassData.Count);
 
-        // Calculate the number of threads to use. Get the thread size from the kernel
-        // Then, divide the number of triangles by that size
-        _instComputeShader.GetKernelThreadGroupSizes(_idGrassKernel, out _threadGroupSize, out _, out _);
-        //set once only
-        // _dispatchSize = Mathf.CeilToInt((int)(grassData.Count / _threadGroupSize));
+        instantiatedMaterial.SetBuffer(GrassShaderPropertyID.DrawTriangles, _drawBuffer);
+
+        _interactorDataID = Shader.PropertyToID("_InteractorData");
         _dispatchSize = (grassData.Count + (int)_threadGroupSize - 1) >>
                         (int)Math.Log((int)_threadGroupSize, 2);
 
         SetShaderData();
-#if UNITY_EDITOR
-        _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
-#endif
-        SetupQuadTree(full);
-        GetFrustumData();
     }
 
     private void SetupQuadTree(bool full)
@@ -471,18 +477,18 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
                     if (_cutIDs[currentIndex] - 0.1f > hitPointY ||
                         Mathf.Approximately(_cutIDs[currentIndex], -1))
                     {
-                        var (zoneColor, isInZone) =
-                            GrassFuncManager.TriggerEvent<Vector3, (Color, bool)>(GrassEvent.TryGetGrassColor,
+                        var zoneColor =
+                            GrassFuncManager.TriggerEvent<Vector3, Color>(GrassEvent.TryGetGrassColor,
                                 grassPosition);
-                        
+
                         // zone 안이면 zone 색상, 밖이면 원래 색상 사용
-                        var particleColor = isInZone
-                            ? zoneColor
-                            : new Color(
+                        var particleColor = zoneColor == Color.white
+                            ? new Color(
                                 grassData[currentIndex].color.x,
                                 grassData[currentIndex].color.y,
                                 grassData[currentIndex].color.z
-                            );
+                            )
+                            : zoneColor;
 
                         SpawnCuttingParticle(grassPosition, particleColor);
                     }
@@ -617,8 +623,8 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         _instComputeShader.SetFloat(GrassShaderPropertyID.MinFadeDist, grassSetting.minFadeDistance);
         _instComputeShader.SetFloat(GrassShaderPropertyID.MaxFadeDist, grassSetting.maxFadeDistance);
 
-        instantiatedMaterial.SetFloat(GrassShaderPropertyID.SimpleLodThreshold, grassSetting.simpleLodThreshold);
-        instantiatedMaterial.SetFloat(GrassShaderPropertyID.MediumLodThreshold, grassSetting.mediumLodThreshold);
+        instantiatedMaterial.SetFloat(GrassShaderPropertyID.LowQualityDistance, grassSetting.lowQualityDistance);
+        instantiatedMaterial.SetFloat(GrassShaderPropertyID.MediumQualityDistance, grassSetting.mediumQualityDistance);
 
         instantiatedMaterial.SetColor(GrassShaderPropertyID.TopTint, grassSetting.topTint);
         instantiatedMaterial.SetColor(GrassShaderPropertyID.BottomTint, grassSetting.bottomTint);
@@ -675,6 +681,8 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
         _drawBuffer.SetCounterValue(0);
         _argsBuffer.SetData(_argsBufferReset);
+
+        // _dispatchSize = Mathf.CeilToInt((int)(grassData.Count / _threadGroupSize));
 
         _dispatchSize = (_grassVisibleIDList.Count + (int)_threadGroupSize - 1) >>
                         (int)Math.Log(_threadGroupSize, 2);

@@ -57,7 +57,7 @@ MonoBehaviour:
   cullingTreeDepth: 5
   minFadeDistance: 20
   maxFadeDistance: 100
-  simpleLodThreshold: 0.3933518
-  mediumLodThreshold: 0.69529086
+  lowQualityDistance: 0.39889196
+  mediumQualityDistance: 0.7
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}
   castShadow: 0

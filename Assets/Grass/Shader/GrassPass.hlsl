@@ -51,6 +51,33 @@ half3 CalculateMainLight(half3 albedo, half3 normalWS, half3 worldPos)
     return ambient + diffuse;
 }
 
+half3 CalculateSimpleAdditionalLight(float3 worldPos, float3 worldNormal)
+{
+    uint pixelLightCount = GetAdditionalLightsCount();
+    InputData inputData;
+
+    float4 positionsCS = TransformWorldToHClip(worldPos);
+    float3 ndc = positionsCS.xyz / positionsCS.w;
+    float2 screenUV = float2(ndc.x, ndc.y) * 0.5 + 0.5;
+
+    #if UNITY_UV_STARTS_AT_TOP
+    screenUV.y = 1.0 - screenUV.y;
+    #endif
+
+    inputData.normalizedScreenSpaceUV = screenUV;
+    inputData.positionWS = worldPos;
+
+    half3 diffuseColor = 0;
+
+    LIGHT_LOOP_BEGIN(pixelLightCount)
+        Light light = GetAdditionalLight(lightIndex, worldPos);
+        half3 lightColor = light.color * light.distanceAttenuation * _AdditionalLightIntensity;
+        diffuseColor += LightingLambert(lightColor, light.direction, worldNormal);
+    LIGHT_LOOP_END
+
+    return diffuseColor;
+}
+
 half3 CalculateAdditionalLight(float3 worldPos, float3 worldNormal)
 {
     uint pixelLightCount = GetAdditionalLightsCount();
@@ -106,30 +133,31 @@ half3 AdjustSaturation(half3 color, half saturation)
     return lerp(grey.xxx, color, saturation);
 }
 
-half4 GetSimpleLighting(half3 diffuseColor)
+half4 LowQualityLighting(half3 diffuseColor)
 {
     return half4(diffuseColor, 1);
 }
 
-half4 GetMediumDistanceLighting(half2 uv, half3 diffuseColor, half3 normalWS, half3 worldPos)
+half4 MediumQualityLighting(half2 uv, half3 diffuseColor, half3 normalWS, half3 worldPos)
 {
     half verticalFade = CalculateVerticalFade(uv);
     half4 baseColor = CalculateZoneTint(diffuseColor, verticalFade, worldPos);
     half3 mainLighting = CalculateMainLight(baseColor.rgb, normalWS, worldPos);
-    half3 finalColor = mainLighting * _OverallIntensity;
-    finalColor = CustomNeutralToneMapping(finalColor, _Exposure);
+    half3 additionalLight = CalculateSimpleAdditionalLight(worldPos, normalWS);
+    half3 finalColor = (mainLighting + additionalLight) * _OverallIntensity;
+    // finalColor = CustomNeutralToneMapping(finalColor, _Exposure);
     return half4(finalColor, baseColor.a);
 }
 
-half4 GetDetailedLighting(half2 uv, half3 diffuseColor, half3 normalWS, half3 worldPos)
+half4 HighQualityLighting(half2 uv, half3 diffuseColor, half3 normalWS, half3 worldPos)
 {
     half verticalFade = CalculateVerticalFade(uv);
     half4 baseColor = CalculateZoneTint(diffuseColor, verticalFade, worldPos);
     half3 mainLighting = CalculateMainLight(baseColor.rgb, normalWS, worldPos);
     half3 additionalLight = CalculateAdditionalLight(worldPos, normalWS);
     half3 finalColor = (mainLighting + additionalLight) * _OverallIntensity;
-    finalColor = CustomNeutralToneMapping(finalColor, _Exposure);
-    finalColor = AdjustSaturation(finalColor, _Saturation);
+    // finalColor = CustomNeutralToneMapping(finalColor, _Exposure);
+    // finalColor = AdjustSaturation(finalColor, _Saturation);
     return half4(finalColor, baseColor.a);
 }
 
@@ -153,16 +181,16 @@ half4 Fragment(FragmentData input) : SV_Target
     half distanceFade = input.extraBuffer.y;
 
     // 멀리 있는 픽셀은 간단한 계산만 수행
-    if (distanceFade < _SimpleLodThreshold)
+    if (distanceFade < _LowQualityDistance)
     {
-        return GetSimpleLighting(input.diffuseColor);
+        return LowQualityLighting(input.diffuseColor);
     }
 
     // 중간 거리는 메인 라이트만 계산
-    if (distanceFade < _MediumLodThreshold)
+    if (distanceFade < _MediumQualityDistance)
     {
-        return GetMediumDistanceLighting(input.uv, input.diffuseColor, input.normalWS, input.worldPos);
+        return MediumQualityLighting(input.uv, input.diffuseColor, input.normalWS, input.worldPos);
     }
 
-    return GetDetailedLighting(input.uv, input.diffuseColor, input.normalWS, input.worldPos);
+    return HighQualityLighting(input.uv, input.diffuseColor, input.normalWS, input.worldPos);
 }

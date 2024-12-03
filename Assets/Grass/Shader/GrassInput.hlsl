@@ -42,6 +42,6 @@ CBUFFER_START(UnityPerMaterial)
     int _ZoneCount;
 
     // LOD
-    float _SimpleLodThreshold;
-    float _MediumLodThreshold;
+    float _LowQualityDistance;
+    float _MediumQualityDistance;
 CBUFFER_END

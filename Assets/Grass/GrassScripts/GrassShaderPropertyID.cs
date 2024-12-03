@@ -22,8 +22,8 @@ namespace Grass.GrassScripts
         
         public static readonly int MinFadeDist = Shader.PropertyToID("_MinFadeDist");
         public static readonly int MaxFadeDist = Shader.PropertyToID("_MaxFadeDist");
-        public static readonly int SimpleLodThreshold = Shader.PropertyToID("_SimpleLodThreshold");
-        public static readonly int MediumLodThreshold = Shader.PropertyToID("_MediumLodThreshold");
+        public static readonly int LowQualityDistance = Shader.PropertyToID("_LowQualityDistance");
+        public static readonly int MediumQualityDistance = Shader.PropertyToID("_MediumQualityDistance");
         
         public static readonly int InteractorStrength = Shader.PropertyToID("_InteractorStrength");
         public static readonly int InteractorsLength = Shader.PropertyToID("_InteractorsLength");

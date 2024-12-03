@@ -1,5 +1,6 @@
 using Grass.GrassScripts;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [System.Serializable]
 [CreateAssetMenu(fileName = "Grass Settings", menuName = "Utility/GrassSettings")]
@@ -88,8 +89,8 @@ public class GrassSettingSO : ScriptableObject
 
     [Header("LOD Quality Settings")] public float minFadeDistance = 40;
     public float maxFadeDistance = 125;
-    [Range(0, 1)] public float simpleLodThreshold = 0.3f;
-    [Range(0, 1)] public float mediumLodThreshold = 0.7f;
+    [Range(0, 1)] public float lowQualityDistance = 0.3f;
+    [Range(0, 1)] public float mediumQualityDistance = 0.7f;
 
     [Header("Particles")] public GameObject cuttingParticles;
 
