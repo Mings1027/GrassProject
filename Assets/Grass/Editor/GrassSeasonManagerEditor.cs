@@ -51,8 +51,8 @@ namespace Grass.Editor
         {
             EditorGUILayout.LabelField("Global Season Control", EditorStyles.boldLabel);
 
-            var min = manager.GlobalMinRange;
-            var max = manager.GlobalMaxRange;
+            var min = manager.GlobalMinRange();
+            var max = manager.GlobalMaxRange();
 
             EditorGUI.BeginChangeCheck();
 

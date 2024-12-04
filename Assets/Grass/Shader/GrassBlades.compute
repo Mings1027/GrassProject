@@ -67,6 +67,8 @@ float4 _ZoneScales[MAX_ZONES];
 float4 _ZoneColors[MAX_ZONES];
 float4 _ZoneWidthHeights[MAX_ZONES];
 int _ZoneCount;
+float _LowQualityDistance;
+float _MediumQualityDistance;
 
 float grassWidth, grassHeight;
 
@@ -176,16 +178,34 @@ DrawVertex GrassVertex(float3 positionWS, float width, float height,
 }
 
 
-half3 CalculationWind(half3 positionWS, half grassHeight)
+half3 CalculationWind(half3 positionWS, half grassHeight, half distanceFade)
 {
     half timeWind = _Time.x * _WindSpeed;
-    half randomOffset = random(positionWS.xyz) * 4.0 - 2.0; // 현재 -2~2 범위임. * 2.0 - 1.0 이면 -1~1 범위임. 이 값은 바람 속도에 랜덤함을 위해 넣어봤는데 테스트하면서 빼던지 값을 더 키우던지 하면될듯 
-    half windValue = sin(timeWind + dot(positionWS.xz, _WindDirection) + randomOffset);
-    half3 wind = half3(_WindDirection.x * windValue, 0, _WindDirection.y * windValue);
-    return wind * grassHeight * _WindStrength;
+
+    // Low quality (멀리 있는 풀)은 매우 약한 바람만 적용
+    if (distanceFade < _LowQualityDistance)
+    {
+        half simpleWindValue = sin(timeWind) * 0.1; // 10%만 적용
+        return half3(_WindDirection.x * simpleWindValue, 0, _WindDirection.y * simpleWindValue)
+            * grassHeight * _WindStrength;
+    }
+
+    // // Medium quality는 단순화된 바람
+    // if (distanceFade < _MediumQualityDistance)
+    // {
+    //     half windValue = sin(timeWind) * 0.5; // 50% 강도
+    //     return half3(_WindDirection.x * windValue, 0, _WindDirection.y * windValue)
+    //         * grassHeight * _WindStrength;
+    // }
+
+    // High quality (가까운 풀)는 기존 고품질 바람 효과 유지
+    // half randomOffset = random(positionWS.xyz) * 4.0 - 2.0;
+    half windValue = sin(timeWind + dot(positionWS.xz, _WindDirection)/* + randomOffset*/);
+    return half3(_WindDirection.x * windValue, 0, _WindDirection.y * windValue)
+        * grassHeight * _WindStrength;
 }
 
-float3 CalculateInteraction(float3 grassPosition)
+float3 CalculateInteraction(float3 grassPosition, half grassHeight)
 {
     float3 totalBend = float3(0, 0, 0);
 
@@ -198,7 +218,7 @@ float3 CalculateInteraction(float3 grassPosition)
 
         if (distance < interactorRadius)
         {
-            float strength = (1.0 - distance / interactorRadius) * _InteractorStrength;
+            float strength = (1.0 - distance / interactorRadius) * _InteractorStrength * grassHeight;
             float3 bendDirection = normalize(distanceVector);
             bendDirection.y = 0;
             totalBend += bendDirection * strength;
@@ -218,9 +238,10 @@ void Main(uint id : SV_DispatchThreadID)
     SourceVertex sv = _SourceVertices[visibleID];
 
     half distanceFromCamera = distance(sv.positionWS, _CameraPositionWS);
-    half distanceFade = 1 - saturate((distanceFromCamera - _MinFadeDist) / (_MaxFadeDist - _MinFadeDist));
+    if (distanceFromCamera > _MaxFadeDist) return; // 최대 거리 90%에서 컷오프
 
-    if (distanceFade < 0) return;
+    half distanceFade = 1 - saturate((distanceFromCamera - _MinFadeDist) / (_MaxFadeDist - _MinFadeDist));
+    if (distanceFade < 0.1) return;
 
     // LOD에 따른 세그먼트 수 조절
     half numSegmentsPerBlade = min(GRASS_SEGMENTS, _MaxSegmentsPerBlade);
@@ -252,18 +273,16 @@ void Main(uint id : SV_DispatchThreadID)
         grassWidth *= _ZoneWidthHeights[zoneIndex].x;
     }
 
-    // 거리에 따른 크기 감소 (최소 크기 제한 추가)
-    const half MIN_SIZE_MULTIPLIER = 0.3; // 최소 30%까지만 감소
-    half finalSizeFade = lerp(MIN_SIZE_MULTIPLIER, 1, distanceFade);
+    half finalSizeFade = lerp(0.3, 1, distanceFade);
 
     grassWidth *= finalSizeFade * finalSizeFade;
     grassHeight *= finalSizeFade;
 
     _BladeForward *= grassHeight;
 
-
-    half3 wind = CalculationWind(sv.positionWS, grassHeight);
-    half3 interaction = CalculateInteraction(sv.positionWS);
+    half3 wind = CalculationWind(sv.positionWS, grassHeight, distanceFade);
+    half3 interaction = CalculateInteraction(sv.positionWS, grassHeight);
+    half3 finalWind = wind * (1 - length(interaction) / (_InteractorStrength * grassHeight));
 
     for (int j = 0; j < numBladesPerVertex; j++)
     {
@@ -286,7 +305,7 @@ void Main(uint id : SV_DispatchThreadID)
 
             half3 newPos = i == 0
                                ? sv.positionWS
-                               : sv.positionWS + (wind + grassNormal * grassHeight + interaction) * t;
+                               : sv.positionWS + (finalWind + grassNormal * grassHeight + interaction) * t;
             half curveStrength = pow(abs(t), _BladeCurve) * _BladeForward;
 
             drawVertices[i * 2] = GrassVertex(newPos, segmentWidth, segmentHeight,

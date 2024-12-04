@@ -68,7 +68,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         0, // Index of the first instance to render
         0 // Not used
     };
-    private GrassSeasonManager _seasonManager;
 
     public List<GrassData> GrassDataList
     {
@@ -84,14 +83,15 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 #if UNITY_EDITOR
 
     private SceneView _view;
-#endif
 
-#if UNITY_EDITOR
     public void Reset()
     {
         _fastMode = false;
-        OnDisable();
+        ReleaseResources();
         MainSetup(true);
+
+        UnregisterEvents();
+        RegisterEvents();
     }
 
     protected override void OnDestroy()
@@ -132,6 +132,20 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         {
             _mainCamera = Camera.main;
         }
+    }
+
+    public void ResetFaster()
+    {
+        _fastMode = true;
+        ReleaseResources();
+        MainSetup(false);
+    }
+
+    private void ReleaseResources()
+    {
+        ReleaseBuffer();
+        DestroyImmediate(_instComputeShader);
+        DestroyImmediate(instantiatedMaterial);
     }
 #endif
     /*=============================================================================================================
@@ -182,21 +196,10 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
     private void OnDisable()
     {
         UnregisterEvents();
-
-        _interactors.Clear();
-
-        if (Application.isPlaying)
-        {
-            Destroy(_instComputeShader);
-            Destroy(instantiatedMaterial);
-        }
-        else
-        {
-            DestroyImmediate(_instComputeShader);
-            DestroyImmediate(instantiatedMaterial);
-        }
-
         ReleaseBuffer();
+        _interactors.Clear();
+        Destroy(_instComputeShader);
+        Destroy(instantiatedMaterial);
     }
 
 #if UNITY_EDITOR
@@ -228,6 +231,10 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         GrassEventManager.AddEvent<Vector3, float>(GrassEvent.UpdateCutBuffer, UpdateCutBuffer);
         GrassEventManager.AddEvent<GrassInteractor>(GrassEvent.AddInteractor, AddInteractor);
         GrassEventManager.AddEvent<GrassInteractor>(GrassEvent.RemoveInteractor, RemoveInteractor);
+        GrassEventManager.AddEvent<Vector4[], Vector4[], Vector4[], Vector4[], int>(GrassEvent.UpdateSeasonData,
+            UpdateSeasonData);
+
+        GrassFuncManager.AddEvent(GrassEvent.GetGrassSetting, () => grassSetting);
     }
 
     private void UnregisterEvents()
@@ -235,6 +242,10 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         GrassEventManager.RemoveEvent<Vector3, float>(GrassEvent.UpdateCutBuffer, UpdateCutBuffer);
         GrassEventManager.RemoveEvent<GrassInteractor>(GrassEvent.AddInteractor, AddInteractor);
         GrassEventManager.RemoveEvent<GrassInteractor>(GrassEvent.RemoveInteractor, RemoveInteractor);
+        GrassEventManager.RemoveEvent<Vector4[], Vector4[], Vector4[], Vector4[], int>(GrassEvent.UpdateSeasonData,
+            UpdateSeasonData);
+
+        GrassFuncManager.RemoveEvent(GrassEvent.GetGrassSetting, () => grassSetting);
     }
 
     private void ReleaseBuffer()
@@ -251,7 +262,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
     {
         SetupCamera();
         if (ValidateSetup()) return;
-        SetSeasonManager();
         InitializeShader();
         InitializeBuffers();
         SetupComputeShader();
@@ -305,12 +315,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         }
 
         return false;
-    }
-
-    private void SetSeasonManager()
-    {
-        var seasonManager = FindAnyObjectByType<GrassSeasonManager>();
-        if (seasonManager != null) seasonManager.Initialize(grassSetting);
     }
 
     private void InitializeShader()
@@ -411,13 +415,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
             UpdateCulling(_cameraFrustumPlanes);
             _visibleIDBuffer.SetData(_grassVisibleIDList);
         }
-    }
-
-    public void ResetFaster()
-    {
-        _fastMode = true;
-        OnDisable();
-        MainSetup(false);
     }
 
     // Update the shader with frame specific data
@@ -579,18 +576,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         }
     }
 
-    public void AllClear()
-    {
-        grassData.Clear();
-        _nearbyGrassIds.Clear();
-        _grassVisibleIDList.Clear();
-        _boundsListVis.Clear();
-        _leaves.Clear();
-        _cutIDs = Array.Empty<float>();
-        _cullingTree = null;
-        _bounds = new Bounds();
-    }
-
     /*=======================================================================================
      *                              Setup Shader Data
      =======================================================================================*/
@@ -620,18 +605,25 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         _instComputeShader.SetFloat(GrassShaderPropertyID.MaxHeight, grassSetting.maxHeight);
         _instComputeShader.SetFloat(GrassShaderPropertyID.MaxWidth, grassSetting.maxWidth);
 
-        _instComputeShader.SetFloat(GrassShaderPropertyID.MinFadeDist, grassSetting.minFadeDistance);
-        _instComputeShader.SetFloat(GrassShaderPropertyID.MaxFadeDist, grassSetting.maxFadeDistance);
-
-        instantiatedMaterial.SetFloat(GrassShaderPropertyID.LowQualityDistance, grassSetting.lowQualityDistance);
-        instantiatedMaterial.SetFloat(GrassShaderPropertyID.MediumQualityDistance, grassSetting.mediumQualityDistance);
+        SetLODSetting();
 
         instantiatedMaterial.SetColor(GrassShaderPropertyID.TopTint, grassSetting.topTint);
         instantiatedMaterial.SetColor(GrassShaderPropertyID.BottomTint, grassSetting.bottomTint);
     }
 
-    public void UpdateSeasonData(Vector4[] positions, Vector4[] scales, Vector4[] colors, Vector4[] widthHeights,
-                                 int zoneCount)
+    public void SetLODSetting()
+    {
+        _instComputeShader.SetFloat(GrassShaderPropertyID.MinFadeDist, grassSetting.minFadeDistance);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.MaxFadeDist, grassSetting.maxFadeDistance);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.LowQualityDistance, grassSetting.lowQualityDistance);
+        _instComputeShader.SetFloat(GrassShaderPropertyID.MediumQualityDistance, grassSetting.mediumQualityDistance);
+        
+        instantiatedMaterial.SetFloat(GrassShaderPropertyID.LowQualityDistance, grassSetting.lowQualityDistance);
+        instantiatedMaterial.SetFloat(GrassShaderPropertyID.MediumQualityDistance, grassSetting.mediumQualityDistance);
+    }
+
+    private void UpdateSeasonData(Vector4[] positions, Vector4[] scales, Vector4[] colors, Vector4[] widthHeights,
+                                  int zoneCount)
     {
         if (_instComputeShader != null)
         {
@@ -697,6 +689,18 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         _argsBuffer.SetData(_argsBufferReset);
 
         _dispatchSize = 0;
+    }
+
+    public void AllClear()
+    {
+        grassData.Clear();
+        _nearbyGrassIds.Clear();
+        _grassVisibleIDList.Clear();
+        _boundsListVis.Clear();
+        _leaves.Clear();
+        _cutIDs = Array.Empty<float>();
+        _cullingTree = null;
+        _bounds = new Bounds();
     }
 #endif
 }

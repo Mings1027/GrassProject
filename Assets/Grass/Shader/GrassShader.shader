@@ -43,32 +43,29 @@ Shader "Custom/GrassShader"
 			// Shader Stages
 			#pragma vertex Vertex
 			#pragma fragment Fragment
-
-			#pragma shader_feature BLEND
-
-			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+			
 			#pragma multi_compile _ _FORWARD_PLUS
+			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS 
 			#pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
-
 			#include "GrassPass.hlsl"
 			ENDHLSL
 		}
 		// Shadow Caster Pass
-		Pass
-		{
-			Name "ShadowCaster"
-			Tags
-			{
-				"LightMode" = "ShadowCaster"
-			}
-
-			HLSLPROGRAM
-			#pragma vertex ShadowPassVertex
-			#pragma fragment ShadowPassFragment
-
-			#include "GrassShadowCasterPass.hlsl"
-			ENDHLSL
-		}
+//		Pass
+//		{
+//			Name "ShadowCaster"
+//			Tags
+//			{
+//				"LightMode" = "ShadowCaster"
+//			}
+//
+//			HLSLPROGRAM
+//			#pragma vertex ShadowPassVertex
+//			#pragma fragment ShadowPassFragment
+//
+//			#include "GrassShadowCasterPass.hlsl"
+//			ENDHLSL
+//		}
 	}
 	Fallback "Hidden/Universal Render Pipeline/FallbackError"
 }

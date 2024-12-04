@@ -27,11 +27,6 @@ CBUFFER_START(UnityPerMaterial)
     float _AdditionalLightShadowStrength;
     float4 _AdditionalShadowColor;
 
-    // Tone Mapping
-    float _Saturation;
-    float _OverallIntensity;
-    float _Exposure;
-
     // Blend
     float _BlendMult, _BlendOff;
 

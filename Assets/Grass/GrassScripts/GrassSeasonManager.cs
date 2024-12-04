@@ -16,37 +16,24 @@ namespace Grass.GrassScripts
         private readonly ZoneData[] zoneData = new ZoneData[MAX_ZONES];
         private Color[] zoneColors;
         private bool isDirty;
-        
-        [SerializeField] private GrassSettingSO grassSetting;
-        [SerializeField] private GrassComputeScript grassCompute;
+
         [SerializeField] private float globalSeasonValue;
 
-        public float GlobalMinRange => grassSetting != null ? grassSetting.seasonRange.GetRange().min : 0f;
-        public float GlobalMaxRange => grassSetting != null ? grassSetting.seasonRange.GetRange().max : 4f;
+        public float GlobalMinRange()
+        {
+            var grassSetting = GrassFuncManager.TriggerEvent<GrassSettingSO>(GrassEvent.GetGrassSetting);
+            return grassSetting != null ? grassSetting.seasonRange.GetRange().min : 0f;
+        }
+
+        public float GlobalMaxRange()
+        {
+            var grassSetting = GrassFuncManager.TriggerEvent<GrassSettingSO>(GrassEvent.GetGrassSetting);
+            return grassSetting != null ? grassSetting.seasonRange.GetRange().max : 4f;
+        }
 
         private void OnEnable()
         {
             zoneColors = new Color[zoneData.Length];
-
-            if (grassCompute == null)
-            {
-                grassCompute = FindAnyObjectByType<GrassComputeScript>();
-                if (grassCompute == null)
-                {
-                    Debug.LogWarning("GrassComputeScript not found in scene", this);
-                    return;
-                }
-            }
-
-            if (grassSetting == null)
-            {
-                grassSetting = grassCompute.GrassSetting;
-                if (grassSetting == null)
-                {
-                    Debug.LogWarning("GrassSetting not assigned in GrassComputeScript", this);
-                    return;
-                }
-            }
 
             UpdateSeasonZones();
             SetGlobalSeasonValue(globalSeasonValue);
@@ -86,12 +73,6 @@ namespace Grass.GrassScripts
             seasonZones.Remove(zone);
             lastPositions.Remove(zone);
             lastScales.Remove(zone);
-            isDirty = true;
-        }
-
-        public void Initialize(GrassSettingSO setting)
-        {
-            grassSetting = setting;
             isDirty = true;
         }
 
@@ -161,10 +142,8 @@ namespace Grass.GrassScripts
                 zoneColors[i].a = 1;
             }
 
-            if (grassCompute != null)
-            {
-                grassCompute.UpdateSeasonData(positions, scales, colors, widthHeights, zoneCount);
-            }
+            GrassEventManager.TriggerEvent(GrassEvent.UpdateSeasonData, positions, scales, colors, widthHeights,
+                zoneCount);
         }
 
         private Color TryGetGrassColor(Vector3 position)
@@ -195,7 +174,9 @@ namespace Grass.GrassScripts
             int index = seasonZones.IndexOf(zone);
             if (index == -1) return;
 
-            var (color, width, height) = zone.CalculateCurrentSeasonSettings(grassSetting);
+            var (color, width, height) = zone.CalculateCurrentSeasonSettings(
+                GrassFuncManager.TriggerEvent<GrassSettingSO>(GrassEvent.GetGrassSetting)
+            );
 
             zoneData[index] = new ZoneData
             {
@@ -257,7 +238,9 @@ namespace Grass.GrassScripts
                 var zone = seasonZones[i];
                 if (!zone) continue;
 
-                var (color, width, height) = zone.CalculateCurrentSeasonSettings(grassSetting);
+                var (color, width, height) = zone.CalculateCurrentSeasonSettings(
+                    GrassFuncManager.TriggerEvent<GrassSettingSO>(GrassEvent.GetGrassSetting)
+                );
 
                 zoneData[i] = new ZoneData
                 {
@@ -275,9 +258,8 @@ namespace Grass.GrassScripts
 
         public void SetGlobalSeasonValue(float value)
         {
-            if (grassSetting == null) return;
-
-            var (min, max) = grassSetting.seasonRange.GetRange();
+            var (min, max) = GrassFuncManager.TriggerEvent<GrassSettingSO>(GrassEvent.GetGrassSetting)
+                                             .seasonRange.GetRange();
             globalSeasonValue = value; // 전역 시즌 값은 전체 범위에서 움직일 수 있음
 
             foreach (var zone in seasonZones)
@@ -310,7 +292,7 @@ namespace Grass.GrassScripts
                 return;
             }
 
-            float clampedTarget = Mathf.Clamp(targetValue, GlobalMinRange, GlobalMaxRange);
+            float clampedTarget = Mathf.Clamp(targetValue, GlobalMinRange(), GlobalMaxRange());
 
             SetGlobalSeasonValueAsync(globalSeasonValue, clampedTarget, duration, destroyCancellationToken).Forget();
         }
@@ -323,8 +305,8 @@ namespace Grass.GrassScripts
                 return;
             }
 
-            float clampedStart = Mathf.Clamp(startValue, GlobalMinRange, GlobalMaxRange);
-            float clampedEnd = Mathf.Clamp(endValue, GlobalMinRange, GlobalMaxRange);
+            float clampedStart = Mathf.Clamp(startValue, GlobalMinRange(), GlobalMaxRange());
+            float clampedEnd = Mathf.Clamp(endValue, GlobalMinRange(), GlobalMaxRange());
 
             SetGlobalSeasonValueAsync(clampedStart, clampedEnd, duration, destroyCancellationToken).Forget();
         }

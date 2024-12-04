@@ -13,5 +13,6 @@ MonoBehaviour:
   m_Name: TestFloat
   m_EditorClassIdentifier: 
   variableName: dfdf
-  initialValue: 2
-  saveRuntimeChanges: 0
+  initialValue: 10.17
+  saveRuntimeChanges: 1
+  runtimeValue: 10.17

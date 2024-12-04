@@ -5,10 +5,15 @@ namespace Grass.GrassScripts
 {
     public enum GrassEvent
     {
+        //Action
         UpdateCutBuffer,
         AddInteractor,
         RemoveInteractor,
         TryGetGrassColor,
+        UpdateSeasonData,
+        
+        //Func
+        GetGrassSetting,
     }
 
     public static class GrassEventManager
@@ -23,6 +28,12 @@ namespace Grass.GrassScripts
             AddEventInternal(grassEvent, action);
 
         public static void AddEvent<T1, T2, T3>(GrassEvent grassEvent, Action<T1, T2, T3> action) =>
+            AddEventInternal(grassEvent, action);
+
+        public static void AddEvent<T1, T2, T3, T4>(GrassEvent grassEvent, Action<T1, T2, T3, T4> action) =>
+            AddEventInternal(grassEvent, action);
+
+        public static void AddEvent<T1, T2, T3, T4, T5>(GrassEvent grassEvent, Action<T1, T2, T3, T4, T5> action) =>
             AddEventInternal(grassEvent, action);
 
         private static void AddEventInternal(GrassEvent grassEvent, Delegate action)
@@ -40,6 +51,12 @@ namespace Grass.GrassScripts
             RemoveEventInternal(grassEvent, action);
 
         public static void RemoveEvent<T1, T2, T3>(GrassEvent grassEvent, Action<T1, T2, T3> action) =>
+            RemoveEventInternal(grassEvent, action);
+
+        public static void RemoveEvent<T1, T2, T3, T4>(GrassEvent grassEvent, Action<T1, T2, T3, T4> action) =>
+            RemoveEventInternal(grassEvent, action);
+
+        public static void RemoveEvent<T1, T2, T3, T4, T5>(GrassEvent grassEvent, Action<T1, T2, T3, T4, T5> action) =>
             RemoveEventInternal(grassEvent, action);
 
         private static void RemoveEventInternal(GrassEvent grassEvent, Delegate action)
@@ -79,6 +96,23 @@ namespace Grass.GrassScripts
             if (EventDictionary.TryGetValue(grassEvent, out var action))
             {
                 (action as Action<T1, T2, T3>)?.Invoke(arg1, arg2, arg3);
+            }
+        }
+
+        public static void TriggerEvent<T1, T2, T3, T4>(GrassEvent grassEvent, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
+        {
+            if (EventDictionary.TryGetValue(grassEvent, out var action))
+            {
+                (action as Action<T1, T2, T3, T4>)?.Invoke(arg1, arg2, arg3, arg4);
+            }
+        }
+
+        public static void TriggerEvent<T1, T2, T3, T4, T5>(GrassEvent grassEvent, T1 arg1, T2 arg2, T3 arg3, T4 arg4,
+                                                            T5 arg5)
+        {
+            if (EventDictionary.TryGetValue(grassEvent, out var action))
+            {
+                (action as Action<T1, T2, T3, T4, T5>)?.Invoke(arg1, arg2, arg3, arg4, arg5);
             }
         }
     }

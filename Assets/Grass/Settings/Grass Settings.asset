@@ -30,12 +30,12 @@ MonoBehaviour:
   windDirectionVector: {x: 0.70710677, y: 0.70710677}
   bladesPerVertex: 1
   segmentsPerBlade: 2
-  interactorStrength: 1.5
+  interactorStrength: 3
   topTint: {r: 1, g: 1, b: 1, a: 1}
-  bottomTint: {r: 0.1981132, g: 0.18970273, b: 0.18409576, a: 1}
+  bottomTint: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
   seasonRange:
-    from: 1
-    to: 0
+    from: 2
+    to: 1
     isFullCycle: 1
   winterSettings:
     seasonColor: {r: 0.9254902, g: 0.8862745, b: 0.8666667, a: 0}
@@ -47,17 +47,17 @@ MonoBehaviour:
     height: 1
   summerSettings:
     seasonColor: {r: 0.06666667, g: 0.81960785, b: 0.07450981, a: 0}
-    width: 1.33
+    width: 1.5156863
     height: 2
   autumnSettings:
     seasonColor: {r: 1, g: 0.16862746, b: 0, a: 0}
     width: 1
     height: 1
   drawBounds: 0
-  cullingTreeDepth: 5
+  cullingTreeDepth: 7
   minFadeDistance: 20
-  maxFadeDistance: 100
-  lowQualityDistance: 0.39889196
-  mediumQualityDistance: 0.7
+  maxFadeDistance: 120
+  lowQualityDistance: 0.3
+  mediumQualityDistance: 1
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}
   castShadow: 0

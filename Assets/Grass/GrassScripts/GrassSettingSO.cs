@@ -75,7 +75,7 @@ public class GrassSettingSO : ScriptableObject
     [Header("Interactor Strength")] public float interactorStrength = 1;
 
     // Material
-    [Header("Material")] public Color topTint = new(1, 1, 1);
+    [Header("Tinting")] public Color topTint = new(1, 1, 1);
     public Color bottomTint = new(0, 0, 1);
 
     [Header("Season Settings")] public SeasonRange seasonRange = new();

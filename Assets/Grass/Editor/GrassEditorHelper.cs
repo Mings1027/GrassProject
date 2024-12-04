@@ -435,11 +435,11 @@ namespace Grass.Editor
             Handles.DrawLine(points[3], points[7]);
         }
 
-        public static void DrawLODPreview(float simpleLodThreshold, float mediumLodThreshold, out float newSimple,
+        public static void DrawLODPreview(float lowQualityDistance, float mediumQualityDistance, out float newLow,
                                           out float newMedium)
         {
-            newSimple = simpleLodThreshold;
-            newMedium = mediumLodThreshold;
+            newLow = lowQualityDistance;
+            newMedium = mediumQualityDistance;
 
             var rect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(40));
             var padding = 20f;
@@ -451,27 +451,27 @@ namespace Grass.Editor
 
             // LOD 영역
             var width = rect.width;
-            var simpleWidth = width * simpleLodThreshold;
-            var mediumWidth = width * (mediumLodThreshold - simpleLodThreshold);
-            var detailedWidth = width * (1 - mediumLodThreshold);
+            var lowWidth = width * lowQualityDistance;
+            var mediumWidth = width * (mediumQualityDistance - lowQualityDistance);
+            var highWidth = width * (1 - mediumQualityDistance);
 
-            var simpleRect = new Rect(rect.x, rect.y, simpleWidth, rect.height);
-            var mediumRect = new Rect(rect.x + simpleWidth, rect.y, mediumWidth, rect.height);
-            var detailedRect = new Rect(rect.x + simpleWidth + mediumWidth, rect.y, detailedWidth, rect.height);
+            var lowRect = new Rect(rect.x, rect.y, lowWidth, rect.height);
+            var mediumRect = new Rect(rect.x + lowWidth, rect.y, mediumWidth, rect.height);
+            var highRect = new Rect(rect.x + lowWidth + mediumWidth, rect.y, highWidth, rect.height);
 
-            EditorGUI.DrawRect(simpleRect, new Color(0.8f, 0.3f, 0.3f, 0.8f));
+            EditorGUI.DrawRect(lowRect, new Color(0.8f, 0.3f, 0.3f, 0.8f));
             EditorGUI.DrawRect(mediumRect, new Color(0.3f, 0.8f, 0.3f, 0.8f));
-            EditorGUI.DrawRect(detailedRect, new Color(0.3f, 0.3f, 0.8f, 0.8f));
+            EditorGUI.DrawRect(highRect, new Color(0.3f, 0.3f, 0.8f, 0.8f));
 
             // 드래그 핸들
             var handleWidth = 10f;
             var handleHeight = rect.height;
 
-            var simpleHandle = new Rect(rect.x + simpleWidth - handleWidth / 2, rect.y, handleWidth, handleHeight);
-            var mediumHandle = new Rect(rect.x + simpleWidth + mediumWidth - handleWidth / 2, rect.y, handleWidth,
+            var lowHandle = new Rect(rect.x + lowWidth - handleWidth / 2, rect.y, handleWidth, handleHeight);
+            var mediumHandle = new Rect(rect.x + lowWidth + mediumWidth - handleWidth / 2, rect.y, handleWidth,
                 handleHeight);
 
-            EditorGUI.DrawRect(simpleHandle, new Color(1f, 1f, 1f, 0.5f));
+            EditorGUI.DrawRect(lowHandle, new Color(1f, 1f, 1f, 0.5f));
             EditorGUI.DrawRect(mediumHandle, new Color(1f, 1f, 1f, 0.5f));
 
             // 드래그 처리
@@ -481,7 +481,7 @@ namespace Grass.Editor
             switch (evt.GetTypeForControl(controlID))
             {
                 case EventType.MouseDown when evt.button == 0:
-                    if (simpleHandle.Contains(evt.mousePosition) || mediumHandle.Contains(evt.mousePosition))
+                    if (lowHandle.Contains(evt.mousePosition) || mediumHandle.Contains(evt.mousePosition))
                     {
                         GUIUtility.hotControl = controlID;
                         evt.Use();
@@ -491,15 +491,16 @@ namespace Grass.Editor
 
                 case EventType.MouseDrag when GUIUtility.hotControl == controlID:
                     var normalizedX = (evt.mousePosition.x - rect.x) / rect.width;
+                    normalizedX = Mathf.Round(normalizedX * 10f) / 10f;
 
-                    if (Vector2.Distance(evt.mousePosition, simpleHandle.center) <
+                    if (Vector2.Distance(evt.mousePosition, lowHandle.center) <
                         Vector2.Distance(evt.mousePosition, mediumHandle.center))
                     {
-                        newSimple = Mathf.Clamp(normalizedX, 0, newMedium);
+                        newLow = Mathf.Clamp(normalizedX, 0, newMedium);
                     }
                     else
                     {
-                        newMedium = Mathf.Clamp(normalizedX, newSimple, 1);
+                        newMedium = Mathf.Clamp(normalizedX, newLow, 1);
                     }
 
                     GUI.changed = true;
@@ -522,9 +523,9 @@ namespace Grass.Editor
                 normal = { textColor = Color.white }
             };
 
-            EditorGUI.LabelField(simpleRect, "Simple", style);
+            EditorGUI.LabelField(lowRect, "Low", style);
             EditorGUI.LabelField(mediumRect, "Medium", style);
-            EditorGUI.LabelField(detailedRect, "Detailed", style);
+            EditorGUI.LabelField(highRect, "High", style);
 
             var percentStyle = new GUIStyle(EditorStyles.miniLabel)
             {
@@ -532,8 +533,8 @@ namespace Grass.Editor
                 normal = { textColor = Color.white }
             };
 
-            EditorGUI.LabelField(simpleRect, $"{simpleLodThreshold:P0}", percentStyle);
-            EditorGUI.LabelField(mediumRect, $"{mediumLodThreshold:P0}", percentStyle);
+            EditorGUI.LabelField(lowRect, $"{lowQualityDistance:P0}", percentStyle);
+            EditorGUI.LabelField(mediumRect, $"{mediumQualityDistance:P0}", percentStyle);
         }
 
         public static bool DrawFoldoutSection(string title, Action drawContent)
