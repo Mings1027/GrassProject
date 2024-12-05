@@ -55,8 +55,8 @@ MonoBehaviour:
     height: 1
   drawBounds: 0
   cullingTreeDepth: 7
-  minFadeDistance: 29.5
-  maxFadeDistance: 300
+  minFadeDistance: 30
+  maxFadeDistance: 140
   lowQualityDistance: 0.53
   mediumQualityDistance: 0.85
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}

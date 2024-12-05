@@ -13,6 +13,8 @@ namespace Grass.Editor
         private readonly GrassComputeScript _grassCompute;
         private readonly GrassToolSettingSo _toolSettings;
         private readonly System.Random _random;
+        private int _totalGrassToGenerate;
+        private int _currentGrassGenerated;
 
         public GrassGenerationOperation(GrassPainterWindow window, GrassComputeScript grassCompute,
                                         GrassToolSettingSo toolSettings)
@@ -54,7 +56,22 @@ namespace Grass.Editor
             var pointsPerUnit = _toolSettings.GenerateGrassCount / totalArea;
             var allTasks = new List<UniTask<List<GrassData>>>();
 
-            // 메시 오브젝트 병렬 처리
+            _totalGrassToGenerate = 0;
+            _currentGrassGenerated = 0;
+
+            // Calculate total grass count
+            foreach (var (mesh, _, _) in meshObjects)
+            {
+                var meshArea = CalculateMeshArea(mesh.sharedMesh);
+                _totalGrassToGenerate += Mathf.RoundToInt(meshArea * pointsPerUnit);
+            }
+            foreach (var (_, _, size, _) in terrains)
+            {
+                var terrainArea = size.x * size.z;
+                _totalGrassToGenerate += Mathf.RoundToInt(terrainArea * pointsPerUnit);
+            }
+
+            // Generate for meshes
             foreach (var (mesh, matrix, up) in meshObjects)
             {
                 var meshArea = CalculateMeshArea(mesh.sharedMesh);
@@ -62,7 +79,7 @@ namespace Grass.Editor
                 allTasks.Add(GeneratePointsForMesh(mesh, matrix, up, pointCount));
             }
 
-            // 터레인 병렬 처리
+            // Generate for terrains
             foreach (var (terrain, data, size, position) in terrains)
             {
                 var terrainArea = size.x * size.z;
@@ -70,17 +87,16 @@ namespace Grass.Editor
                 allTasks.Add(GeneratePointsForTerrain(terrain, data, size, position, pointCount));
             }
 
-            // 모든 태스크를 동시에 실행하고 결과 수집
             var results = await UniTask.WhenAll(allTasks);
             var allGrassData = results.SelectMany(x => x).ToList();
 
-            // 배치 처리로 데이터 추가
+            // Batch processing
             for (int i = 0; i < allGrassData.Count; i += BatchSize)
             {
                 var batchSize = Math.Min(BatchSize, allGrassData.Count - i);
                 _grassCompute.GrassDataList.AddRange(allGrassData.GetRange(i, batchSize));
-                await _window.UpdateProgress(i + batchSize, allGrassData.Count,
-                    $"Adding grass data ({i + batchSize}/{allGrassData.Count})");
+                await _window.UpdateProgress(i + batchSize, allGrassData.Count, 
+                    $"Generating grass ({i + batchSize}/{allGrassData.Count})");
             }
         }
 
@@ -117,8 +133,9 @@ namespace Grass.Editor
 
             for (int i = 0; i < pointCount; i++)
             {
-                await _window.UpdateProgress(i, pointCount,
-                    $"Processing points on '{mesh.name}' ({i}/{pointCount})");
+                _currentGrassGenerated++;
+                await _window.UpdateProgress(_currentGrassGenerated, _totalGrassToGenerate,
+                    $"Generating grass ({_currentGrassGenerated}/{_totalGrassToGenerate})");
 
                 // 안전한 삼각형 인덱스 선택
                 var triangleIndex = Mathf.Min(
@@ -178,11 +195,9 @@ namespace Grass.Editor
 
             for (int i = 0; i < pointCount; i++)
             {
-                if (i % 1000 == 0)
-                {
-                    await _window.UpdateProgress(i, pointCount,
-                        $"Processing points on terrain '{terrain.name}' ({i}/{pointCount})");
-                }
+                _currentGrassGenerated++;
+                await _window.UpdateProgress(_currentGrassGenerated, _totalGrassToGenerate,
+                    $"Generating grass ({_currentGrassGenerated}/{_totalGrassToGenerate})");
 
                 var randomPoint = new Vector3(
                     (float)(_random.NextDouble() * size.x),

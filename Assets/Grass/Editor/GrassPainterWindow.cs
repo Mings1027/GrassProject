@@ -1378,7 +1378,7 @@ namespace Grass.Editor
             _isProcessing = true;
             _cts = new CancellationTokenSource();
 
-            var removalOperation = new GrassRemovalOperation(this, grassCompute, _spatialGrid);
+            var removalOperation = new GrassRemovalOperation(this, grassCompute, toolSettings.PaintMask.value);
             await removalOperation.RemoveGrassFromObjects(selectedObjects);
 
             var generator = new GrassGenerationOperation(this, grassCompute, toolSettings);
@@ -1395,7 +1395,7 @@ namespace Grass.Editor
             _isProcessing = true;
             _cts = new CancellationTokenSource();
 
-            var removalOperation = new GrassRemovalOperation(this, grassCompute, _spatialGrid);
+            var removalOperation = new GrassRemovalOperation(this, grassCompute, toolSettings.PaintMask.value);
             await removalOperation.RemoveGrassFromObjects(selectedObjects);
 
             Init();

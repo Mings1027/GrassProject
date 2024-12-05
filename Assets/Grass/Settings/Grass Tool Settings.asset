@@ -14,18 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   layerBlocking:
   - 0.54
-  - 0
-  - 0
-  - 0
-  - 0
+  - 0.2
+  - 0.4
+  - 0.6
+  - 0.24
   - 0
   - 0
   - 0
   heightFading:
   - 1
-  - 0.3
-  - 1
-  - 0.1
+  - 0.4
+  - 0.2
+  - 0.6
   - 0.24
   - 0
   - 0
@@ -53,7 +53,7 @@ MonoBehaviour:
   density: 1
   normalLimit: 1
   brushHeight: 9.45
-  generateGrassCount: 225225
+  generateGrassCount: 400901
   grassMouseButton: 0
   brushSizeShortcut: 2
   brushHeightShortcut: 1

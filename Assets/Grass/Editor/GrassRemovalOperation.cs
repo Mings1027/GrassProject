@@ -1,120 +1,71 @@
 using System.Collections.Generic;
+using System.Linq;
 using Cysharp.Threading.Tasks;
+using Grass.Editor;
 using UnityEngine;
 
-namespace Grass.Editor
+public class GrassRemovalOperation
 {
-    public class GrassRemovalOperation
+    private readonly GrassPainterWindow _window;
+    private readonly GrassComputeScript _grassCompute;
+    private readonly LayerMask _layerMask;
+    private const float COLLISION_RADIUS = 0.1f;
+    private const float BOUNDS_EXPANSION = 0.1f;
+
+    public GrassRemovalOperation(GrassPainterWindow window, GrassComputeScript grassCompute, LayerMask layerMask)
     {
-        private readonly GrassPainterWindow _window;
-        private readonly GrassComputeScript _grassCompute;
-        private readonly SpatialGrid _spatialGrid;
-        private readonly List<GrassData> _grassData;
+        _window = window;
+        _grassCompute = grassCompute;
+        _layerMask = layerMask;
+    }
 
-        public GrassRemovalOperation(GrassPainterWindow window, GrassComputeScript grassCompute,
-                                     SpatialGrid spatialGrid)
-        {
-            _window = window;
-            _grassCompute = grassCompute;
-            _spatialGrid = spatialGrid;
-            _grassData = grassCompute.GrassDataList;
-        }
+    public async UniTask RemoveGrassFromObjects(GameObject[] selectedObjects)
+    {
+        var totalOperations = selectedObjects.Length * _grassCompute.GrassDataList.Count;
+        var currentOperation = 0;
+        var grassToRemove = new HashSet<int>();
 
-        public async UniTask RemoveGrassFromObjects(GameObject[] selectedObjects)
+        foreach (var obj in selectedObjects)
         {
-            var grassPositionsToRemove = await FindGrassToRemove(selectedObjects);
-            if (grassPositionsToRemove.Count == 0)
+            var bounds = GetObjectBounds(obj);
+            if (!bounds.HasValue) continue;
+
+            for (int i = 0; i < _grassCompute.GrassDataList.Count; i++)
             {
-                Debug.Log("No grass to remove");
-                return;
-            }
+                var grass = _grassCompute.GrassDataList[i];
 
-            await RemoveGrassAtPositions(grassPositionsToRemove);
-        }
-
-        private async UniTask<HashSet<Vector3>> FindGrassToRemove(GameObject[] selectedObjects)
-        {
-            var positionsToRemove = new HashSet<Vector3>();
-            var tempIndices = new List<int>();
-
-            for (var i = 0; i < selectedObjects.Length; i++)
-            {
-                var obj = selectedObjects[i];
-                await ProcessSingleObject(obj, i, selectedObjects.Length, tempIndices, positionsToRemove);
-            }
-
-            return positionsToRemove;
-        }
-
-        private async UniTask ProcessSingleObject(GameObject obj, int currentIndex,
-                                                  int totalObjects, List<int> tempIndices,
-                                                  HashSet<Vector3> positionsToRemove)
-        {
-            var bound = GrassEditorHelper.GetObjectBounds(obj);
-            if (!bound.HasValue) return;
-
-            await CollectGrassPositionsInBounds(bound.Value, tempIndices, positionsToRemove);
-            await UpdateRemovalProgress(currentIndex, totalObjects, $"Scanning grass on '{obj.name}'");
-        }
-
-        private async UniTask CollectGrassPositionsInBounds(Bounds bounds, List<int> tempIndices,
-                                                            HashSet<Vector3> positionsToRemove)
-        {
-            tempIndices.Clear();
-
-            var expandedRadius = bounds.extents.magnitude * 1.1f;
-            await _spatialGrid.GetObjectsInRadiusAsync(bounds.center, expandedRadius, tempIndices);
-
-            foreach (var index in tempIndices)
-            {
-                if (index < _grassData.Count)
+                if (bounds.Value.Contains(grass.position) && Physics.CheckSphere(grass.position, COLLISION_RADIUS, _layerMask))
                 {
-                    positionsToRemove.Add(_grassData[index].position);
+                    grassToRemove.Add(i);
                 }
+
+                currentOperation++;
+                await _window.UpdateProgress(currentOperation, totalOperations, "Removing grass");
             }
         }
 
-        private async UniTask RemoveGrassAtPositions(HashSet<Vector3> positionsToRemove)
+        _grassCompute.GrassDataList = _grassCompute.GrassDataList
+            .Where((_, i) => !grassToRemove.Contains(i))
+            .ToList();
+    }
+
+    private Bounds? GetObjectBounds(GameObject obj)
+    {
+        if (obj.TryGetComponent<Terrain>(out var terrain))
         {
-            const int progressUpdateInterval = 1000; // 진행상태 업데이트 간격
-            var remainingGrass = new List<GrassData>();
-            var removedCount = 0;
-
-            // 병렬 처리를 위해 데이터를 청크로 나누어 처리
-            await UniTask.RunOnThreadPool(() =>
-            {
-                for (var i = 0; i < _grassData.Count; i++)
-                {
-                    var grassData = _grassData[i];
-                    if (!positionsToRemove.Contains(grassData.position))
-                    {
-                        remainingGrass.Add(grassData);
-                    }
-                    else
-                    {
-                        removedCount++;
-                    }
-
-                    // progressUpdateInterval마다 진행상태 업데이트
-                    if (i % progressUpdateInterval == 0)
-                    {
-                        UpdateRemovalProgress(i, _grassData.Count, "Removing Grass").Forget();
-                    }
-                }
-            });
-
-            // 최종 진행상태 업데이트
-            await UpdateRemovalProgress(_grassData.Count, _grassData.Count, "Removing Grass");
-
-            _grassCompute.GrassDataList = remainingGrass;
-            _window.InitSpatialGrid();
-
-            Debug.Log($"Removed {removedCount} grass instances in total");
+            return new Bounds(
+                terrain.transform.position + terrain.terrainData.size / 2,
+                terrain.terrainData.size
+            );
+        }
+        
+        if (obj.TryGetComponent<Renderer>(out var renderer))
+        {
+            var bounds = renderer.bounds;
+            bounds.Expand(BOUNDS_EXPANSION);
+            return bounds;
         }
 
-        private async UniTask UpdateRemovalProgress(int current, int total, string message)
-        {
-            await _window.UpdateProgress(current, total, message);
-        }
+        return null;
     }
 }
