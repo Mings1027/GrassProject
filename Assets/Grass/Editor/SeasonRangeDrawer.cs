@@ -70,7 +70,7 @@ namespace Grass.Editor
             var infoRect = position;
             infoRect.y += totalHeight - lineHeight;
             infoRect.height = lineHeight;
-            var rangeInfo = GetSeasonRangeInfo(from, to, isFullCycleProp.boolValue);
+            var rangeInfo = SeasonRange.GetSeasonRangeInfo(from, to, isFullCycleProp.boolValue);
             EditorGUI.LabelField(infoRect, "Sequence: " + rangeInfo, EditorStyles.miniLabel);
 
             EditorGUI.EndProperty();
@@ -86,55 +86,6 @@ namespace Grass.Editor
                 ? (EditorGUIUtility.singleLineHeight * 3) + (EditorGUIUtility.standardVerticalSpacing * 2)
                 : (EditorGUIUtility.singleLineHeight * 2) + EditorGUIUtility.standardVerticalSpacing;
         }
-
-        private string GetSeasonRangeInfo(SeasonType from, SeasonType to, bool isFullCycle)
-        {
-            if (from == to && isFullCycle)
-            {
-                // Full Cycle: 한 바퀴 도는 경우
-                string seasons = "";
-                SeasonType current = from;
-                do
-                {
-                    seasons += current.ToString() + " → ";
-                    current = (SeasonType)(((int)current + 1) % 4);
-                } while (current != from);
-
-                seasons += from.ToString();
-                return seasons;
-            }
-            else if (from == to)
-            {
-                // 같은 계절: 고정
-                return from.ToString();
-            }
-            else if (from < to)
-            {
-                // 정방향 순서
-                string seasons = "";
-                for (SeasonType season = from; season <= to; season++)
-                {
-                    seasons += season.ToString() + " → ";
-                }
-
-                return seasons.TrimEnd('→', ' ');
-            }
-            else
-            {
-                // 역방향 순서 (한 사이클)
-                string seasons = "";
-                for (SeasonType season = from; season <= SeasonType.Autumn; season++)
-                {
-                    seasons += season.ToString() + " → ";
-                }
-
-                for (SeasonType season = SeasonType.Winter; season <= to; season++)
-                {
-                    seasons += season.ToString() + " → ";
-                }
-
-                return seasons.TrimEnd('→', ' ');
-            }
-        }
+        
     }
 }

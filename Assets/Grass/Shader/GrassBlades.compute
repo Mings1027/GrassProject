@@ -185,7 +185,7 @@ half3 CalculationWind(half3 positionWS, half grassHeight, half distanceFade)
     // Low quality (멀리 있는 풀)은 매우 약한 바람만 적용
     if (distanceFade < _LowQualityDistance)
     {
-        half simpleWindValue = sin(timeWind) * 0.1; // 10%만 적용
+        half simpleWindValue = sin(timeWind) ; // 뒤에 0.x 를 곱해 sin강도 조절할 수 있음
         return half3(_WindDirection.x * simpleWindValue, 0, _WindDirection.y * simpleWindValue)
             * grassHeight * _WindStrength;
     }
@@ -226,7 +226,16 @@ float3 CalculateInteraction(float3 grassPosition, half grassHeight)
     }
     return totalBend;
 }
-
+half GetLODLevel(half distanceFromCamera) {
+    // Simple linear interpolation between segment counts
+    half segmentCount = _MaxSegmentsPerBlade;
+    if(distanceFromCamera > _MediumQualityDistance) {
+        half t = (distanceFromCamera - _MediumQualityDistance) / (_LowQualityDistance - _MediumQualityDistance);
+        t = saturate(t);
+        segmentCount = lerp(_MaxSegmentsPerBlade / 2, 1, t);
+    }
+    return floor(segmentCount);
+}
 [numthreads(256, 1, 1)]
 void Main(uint id : SV_DispatchThreadID)
 {
@@ -238,7 +247,7 @@ void Main(uint id : SV_DispatchThreadID)
     SourceVertex sv = _SourceVertices[visibleID];
 
     half distanceFromCamera = distance(sv.positionWS, _CameraPositionWS);
-    if (distanceFromCamera > _MaxFadeDist) return; // 최대 거리 90%에서 컷오프
+    if (distanceFromCamera > _MaxFadeDist) return;
 
     half distanceFade = 1 - saturate((distanceFromCamera - _MinFadeDist) / (_MaxFadeDist - _MinFadeDist));
     if (distanceFade < 0.1) return;

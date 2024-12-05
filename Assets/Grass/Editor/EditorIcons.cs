@@ -8,7 +8,8 @@ namespace Grass.Editor
         public static GUIContent Settings => IconContent("d_SettingsIcon");
         public static GUIContent Gizmos => IconContent("d_SceneViewVisibility");
         public static GUIContent Cube => IconContent("d_PreMatCube");
-        
+        public static GUIContent Info => IconContent("d_console.infoicon");
+
         private static GUIContent IconContent(string iconName)
         {
             var icon = EditorGUIUtility.IconContent(iconName);

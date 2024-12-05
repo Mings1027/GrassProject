@@ -48,6 +48,7 @@ namespace Grass.Editor
     {
         // Add to existing class
         private static Dictionary<string, bool> _foldoutStates = new();
+        public static Dictionary<string, bool> FoldoutStates => _foldoutStates;
 
         public static Bounds? GetObjectBounds(GameObject obj)
         {
@@ -584,7 +585,8 @@ namespace Grass.Editor
             return _foldoutStates[title];
         }
 
-        public static void DrawSeasonSettingsTable(Rect position, GrassSettingSO grassSetting)
+        public static void DrawSeasonSettingsTable(Rect position, GrassSettingSO grassSetting,
+                                                   GrassSeasonManager grassSeasonManager)
         {
             var labelWidth = 40f;
             var cellWidth = (position.width - labelWidth) / 4;
@@ -609,7 +611,7 @@ namespace Grass.Editor
                 grassSetting.summerSettings, grassSetting.autumnSettings
             };
 
-            // Color row (기존 코드와 동일)
+            EditorGUI.BeginChangeCheck();
             EditorGUI.LabelField(new Rect(position.x, y, labelWidth, rowHeight), "Color", EditorStyles.boldLabel);
             for (int i = 0; i < settings.Length; i++)
             {
@@ -617,9 +619,14 @@ namespace Grass.Editor
                 settings[i].seasonColor = EditorGUI.ColorField(rect, settings[i].seasonColor);
             }
 
+            if (EditorGUI.EndChangeCheck())
+            {
+                grassSeasonManager.UpdateShaderData();
+            }
+
             y += rowHeight + padding;
 
-            // Width row (커스텀 슬라이더)
+            EditorGUI.BeginChangeCheck();
             EditorGUI.LabelField(new Rect(position.x, y, labelWidth, rowHeight), "Width", EditorStyles.boldLabel);
             for (int i = 0; i < settings.Length; i++)
             {
@@ -632,9 +639,14 @@ namespace Grass.Editor
                 settings[i].width = Mathf.Clamp(settings[i].width, 0.1f, 2f);
             }
 
+            if (EditorGUI.EndChangeCheck())
+            {
+                grassSeasonManager.UpdateShaderData();
+            }
+
             y += rowHeight + padding;
 
-            // Height row (커스텀 슬라이더)
+            EditorGUI.BeginChangeCheck();
             EditorGUI.LabelField(new Rect(position.x, y, labelWidth, rowHeight), "Height", EditorStyles.boldLabel);
             for (int i = 0; i < settings.Length; i++)
             {
@@ -645,6 +657,11 @@ namespace Grass.Editor
                 settings[i].height = GUI.HorizontalSlider(sliderRect, settings[i].height, 0.1f, 2f);
                 settings[i].height = EditorGUI.FloatField(fieldRect, settings[i].height);
                 settings[i].height = Mathf.Clamp(settings[i].height, 0.1f, 2f);
+            }
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                grassSeasonManager.UpdateShaderData();
             }
         }
     }

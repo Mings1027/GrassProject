@@ -48,12 +48,67 @@ namespace Grass.GrassScripts
             {
                 return $"{from} → {from} (Full Cycle)";
             }
-            else if (from == to)
+
+            if (from == to)
             {
                 return from.ToString();
             }
 
             return $"{from} → {to}";
         }
+
+#if UNITY_EDITOR
+        public static string GetSeasonRangeInfo(SeasonType from, SeasonType to, bool isFullCycle)
+        {
+            if (from == to && isFullCycle)
+            {
+                // Full Cycle: 한 바퀴 도는 경우
+                string seasons = "";
+                SeasonType current = from;
+                do
+                {
+                    seasons += current + " → ";
+                    current = (SeasonType)(((int)current + 1) % 4);
+                } while (current != from);
+
+                seasons += from.ToString();
+                return seasons;
+            }
+
+            if (from == to)
+            {
+                // 같은 계절: 고정
+                return from.ToString();
+            }
+
+            if (from < to)
+            {
+                // 정방향 순서
+                string seasons = "";
+                for (SeasonType season = from; season <= to; season++)
+                {
+                    seasons += season + " → ";
+                }
+
+                return seasons.TrimEnd('→', ' ');
+            }
+            else
+            {
+                // 역방향 순서 (한 사이클)
+                string seasons = "";
+                for (SeasonType season = from; season <= SeasonType.Autumn; season++)
+                {
+                    seasons += season + " → ";
+                }
+
+                for (SeasonType season = SeasonType.Winter; season <= to; season++)
+                {
+                    seasons += season + " → ";
+                }
+
+                return seasons.TrimEnd('→', ' ');
+            }
+        }
+#endif
     }
 }

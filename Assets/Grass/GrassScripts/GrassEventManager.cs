@@ -14,6 +14,7 @@ namespace Grass.GrassScripts
         
         //Func
         GetGrassSetting,
+        UpdateShaderData
     }
 
     public static class GrassEventManager

@@ -1,146 +1,173 @@
 using UnityEditor;
 using UnityEngine;
 
-public static class GrassLODSettingEditor
+namespace Grass.Editor
 {
-    private static readonly Color LowQualityColor = new Color(0.3f, 0.7f, 0.3f); // 가벼운 작업 = 초록색
-    private static readonly Color MediumQualityColor = new Color(0.7f, 0.7f, 0.3f); // 중간 작업 = 노란색 
-    private static readonly Color HighQualityColor = new Color(0.7f, 0.3f, 0.3f); // 무거운 작업 = 빨간색
-
-    public static bool DrawLODSettingsPanel(GrassSettingSO settings)
+    public static class GrassLODSettingEditor
     {
-        var rect = GUILayoutUtility.GetRect(0, 60, GUILayout.ExpandWidth(true));
-        rect.y += 5;
+        private static readonly Color LowQualityColor = new Color(0.3f, 0.7f, 0.3f);
+        private static readonly Color MediumQualityColor = new Color(0.7f, 0.7f, 0.3f);
+        private static readonly Color HighQualityColor = new Color(0.7f, 0.3f, 0.3f);
 
-        DrawQualityBar(rect, settings);
-        DrawDistanceLabels(rect, settings);
-
-        EditorGUILayout.Space(10);
-
-        return DrawDistanceSliders(settings);
-    }
-
-    private static void DrawQualityBar(Rect position, GrassSettingSO settings)
-    {
-        var barRect = new Rect(position.x, position.y, position.width, 30);
-        EditorGUI.DrawRect(barRect, new Color(0.2f, 0.2f, 0.2f));
-
-        var normalizedMinFade = Mathf.Clamp01(settings.minFadeDistance / settings.maxFadeDistance);
-
-        var highPercent = normalizedMinFade;
-        var remainingPercent = 1f - highPercent;
-
-        var lowWidth = barRect.width * (settings.lowQualityDistance * remainingPercent);
-        var medWidth = barRect.width *
-                       ((settings.mediumQualityDistance - settings.lowQualityDistance) * remainingPercent);
-        var highWidth = barRect.width * highPercent +
-                        barRect.width * ((1 - settings.mediumQualityDistance) * remainingPercent);
-
-        var lowRect = new Rect(barRect.x, barRect.y, lowWidth, barRect.height);
-        EditorGUI.DrawRect(lowRect, LowQualityColor);
-
-        var medRect = new Rect(barRect.x + lowWidth, barRect.y, medWidth, barRect.height);
-        EditorGUI.DrawRect(medRect, MediumQualityColor);
-
-        var highRect = new Rect(barRect.x + lowWidth + medWidth, barRect.y, highWidth, barRect.height);
-        EditorGUI.DrawRect(highRect, HighQualityColor);
-
-        var handleWidth = 2f;
-
-        if (lowWidth > 0)
+        private struct QualityBarData
         {
-            var lowHandle = new Rect(barRect.x + lowWidth - handleWidth / 2,
-                barRect.y, handleWidth, barRect.height);
-            EditorGUI.DrawRect(lowHandle, new Color(0, 0, 0));
+            private float NormalizedMinFade;
+            private float RemainingPercent;
+            public float LowWidth;
+            public float MedWidth;
+            public float HighWidth;
+
+            public static QualityBarData Calculate(GrassSettingSO settings, float totalWidth)
+            {
+                var data = new QualityBarData
+                {
+                    NormalizedMinFade = settings.minFadeDistance / settings.maxFadeDistance
+                };
+
+                data.RemainingPercent = 1f - data.NormalizedMinFade;
+
+                // shader와 동일한 계산식 사용
+                data.LowWidth = totalWidth * (settings.lowQualityDistance * data.RemainingPercent);
+                data.MedWidth = totalWidth * ((settings.mediumQualityDistance - settings.lowQualityDistance) *
+                                              data.RemainingPercent);
+                data.HighWidth = totalWidth * data.NormalizedMinFade +
+                                 totalWidth * ((1f - settings.mediumQualityDistance) * data.RemainingPercent);
+
+                return data;
+            }
         }
 
-        if (medWidth > 0)
+        public static bool DrawLODSettingsPanel(GrassSettingSO settings)
         {
-            var medHandle = new Rect(barRect.x + lowWidth + medWidth - handleWidth / 2,
-                barRect.y, handleWidth, barRect.height);
-            EditorGUI.DrawRect(medHandle, new Color(0, 0, 0));
+            var rect = GUILayoutUtility.GetRect(0, 50, GUILayout.ExpandWidth(true));
+            rect.y += 5;
+
+            var barData = QualityBarData.Calculate(settings, rect.width);
+            DrawQualityBar(rect, barData);
+            DrawDistanceLabels(rect, barData);
+
+            EditorGUILayout.Space(5);
+
+            return DrawDistanceSliders(settings);
         }
-    }
 
-    private static void DrawDistanceLabels(Rect position, GrassSettingSO settings)
-    {
-        var labelRect = new Rect(position.x, position.y + 32, position.width, 20);
-        var style = new GUIStyle(EditorStyles.label)
+        private static void DrawQualityBar(Rect position, QualityBarData barData)
         {
-            alignment = TextAnchor.UpperCenter,
-            normal = { textColor = Color.white },
-            clipping = TextClipping.Clip
-        };
+            var barRect = new Rect(position.x, position.y, position.width, 30);
+            EditorGUI.DrawRect(barRect, new Color(0.2f, 0.2f, 0.2f));
 
-        var normalizedMinFade = Mathf.Clamp01(settings.minFadeDistance / settings.maxFadeDistance);
-        var remainingPercent = 1f - normalizedMinFade;
+            var lowRect = new Rect(barRect.x, barRect.y, barData.LowWidth, barRect.height);
+            EditorGUI.DrawRect(lowRect, LowQualityColor);
 
-        var lowWidth = labelRect.width * (settings.lowQualityDistance * remainingPercent);
-        var medWidth = labelRect.width *
-                       ((settings.mediumQualityDistance - settings.lowQualityDistance) * remainingPercent);
-        var highWidth = labelRect.width * normalizedMinFade +
-                        labelRect.width * ((1 - settings.mediumQualityDistance) * remainingPercent);
+            var medRect = new Rect(barRect.x + barData.LowWidth, barRect.y, barData.MedWidth, barRect.height);
+            EditorGUI.DrawRect(medRect, MediumQualityColor);
 
-        if (lowWidth > 0)
+            var highRect = new Rect(barRect.x + barData.LowWidth + barData.MedWidth, barRect.y, barData.HighWidth,
+                barRect.height);
+            EditorGUI.DrawRect(highRect, HighQualityColor);
+
+            DrawQualityHandles(barRect, barData.LowWidth, barData.MedWidth);
+        }
+
+        private static void DrawQualityHandles(Rect barRect, float lowWidth, float medWidth)
         {
+            const float handleWidth = 2f;
+
+            if (lowWidth > 0)
+            {
+                var lowHandle = new Rect(barRect.x + lowWidth - handleWidth / 2,
+                    barRect.y, handleWidth, barRect.height);
+                EditorGUI.DrawRect(lowHandle, Color.black);
+            }
+
+            if (medWidth > 0)
+            {
+                var medHandle = new Rect(barRect.x + lowWidth + medWidth - handleWidth / 2,
+                    barRect.y, handleWidth, barRect.height);
+                EditorGUI.DrawRect(medHandle, Color.black);
+            }
+        }
+
+        private static void DrawDistanceLabels(Rect position, QualityBarData barData)
+        {
+            var labelRect = new Rect(position.x, position.y + 32, position.width, 20);
+            var style = new GUIStyle(EditorStyles.label)
+            {
+                alignment = TextAnchor.UpperCenter,
+                normal = { textColor = Color.white },
+                clipping = TextClipping.Clip
+            };
+
+            if (barData.LowWidth > 0)
+            {
+                EditorGUI.LabelField(
+                    new Rect(labelRect.x, labelRect.y, barData.LowWidth, labelRect.height),
+                    "Low", style);
+            }
+
+            if (barData.MedWidth > 0)
+            {
+                EditorGUI.LabelField(
+                    new Rect(labelRect.x + barData.LowWidth, labelRect.y, barData.MedWidth, labelRect.height),
+                    "Medium", style);
+            }
+
             EditorGUI.LabelField(
-                new Rect(labelRect.x, labelRect.y, lowWidth, labelRect.height),
-                "Low", style);
+                new Rect(labelRect.x + barData.LowWidth + barData.MedWidth, labelRect.y, barData.HighWidth,
+                    labelRect.height),
+                "High", style);
         }
 
-        if (medWidth > 0)
+        private static bool DrawDistanceSliders(GrassSettingSO settings)
         {
-            EditorGUI.LabelField(
-                new Rect(labelRect.x + lowWidth, labelRect.y, medWidth, labelRect.height),
-                "Medium", style);
+            EditorGUI.BeginChangeCheck();
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Min Fade Distance", GUILayout.Width(150));
+            var minFade = GUILayout.HorizontalSlider(settings.minFadeDistance, 0f, settings.maxFadeDistance);
+            var minFadeFormatted = Mathf.Round(minFade * 10) / 10f;
+            minFade = EditorGUILayout.FloatField(minFadeFormatted, GUILayout.Width(50));
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Max Fade Distance", GUILayout.Width(150));
+            var maxFade = GUILayout.HorizontalSlider(settings.maxFadeDistance, minFade, 300f);
+            var maxFadeFormatted = Mathf.Round(maxFade * 10) / 10f;
+            maxFade = EditorGUILayout.FloatField(maxFadeFormatted, GUILayout.Width(50));
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.Space(5);
+
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Low Quality Distance", GUILayout.Width(150));
+            var lowQuality =
+                GUILayout.HorizontalSlider(settings.lowQualityDistance, 0f, settings.mediumQualityDistance);
+            var lowQualityFormatted = Mathf.Round(lowQuality * 100) / 100f;
+            lowQuality = EditorGUILayout.FloatField(lowQualityFormatted, GUILayout.Width(50));
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Medium Quality Distance", GUILayout.Width(150));
+            var mediumQuality = GUILayout.HorizontalSlider(settings.mediumQualityDistance, lowQuality, 1f);
+            var mediumQualityFormatted = Mathf.Round(mediumQuality * 100) / 100f;
+            mediumQuality = EditorGUILayout.FloatField(mediumQualityFormatted, GUILayout.Width(50));
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndVertical();
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                settings.minFadeDistance = minFade;
+                settings.maxFadeDistance = maxFade;
+                settings.lowQualityDistance = lowQuality;
+                settings.mediumQualityDistance = mediumQuality;
+
+                EditorUtility.SetDirty(settings);
+                return true;
+            }
+
+            return false;
         }
-
-        EditorGUI.LabelField(
-            new Rect(labelRect.x + lowWidth + medWidth, labelRect.y, highWidth, labelRect.height),
-            "High", style);
-    }
-
-    private static bool DrawDistanceSliders(GrassSettingSO settings)
-    {
-        EditorGUI.BeginChangeCheck();
-
-        EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-
-        // Min Fade Distance
-        var minFade = EditorGUILayout.Slider(new GUIContent("Min Fade Distance",
-                "Distance at which grass begins to fade in"),
-            settings.minFadeDistance, 0, settings.maxFadeDistance);
-
-        // Max Fade Distance
-        var maxFade = EditorGUILayout.Slider(new GUIContent("Max Fade Distance",
-                "Maximum distance at which grass is rendered"),
-            settings.maxFadeDistance, minFade, 300);
-
-        EditorGUILayout.Space(5);
-
-        // Quality Transition Distances
-        var lowQuality = EditorGUILayout.Slider(new GUIContent("Low Quality Distance",
-                "Distance at which grass transitions to low quality"),
-            settings.lowQualityDistance, 0, settings.mediumQualityDistance);
-
-        var mediumQuality = EditorGUILayout.Slider(new GUIContent("Medium Quality Distance",
-                "Distance at which grass transitions to medium quality"),
-            settings.mediumQualityDistance, lowQuality, 1);
-
-        EditorGUILayout.EndVertical();
-
-        if (EditorGUI.EndChangeCheck())
-        {
-            Undo.RecordObject(settings, "Modified LOD Settings");
-
-            settings.minFadeDistance = minFade;
-            settings.maxFadeDistance = maxFade;
-            settings.lowQualityDistance = lowQuality;
-            settings.mediumQualityDistance = mediumQuality;
-
-            EditorUtility.SetDirty(settings);
-            return true;
-        }
-        return false;
     }
 }

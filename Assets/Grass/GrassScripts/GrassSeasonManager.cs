@@ -1,336 +1,118 @@
 using System.Collections.Generic;
-using System.Threading;
-using Cysharp.Threading.Tasks;
+using System.Linq;
+using Grass.GrassScripts;
 using UnityEngine;
 
-namespace Grass.GrassScripts
+[ExecuteInEditMode]
+public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
 {
-    [ExecuteInEditMode]
-    public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
+    private const int MAX_ZONES = 9;
+    private GrassComputeScript grassComputeScript;
+    [SerializeField] private List<GrassSeasonZone> seasonZones = new();
+    [SerializeField] private float globalSeasonValue;
+
+    private void OnEnable()
     {
-        private const int MAX_ZONES = 9;
+        grassComputeScript = FindAnyObjectByType<GrassComputeScript>();
 
-        [SerializeField, HideInInspector] private List<GrassSeasonZone> seasonZones = new();
-        private readonly Dictionary<GrassSeasonZone, Vector3> lastPositions = new();
-        private readonly Dictionary<GrassSeasonZone, Vector3> lastScales = new();
-        private readonly ZoneData[] zoneData = new ZoneData[MAX_ZONES];
-        private Color[] zoneColors;
-        private bool isDirty;
+        GrassEventManager.AddEvent(GrassEvent.UpdateShaderData, UpdateShaderData);
+        GrassFuncManager.AddEvent<Vector3, Color>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
+        UpdateSeasonZones();
+        SetGlobalSeasonValue(globalSeasonValue);
+    }
 
-        [SerializeField] private float globalSeasonValue;
+    private void OnDisable()
+    {
+        GrassEventManager.RemoveEvent(GrassEvent.UpdateShaderData, UpdateShaderData);
+        GrassFuncManager.RemoveEvent<Vector3, Color>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
+    }
 
-        public float GlobalMinRange()
+    public float GlobalMinRange()
+    {
+        var grassSetting = grassComputeScript.GrassSetting;
+        return grassSetting != null ? grassSetting.seasonRange.GetRange().min : 0f;
+    }
+
+    public float GlobalMaxRange()
+    {
+        var grassSetting = grassComputeScript.GrassSetting;
+        return grassSetting != null ? grassSetting.seasonRange.GetRange().max : 4f;
+    }
+
+    public void UpdateSeasonZones()
+    {
+        seasonZones.Clear();
+        var foundZones = GetComponentsInChildren<GrassSeasonZone>();
+        for (int i = 0; i < Mathf.Min(foundZones.Length, MAX_ZONES); i++)
         {
-            var grassSetting = GrassFuncManager.TriggerEvent<GrassSettingSO>(GrassEvent.GetGrassSetting);
-            return grassSetting != null ? grassSetting.seasonRange.GetRange().min : 0f;
-        }
-
-        public float GlobalMaxRange()
-        {
-            var grassSetting = GrassFuncManager.TriggerEvent<GrassSettingSO>(GrassEvent.GetGrassSetting);
-            return grassSetting != null ? grassSetting.seasonRange.GetRange().max : 4f;
-        }
-
-        private void OnEnable()
-        {
-            zoneColors = new Color[zoneData.Length];
-
-            UpdateSeasonZones();
-            SetGlobalSeasonValue(globalSeasonValue);
-            GrassFuncManager.AddEvent<Vector3, Color>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
-        }
-
-        private void OnDisable()
-        {
-            GrassFuncManager.RemoveEvent<Vector3, Color>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
-        }
-
-        private void Update()
-        {
-            if (isDirty || CheckZoneTransforms())
+            if (foundZones[i] != null)
             {
-                UpdateAllSeasonEffects();
-                isDirty = false;
+                seasonZones.Add(foundZones[i]);
             }
         }
 
-        public void RegisterZone(GrassSeasonZone zone)
+        UpdateAllZones();
+    }
+
+    private void UpdateAllZones()
+    {
+        var grassSettings = GrassFuncManager.TriggerEvent<GrassSettingSO>(GrassEvent.GetGrassSetting);
+        var (min, max) = grassSettings.seasonRange.GetRange();
+
+        foreach (var zone in seasonZones)
         {
-            if (zone == null || seasonZones.Contains(zone) || seasonZones.Count >= MAX_ZONES)
-                return;
-
-            seasonZones.Add(zone);
-            lastPositions[zone] = zone.transform.position;
-            lastScales[zone] = zone.transform.localScale;
-            isDirty = true;
-        }
-
-        public void UnregisterZone(GrassSeasonZone zone)
-        {
-            if (zone == null || !seasonZones.Contains(zone))
-                return;
-
-            seasonZones.Remove(zone);
-            lastPositions.Remove(zone);
-            lastScales.Remove(zone);
-            isDirty = true;
-        }
-
-        public void UpdateSeasonZones()
-        {
-            var foundZones = GetComponentsInChildren<GrassSeasonZone>();
-            var updatedZones = new List<GrassSeasonZone>();
-            var currentZones = new HashSet<GrassSeasonZone>(seasonZones);
-
-            for (int i = 0; i < Mathf.Min(foundZones.Length, MAX_ZONES); i++)
+            if (zone != null)
             {
-                if (foundZones[i] != null)
-                {
-                    updatedZones.Add(foundZones[i]);
-                    currentZones.Remove(foundZones[i]);
-                }
+                zone.UpdateSeasonValue(globalSeasonValue, min, max);
             }
+        }
+    }
 
-            // 남은 볼륨들은 제거된 것들
-            foreach (var removedZone in currentZones)
+    public void UpdateShaderData()
+    {
+        var positions = new Vector4[seasonZones.Count];
+        var scales = new Vector4[seasonZones.Count];
+        var colors = new Vector4[seasonZones.Count];
+        var widthHeights = new Vector4[seasonZones.Count];
+
+        for (int i = 0; i < seasonZones.Count; i++)
+        {
+            var data = seasonZones[i].GetZoneData();
+            positions[i] = data.position;
+            positions[i].w = data.isActive ? 1.0f : 0.0f;
+            scales[i] = data.scale;
+            colors[i] = data.color;
+            widthHeights[i] = new Vector4(data.width, data.height, 0, 0);
+        }
+
+        GrassEventManager.TriggerEvent(GrassEvent.UpdateSeasonData, positions, scales, colors, widthHeights,
+            seasonZones.Count);
+    }
+
+    private Color TryGetGrassColor(Vector3 position)
+    {
+        for (int i = 0; i < seasonZones.Count; i++)
+        {
+            var zone = seasonZones[i];
+            if (!zone || !zone.gameObject.activeInHierarchy) continue;
+
+            if (zone.ContainsPosition(position))
             {
-                if (removedZone != null)
-                {
-                    RemoveZoneData(removedZone);
-                }
+                return zone.GetZoneColor();
             }
-
-            seasonZones = updatedZones;
-
-            foreach (var zone in seasonZones)
-            {
-                if (!zone) continue;
-                if (!lastPositions.ContainsKey(zone))
-                {
-                    AddZoneData(zone);
-                }
-            }
-
-            UpdateAllSeasonEffects();
         }
 
-        private void UpdateShaderData()
-        {
-            var zoneCount = seasonZones.Count;
-            var positions = new Vector4[zoneCount];
-            var scales = new Vector4[zoneCount];
-            var colors = new Vector4[zoneCount];
-            var widthHeights = new Vector4[zoneCount];
+        return Color.white;
+    }
 
-            for (int i = 0; i < zoneCount; i++)
-            {
-                if (zoneData[i].isActive)
-                {
-                    positions[i] = zoneData[i].position;
-                    positions[i].w = 1.0f;
-                    scales[i] = zoneData[i].scale;
-                    colors[i] = zoneData[i].color;
-                    widthHeights[i] = new Vector4(zoneData[i].width, zoneData[i].height, 0, 0);
-                    zoneColors[i] = zoneData[i].color;
-                }
-                else
-                {
-                    positions[i].w = 0.0f;
-                    zoneColors[i] = Color.white;
-                }
+    public void SetGlobalSeasonValue(float value)
+    {
+        globalSeasonValue = value;
+        UpdateAllZones();
+    }
 
-                zoneColors[i].a = 1;
-            }
-
-            GrassEventManager.TriggerEvent(GrassEvent.UpdateSeasonData, positions, scales, colors, widthHeights,
-                zoneCount);
-        }
-
-        private Color TryGetGrassColor(Vector3 position)
-        {
-            // 위치가 어떤 zone 안에 있는지 확인
-            for (int i = 0; i < seasonZones.Count; i++)
-            {
-                var zone = seasonZones[i];
-                if (!zone || !zone.gameObject.activeInHierarchy) continue;
-
-                // zone의 bounds 체크
-                var worldBounds = new Bounds(
-                    zone.transform.position,
-                    Vector3.Scale(Vector3.one, zone.transform.localScale)
-                );
-
-                if (worldBounds.Contains(position))
-                {
-                    return zoneColors[i];
-                }
-            }
-
-            return Color.white;
-        }
-
-        public void UpdateSingleZone(GrassSeasonZone zone)
-        {
-            int index = seasonZones.IndexOf(zone);
-            if (index == -1) return;
-
-            var (color, width, height) = zone.CalculateCurrentSeasonSettings(
-                GrassFuncManager.TriggerEvent<GrassSettingSO>(GrassEvent.GetGrassSetting)
-            );
-
-            zoneData[index] = new ZoneData
-            {
-                position = zone.transform.position,
-                scale = zone.transform.localScale,
-                color = color,
-                width = width,
-                height = height,
-                isActive = zone.gameObject.activeInHierarchy
-            };
-            UpdateShaderData();
-        }
-
-        private void AddZoneData(GrassSeasonZone zone)
-        {
-            lastPositions[zone] = zone.transform.position;
-            lastScales[zone] = zone.transform.localScale;
-        }
-
-        private void RemoveZoneData(GrassSeasonZone zone)
-        {
-            lastPositions.Remove(zone);
-            lastScales.Remove(zone);
-        }
-
-        private bool CheckZoneTransforms()
-        {
-            bool needsUpdate = false;
-
-            foreach (var zone in seasonZones)
-            {
-                if (!zone) continue;
-
-                var currentPosition = zone.transform.position;
-                var currentScale = zone.transform.localScale;
-
-                if (currentPosition != lastPositions[zone] || currentScale != lastScales[zone])
-                {
-                    lastPositions[zone] = currentPosition;
-                    lastScales[zone] = currentScale;
-                    needsUpdate = true;
-                }
-            }
-
-            return needsUpdate;
-        }
-
-        private void UpdateAllSeasonEffects()
-        {
-            // 기존의 볼륨 데이터 초기화
-            for (int i = 0; i < seasonZones.Count; i++)
-            {
-                zoneData[i] = new ZoneData { isActive = false };
-            }
-
-            // 각 볼륨의 데이터 업데이트
-            for (int i = 0; i < seasonZones.Count; i++)
-            {
-                var zone = seasonZones[i];
-                if (!zone) continue;
-
-                var (color, width, height) = zone.CalculateCurrentSeasonSettings(
-                    GrassFuncManager.TriggerEvent<GrassSettingSO>(GrassEvent.GetGrassSetting)
-                );
-
-                zoneData[i] = new ZoneData
-                {
-                    position = zone.transform.position,
-                    scale = zone.transform.localScale,
-                    color = color,
-                    width = width,
-                    height = height,
-                    isActive = zone.gameObject.activeInHierarchy
-                };
-            }
-
-            UpdateShaderData();
-        }
-
-        public void SetGlobalSeasonValue(float value)
-        {
-            var (min, max) = GrassFuncManager.TriggerEvent<GrassSettingSO>(GrassEvent.GetGrassSetting)
-                                             .seasonRange.GetRange();
-            globalSeasonValue = value; // 전역 시즌 값은 전체 범위에서 움직일 수 있음
-
-            foreach (var zone in seasonZones)
-            {
-                if (!zone) continue;
-
-                if (zone.OverrideGlobalSettings)
-                {
-                    // Override된 zone은 전역 range와 무관하게 자신의 전체 range를 사용
-                    // 전역값을 현재 min-max 범위에서의 비율로 변환 후 zone의 전체 범위에 적용
-                    float t = Mathf.InverseLerp(min, max, value);
-                    zone.SetSeasonValue(Mathf.Lerp(zone.MinRange, zone.MaxRange, t));
-                }
-                else
-                {
-                    // Override되지 않은 zone은 글로벌 설정의 범위를 따름
-                    float clampedValue = Mathf.Clamp(value, min, max);
-                    zone.SetSeasonValue(clampedValue);
-                }
-            }
-
-            isDirty = true;
-        }
-
-        public void SetGlobalSeasonValueOverTime(float targetValue, float duration)
-        {
-            if (duration <= 0f)
-            {
-                SetGlobalSeasonValue(targetValue);
-                return;
-            }
-
-            float clampedTarget = Mathf.Clamp(targetValue, GlobalMinRange(), GlobalMaxRange());
-
-            SetGlobalSeasonValueAsync(globalSeasonValue, clampedTarget, duration, destroyCancellationToken).Forget();
-        }
-
-        public void SetGlobalSeasonValueOverTime(float startValue, float endValue, float duration)
-        {
-            if (duration <= 0f)
-            {
-                SetGlobalSeasonValue(endValue);
-                return;
-            }
-
-            float clampedStart = Mathf.Clamp(startValue, GlobalMinRange(), GlobalMaxRange());
-            float clampedEnd = Mathf.Clamp(endValue, GlobalMinRange(), GlobalMaxRange());
-
-            SetGlobalSeasonValueAsync(clampedStart, clampedEnd, duration, destroyCancellationToken).Forget();
-        }
-
-        private async UniTask SetGlobalSeasonValueAsync(float startValue, float endValue, float duration,
-                                                        CancellationToken token)
-        {
-            var elapsed = 0f;
-
-            while (elapsed < duration)
-            {
-                elapsed += Time.deltaTime;
-                var t = elapsed / duration;
-                var currentValue = Mathf.Lerp(startValue, endValue, t);
-                SetGlobalSeasonValue(currentValue);
-                await UniTask.Yield(token);
-            }
-
-            SetGlobalSeasonValue(endValue);
-        }
-
-        private void OnTransformChildrenChanged()
-        {
-            UpdateSeasonZones();
-        }
+    private void OnTransformChildrenChanged()
+    {
+        UpdateSeasonZones();
     }
 }

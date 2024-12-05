@@ -178,6 +178,25 @@ public class SpatialGrid
         }
     }
 
+    public void GetObjectsInBounds(Bounds bounds, List<int> results)
+    {
+        results.Clear();
+
+        var minCell = WorldToCell(bounds.min);
+        var maxCell = WorldToCell(bounds.max);
+
+        for (var x = minCell.x; x <= maxCell.x; x++)
+        for (var y = minCell.y; y <= maxCell.y; y++)
+        for (var z = minCell.z; z <= maxCell.z; z++)
+        {
+            var key = GetKey(x, y, z);
+            if (_grid.TryGetValue(key, out var cellSet))
+            {
+                results.AddRange(cellSet);
+            }
+        }
+    }
+
     public Vector3Int WorldToCell(Vector3 position)
     {
         var relativePosition = position - _origin;
