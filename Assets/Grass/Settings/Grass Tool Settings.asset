@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Grass Tool Settings
   m_EditorClassIdentifier: 
   layerBlocking:
-  - 0.54
-  - 0.2
-  - 0.4
-  - 0.6
-  - 0.24
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
   - 0
   - 0
   - 0
@@ -48,12 +48,12 @@ MonoBehaviour:
   paintBlockMask:
     serializedVersion: 2
     m_Bits: 64
-  brushSize: 122
+  brushSize: 3.8
   brushTransitionSpeed: 0.95
-  density: 1
+  density: 55
   normalLimit: 1
   brushHeight: 9.45
-  generateGrassCount: 400901
+  generateGrassCount: 350000
   grassMouseButton: 0
   brushSizeShortcut: 2
   brushHeightShortcut: 1

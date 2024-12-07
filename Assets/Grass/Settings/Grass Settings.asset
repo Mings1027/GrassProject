@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e38e65c4d9efd490bb579ff0fe1a4443, type: 3}
   m_Name: Grass Settings
   m_EditorClassIdentifier: 
-  shaderToUse: {fileID: 7200000, guid: 11036af5f2d1499c8845585fb5fadb4c, type: 3}
-  materialToUse: {fileID: 2100000, guid: 7725493650b5a4b4d9c0d612493ca34d, type: 2}
+  shaderToUse: {fileID: 7200000, guid: c0d95922e2c64e3b83dcd4f578876eba, type: 3}
+  materialToUse: {fileID: 2100000, guid: dd1924b34c0304fff93030c454b9e25f, type: 2}
   bladeRadius: 1.073
   bladeForward: 1.4
   bladeCurve: 1.6
@@ -54,10 +54,10 @@ MonoBehaviour:
     width: 1
     height: 1
   drawBounds: 0
-  cullingTreeDepth: 7
-  minFadeDistance: 30
-  maxFadeDistance: 140
-  lowQualityDistance: 0.53
-  mediumQualityDistance: 0.85
+  cullingCellSize: 6
+  minFadeDistance: 36.1
+  maxFadeDistance: 133
+  lowQualityDistance: 0.491
+  mediumQualityDistance: 1
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}
   castShadow: 0

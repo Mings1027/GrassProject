@@ -3,158 +3,96 @@ using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Grass.Editor
 {
     public class GrassGenerationOperation
     {
-        private const int BatchSize = 10000;
         private readonly GrassPainterWindow _window;
         private readonly GrassComputeScript _grassCompute;
         private readonly GrassToolSettingSo _toolSettings;
-        private readonly System.Random _random;
-        private int _totalGrassToGenerate;
-        private int _currentGrassGenerated;
 
-        public GrassGenerationOperation(GrassPainterWindow window, GrassComputeScript grassCompute,
-                                        GrassToolSettingSo toolSettings)
+        public GrassGenerationOperation(GrassPainterWindow window,
+                                        GrassComputeScript grassCompute, GrassToolSettingSo toolSettings)
         {
             _window = window;
             _grassCompute = grassCompute;
             _toolSettings = toolSettings;
-            _random = new System.Random(Environment.TickCount);
         }
 
         public async UniTask GenerateGrass(GameObject[] selectedObjects)
         {
-            var meshObjects = new List<(MeshFilter mesh, Matrix4x4 matrix, Vector3 up)>();
-            var terrains = new List<(Terrain terrain, TerrainData data, Vector3 size, Vector3 position)>();
-            var totalArea = 0f;
-
+            // Calculate valid objects that match the paint mask
+            List<GameObject> list = new List<GameObject>();
             foreach (var obj in selectedObjects)
             {
-                if (((1 << obj.layer) & _toolSettings.PaintMask.value) == 0)
+                if (((1 << obj.layer) & _toolSettings.PaintMask.value) != 0) list.Add(obj);
+            }
+            
+            if (list.Count == 0) return;
+
+            // Calculate grass points per object to match total requested count
+            var grassPerObject = _toolSettings.GenerateGrassCount / list.Count;
+            
+            var allGrassPoints = new List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>();
+            var currentPoint = 0;
+            var totalPoints = _toolSettings.GenerateGrassCount;
+
+            foreach (var obj in list)
+            {
+                var task = CreateGenerationTaskForObject(obj, currentPoint, totalPoints, grassPerObject);
+                if (task.HasValue)
                 {
-                    Debug.LogWarning($"Layer mismatch for {obj.name}. Check paint mask settings.");
-                    continue;
-                }
-
-                if (obj.TryGetComponent(out MeshFilter mesh))
-                {
-                    var area = CalculateMeshArea(mesh.sharedMesh);
-                    totalArea += area;
-                    meshObjects.Add((mesh, mesh.transform.localToWorldMatrix, mesh.transform.up));
-                }
-                else if (obj.TryGetComponent(out Terrain terrain))
-                {
-                    var data = terrain.terrainData;
-                    totalArea += data.size.x * data.size.z;
-                    terrains.Add((terrain, data, data.size, terrain.transform.position));
+                    var points = await task.Value;
+                    allGrassPoints.AddRange(points);
+                    currentPoint += grassPerObject;
                 }
             }
 
-            var pointsPerUnit = _toolSettings.GenerateGrassCount / totalArea;
-            var allTasks = new List<UniTask<List<GrassData>>>();
-
-            _totalGrassToGenerate = 0;
-            _currentGrassGenerated = 0;
-
-            // Calculate total grass count
-            foreach (var (mesh, _, _) in meshObjects)
-            {
-                var meshArea = CalculateMeshArea(mesh.sharedMesh);
-                _totalGrassToGenerate += Mathf.RoundToInt(meshArea * pointsPerUnit);
-            }
-            foreach (var (_, _, size, _) in terrains)
-            {
-                var terrainArea = size.x * size.z;
-                _totalGrassToGenerate += Mathf.RoundToInt(terrainArea * pointsPerUnit);
-            }
-
-            // Generate for meshes
-            foreach (var (mesh, matrix, up) in meshObjects)
-            {
-                var meshArea = CalculateMeshArea(mesh.sharedMesh);
-                var pointCount = Mathf.RoundToInt(meshArea * pointsPerUnit);
-                allTasks.Add(GeneratePointsForMesh(mesh, matrix, up, pointCount));
-            }
-
-            // Generate for terrains
-            foreach (var (terrain, data, size, position) in terrains)
-            {
-                var terrainArea = size.x * size.z;
-                var pointCount = Mathf.RoundToInt(terrainArea * pointsPerUnit);
-                allTasks.Add(GeneratePointsForTerrain(terrain, data, size, position, pointCount));
-            }
-
-            var results = await UniTask.WhenAll(allTasks);
-            var allGrassData = results.SelectMany(x => x).ToList();
-
-            // Batch processing
-            for (int i = 0; i < allGrassData.Count; i += BatchSize)
-            {
-                var batchSize = Math.Min(BatchSize, allGrassData.Count - i);
-                _grassCompute.GrassDataList.AddRange(allGrassData.GetRange(i, batchSize));
-                await _window.UpdateProgress(i + batchSize, allGrassData.Count, 
-                    $"Generating grass ({i + batchSize}/{allGrassData.Count})");
-            }
+            await CreateGrassFromPoints(allGrassPoints);
+            _grassCompute.Reset();
         }
 
-        private static float CalculateMeshArea(Mesh mesh)
+        private UniTask<List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>>?
+            CreateGenerationTaskForObject(GameObject obj, int startPoint, int totalPoints, int pointsForThisObject)
         {
-            var vertices = mesh.vertices;
-            var triangles = mesh.triangles;
-            var area = 0f;
-
-            for (int i = 0; i < triangles.Length; i += 3)
+            if (obj.TryGetComponent(out MeshFilter mesh))
             {
-                var v1 = vertices[triangles[i]];
-                var v2 = vertices[triangles[i + 1]];
-                var v3 = vertices[triangles[i + 2]];
-                area += Vector3.Cross(v2 - v1, v3 - v1).magnitude * 0.5f;
+                return CalculateValidPointsForMesh(mesh, pointsForThisObject, startPoint, totalPoints);
             }
 
-            return area;
+            if (obj.TryGetComponent(out Terrain terrain))
+            {
+                return CalculateValidPointsForTerrain(terrain, pointsForThisObject, startPoint, totalPoints);
+            }
+
+            LogLayerMismatch(obj);
+            return null;
         }
 
-        private async UniTask<List<GrassData>> GeneratePointsForMesh(
-            MeshFilter mesh, Matrix4x4 localToWorld, Vector3 objectUp, int pointCount)
+        private async UniTask<List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>>
+            CalculateValidPointsForMesh(MeshFilter sourceMesh, int numPoints, int startPoint, int totalPoints)
         {
-            var points = new List<GrassData>();
-            var sharedMesh = mesh.sharedMesh;
+            var localToWorld = sourceMesh.transform.localToWorldMatrix;
+            var objectUp = sourceMesh.transform.up;
+            var sharedMesh = sourceMesh.sharedMesh;
             var vertices = sharedMesh.vertices;
             var normals = sharedMesh.normals;
             var triangles = sharedMesh.triangles;
             var colors = sharedMesh.colors;
-            var hasColors = colors != null && colors.Length > 0;
+            var hasColors = colors is { Length: > 0 };
+            var tempPoints = new List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>();
+            var random = new System.Random(Environment.TickCount);
 
-            var triangleCount = triangles.Length / 3;
-            var safeTriangleCount = triangleCount - 1;
-
-            for (int i = 0; i < pointCount; i++)
+            for (var i = 0; i < numPoints; i++)
             {
-                _currentGrassGenerated++;
-                await _window.UpdateProgress(_currentGrassGenerated, _totalGrassToGenerate,
-                    $"Generating grass ({_currentGrassGenerated}/{_totalGrassToGenerate})");
+                await _window.UpdateProgress(startPoint + i + 1, totalPoints,
+                    $"Calculating grass positions on '{sourceMesh.name}'");
 
-                // 안전한 삼각형 인덱스 선택
-                var triangleIndex = Mathf.Min(
-                    Mathf.FloorToInt((float)_random.NextDouble() * triangleCount),
-                    safeTriangleCount
-                );
-                var triIndex = triangleIndex * 3;
+                var triIndex = random.Next(0, triangles.Length / 3) * 3;
 
-                // 인덱스 범위 체크
-                if (triIndex + 2 >= triangles.Length ||
-                    triangles[triIndex] >= vertices.Length ||
-                    triangles[triIndex + 1] >= vertices.Length ||
-                    triangles[triIndex + 2] >= vertices.Length)
-                {
-                    continue;
-                }
-
-                var baryCoords = GrassEditorHelper.GetRandomBarycentricCoordWithSeed(_random);
-
+                var baryCoords = GrassEditorHelper.GetRandomBarycentricCoordWithSeed(random);
                 var localPos = baryCoords.x * vertices[triangles[triIndex]] +
                                baryCoords.y * vertices[triangles[triIndex + 1]] +
                                baryCoords.z * vertices[triangles[triIndex + 2]];
@@ -163,156 +101,171 @@ namespace Grass.Editor
                              baryCoords.y * normals[triangles[triIndex + 1]] +
                              baryCoords.z * normals[triangles[triIndex + 2]];
 
-                if (hasColors && ShouldSkipDueToVertexColor(colors, triangles, triIndex, baryCoords))
+                var shouldSkip = false;
+                if (hasColors)
+                {
+                    var interpolatedColor = baryCoords.x * colors[triangles[triIndex]] +
+                                            baryCoords.y * colors[triangles[triIndex + 1]] +
+                                            baryCoords.z * colors[triangles[triIndex + 2]];
+
+                    switch (_toolSettings.VertexColorSettings)
+                    {
+                        case GrassToolSettingSo.VertexColorSetting.Red:
+                            if (interpolatedColor.r > 0.5f) shouldSkip = true;
+                            break;
+                        case GrassToolSettingSo.VertexColorSetting.Green:
+                            if (interpolatedColor.g > 0.5f) shouldSkip = true;
+                            break;
+                        case GrassToolSettingSo.VertexColorSetting.Blue:
+                            if (interpolatedColor.b > 0.5f) shouldSkip = true;
+                            break;
+                    }
+                }
+
+                if (shouldSkip)
                     continue;
 
                 var worldPos = localToWorld.MultiplyPoint3x4(localPos);
                 var worldNormal = localToWorld.MultiplyVector(normal).normalized;
 
-                if (IsValidGrassPoint(worldPos, worldNormal, objectUp))
+                var normalDot = Mathf.Abs(Vector3.Dot(worldNormal, objectUp));
+                if (normalDot >= 1 - _toolSettings.NormalLimit)
                 {
-                    points.Add(new GrassData
+                    if (!Physics.CheckSphere(worldPos, 0.1f, _toolSettings.PaintBlockMask))
                     {
-                        position = worldPos,
-                        normal = worldNormal,
-                        color = GetRandomColor(),
-                        widthHeight = new Vector2(_toolSettings.GrassWidth, _toolSettings.GrassHeight)
-                    });
+                        var widthHeight = new Vector2(_toolSettings.GrassWidth, _toolSettings.GrassHeight);
+                        tempPoints.Add((worldPos, worldNormal, widthHeight));
+                    }
                 }
             }
 
-            return points;
+            return tempPoints;
         }
 
-        private async UniTask<List<GrassData>> GeneratePointsForTerrain(
-            Terrain terrain, TerrainData data, Vector3 size, Vector3 position, int pointCount)
+        private async UniTask<List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>>
+            CalculateValidPointsForTerrain(Terrain terrain, int numPoints, int startPoint, int totalPoints)
         {
-            var points = new List<GrassData>();
-            var layers = data.terrainLayers;
-            var splatMapWidth = data.alphamapWidth;
-            var splatMapHeight = data.alphamapHeight;
-            var splatmapData = data.GetAlphamaps(0, 0, splatMapWidth, splatMapHeight);
+            var terrainData = terrain.terrainData;
+            var terrainSize = terrainData.size;
+            var tempPoints = new List<(Vector3 position, Vector3 normal, Vector2 widthHeight)>();
+            var random = new System.Random(Environment.TickCount);
 
-            for (int i = 0; i < pointCount; i++)
+            var layerCount = terrainData.terrainLayers.Length;
+            var splatMapWidth = terrainData.alphamapWidth;
+            var splatMapHeight = terrainData.alphamapHeight;
+            var splatmapData = terrainData.GetAlphamaps(0, 0, splatMapWidth, splatMapHeight);
+
+            for (var i = 0; i < numPoints; i++)
             {
-                _currentGrassGenerated++;
-                await _window.UpdateProgress(_currentGrassGenerated, _totalGrassToGenerate,
-                    $"Generating grass ({_currentGrassGenerated}/{_totalGrassToGenerate})");
+                await _window.UpdateProgress(startPoint + i + 1, totalPoints,
+                    $"Calculating grass positions on '{terrain.name}'");
 
                 var randomPoint = new Vector3(
-                    (float)(_random.NextDouble() * size.x),
+                    (float)(random.NextDouble() * terrainSize.x),
                     0,
-                    (float)(_random.NextDouble() * size.z)
+                    (float)(random.NextDouble() * terrainSize.z)
                 );
 
                 var worldPoint = terrain.transform.TransformPoint(randomPoint);
                 worldPoint.y = terrain.SampleHeight(worldPoint);
 
-                if (!IsValidTerrainPoint(worldPoint, randomPoint, size, splatmapData,
-                        splatMapWidth, splatMapHeight, layers.Length))
+                if (Physics.CheckSphere(worldPoint, 0.1f, _toolSettings.PaintBlockMask))
                     continue;
 
-                var normal = data.GetInterpolatedNormal(
-                    randomPoint.x / size.x,
-                    randomPoint.z / size.z
-                );
+                var normal = terrain.terrainData.GetInterpolatedNormal(
+                    randomPoint.x / terrainSize.x,
+                    randomPoint.z / terrainSize.z);
 
-                points.Add(new GrassData
+                if (normal.y > 1 - _toolSettings.NormalLimit || normal.y < 1 + _toolSettings.NormalLimit)
                 {
-                    position = worldPoint,
-                    normal = normal,
-                    color = GetRandomColor(),
-                    widthHeight = new Vector2(
-                        _toolSettings.GrassWidth,
-                        _toolSettings.GrassHeight * GetHeightFade(splatmapData, randomPoint, size,
-                            splatMapWidth, splatMapHeight, layers.Length)
-                    )
-                });
+                    var splatX = Mathf.FloorToInt((randomPoint.x / terrainSize.x) * (splatMapWidth - 1));
+                    var splatZ = Mathf.FloorToInt((randomPoint.z / terrainSize.z) * (splatMapHeight - 1));
+
+                    var totalDensity = 0f;
+                    var totalWeight = 0f;
+                    var heightFade = 0f;
+                    var shouldSkip = true;
+
+                    for (var j = 0; j < layerCount; j++)
+                    {
+                        if (_toolSettings.LayerBlocking[j] <= 0f || _toolSettings.HeightFading[j] <= 0f)
+                            continue;
+
+                        var layerStrength = splatmapData[splatZ, splatX, j];
+                        shouldSkip = false;
+                        totalDensity += _toolSettings.LayerBlocking[j] * layerStrength;
+                        totalWeight += layerStrength;
+                        heightFade += layerStrength * _toolSettings.HeightFading[j];
+                    }
+
+                    if (shouldSkip)
+                        continue;
+
+                    var averageDensity = totalWeight > 0 ? totalDensity / totalWeight : 0;
+                    heightFade = totalWeight > 0 ? heightFade / totalWeight : 1f;
+
+                    if ((float)random.NextDouble() <= averageDensity)
+                    {
+                        var widthHeight = new Vector2(
+                            _toolSettings.GrassWidth,
+                            _toolSettings.GrassHeight * heightFade
+                        );
+                        tempPoints.Add((worldPoint, normal, widthHeight));
+                    }
+                }
             }
 
-            return points;
+            return tempPoints;
         }
 
-        private bool ShouldSkipDueToVertexColor(Color[] colors, int[] triangles, int triIndex, Vector3 baryCoords)
+        private async UniTask CreateGrassFromPoints(
+            List<(Vector3 position, Vector3 normal, Vector2 widthHeight)> points)
         {
-            var interpolatedColor = baryCoords.x * colors[triangles[triIndex]] +
-                                    baryCoords.y * colors[triangles[triIndex + 1]] +
-                                    baryCoords.z * colors[triangles[triIndex + 2]];
+            var newGrassData = new List<GrassData>(points.Count);
 
-            return _toolSettings.VertexColorSettings switch
+            for (var i = 0; i < points.Count; i++)
             {
-                GrassToolSettingSo.VertexColorSetting.Red => interpolatedColor.r > 0.5f,
-                GrassToolSettingSo.VertexColorSetting.Green => interpolatedColor.g > 0.5f,
-                GrassToolSettingSo.VertexColorSetting.Blue => interpolatedColor.b > 0.5f,
-                _ => false
+                await UpdateGenerationProgress(i, points.Count);
+                newGrassData.Add(CreateGrassData(points[i]));
+            }
+
+            _grassCompute.GrassDataList.AddRange(newGrassData);
+        }
+
+        private GrassData CreateGrassData((Vector3 position, Vector3 normal, Vector2 widthHeight) point)
+        {
+            return new GrassData
+            {
+                position = point.position,
+                normal = point.normal,
+                color = GetRandomColor(),
+                widthHeight = point.widthHeight
             };
         }
 
-        private bool IsValidGrassPoint(Vector3 worldPos, Vector3 worldNormal, Vector3 objectUp)
+        private async UniTask UpdateGenerationProgress(int current, int total)
         {
-            if (Physics.CheckSphere(worldPos, 0.1f, _toolSettings.PaintBlockMask))
-                return false;
-
-            var normalDot = Mathf.Abs(Vector3.Dot(worldNormal, objectUp));
-            return normalDot >= 1 - _toolSettings.NormalLimit;
+            await _window.UpdateProgress(
+                current + 1,
+                total,
+                $"Generating grass data ({current + 1:N0}/{total:N0} points)"
+            );
         }
 
-        private bool IsValidTerrainPoint(Vector3 worldPoint, Vector3 randomPoint,
-                                         Vector3 size, float[,,] splatmapData, int width, int height, int layerCount)
+        private void LogLayerMismatch(GameObject obj)
         {
-            if (Physics.CheckSphere(worldPoint, 0.1f, _toolSettings.PaintBlockMask))
-                return false;
-
-            var splatX = Mathf.FloorToInt((randomPoint.x / size.x) * (width - 1));
-            var splatZ = Mathf.FloorToInt((randomPoint.z / size.z) * (height - 1));
-
-            var totalDensity = 0f;
-            var totalWeight = 0f;
-            var shouldSkip = true;
-
-            for (var j = 0; j < layerCount; j++)
-            {
-                if (_toolSettings.LayerBlocking[j] <= 0f || _toolSettings.HeightFading[j] <= 0f)
-                    continue;
-
-                var layerStrength = splatmapData[splatZ, splatX, j];
-                shouldSkip = false;
-                totalDensity += _toolSettings.LayerBlocking[j] * layerStrength;
-                totalWeight += layerStrength;
-            }
-
-            if (shouldSkip || totalWeight <= 0)
-                return false;
-
-            var averageDensity = totalDensity / totalWeight;
-            return (float)_random.NextDouble() <= averageDensity;
-        }
-
-        private float GetHeightFade(float[,,] splatmapData, Vector3 point, Vector3 size,
-                                    int width, int height, int layerCount)
-        {
-            var splatX = Mathf.FloorToInt((point.x / size.x) * (width - 1));
-            var splatZ = Mathf.FloorToInt((point.z / size.z) * (height - 1));
-            var totalFade = 0f;
-            var totalWeight = 0f;
-
-            for (var j = 0; j < layerCount; j++)
-            {
-                var layerStrength = splatmapData[splatZ, splatX, j];
-                totalFade += layerStrength * _toolSettings.HeightFading[j];
-                totalWeight += layerStrength;
-            }
-
-            return totalWeight > 0 ? totalFade / totalWeight : 1f;
+            var expectedLayers = string.Join(", ", _toolSettings.GetPaintMaskLayerNames());
+            Debug.LogWarning(
+                $"'{obj.name}' layer mismatch. Expected: '{expectedLayers}', Current: {LayerMask.LayerToName(obj.layer)}");
         }
 
         private Vector3 GetRandomColor()
         {
             var baseColor = _toolSettings.BrushColor;
             var newRandomCol = new Color(
-                baseColor.r + (float)_random.NextDouble() * _toolSettings.RangeR,
-                baseColor.g + (float)_random.NextDouble() * _toolSettings.RangeG,
-                baseColor.b + (float)_random.NextDouble() * _toolSettings.RangeB,
+                baseColor.r + Random.Range(0, _toolSettings.RangeR),
+                baseColor.g + Random.Range(0, _toolSettings.RangeG),
+                baseColor.b + Random.Range(0, _toolSettings.RangeB),
                 1
             );
             return new Vector3(newRandomCol.r, newRandomCol.g, newRandomCol.b);

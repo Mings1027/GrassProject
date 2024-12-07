@@ -57,7 +57,7 @@ namespace Grass.Editor
             EditorGUI.BeginChangeCheck();
 
             var roundedValue = (float)System.Math.Round(_globalSeasonValueProp.floatValue, 2);
-            float newValue = EditorGUILayout.FloatField("Season Value", roundedValue);
+            var newValue = EditorGUILayout.FloatField("Season Value", roundedValue);
 
             EditorGUILayout.BeginVertical(GUILayout.Height(20));
             newValue = GUILayout.HorizontalSlider(newValue, min, max);
@@ -79,7 +79,7 @@ namespace Grass.Editor
             {
                 if (!volume) continue;
 
-                SerializedObject serializedVolume = new SerializedObject(volume);
+                var serializedVolume = new SerializedObject(volume);
                 var showGizmos = serializedVolume.FindProperty("showGizmos");
                 if (!showGizmos.boolValue) return false;
             }
@@ -94,7 +94,7 @@ namespace Grass.Editor
             {
                 if (!volume) continue;
 
-                SerializedObject serializedVolume = new SerializedObject(volume);
+                var serializedVolume = new SerializedObject(volume);
                 var showGizmos = serializedVolume.FindProperty("showGizmos");
                 showGizmos.boolValue = state;
                 serializedVolume.ApplyModifiedProperties();

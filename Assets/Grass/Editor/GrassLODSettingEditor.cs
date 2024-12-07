@@ -5,9 +5,9 @@ namespace Grass.Editor
 {
     public static class GrassLODSettingEditor
     {
-        private static readonly Color LowQualityColor = new Color(0.3f, 0.7f, 0.3f);
-        private static readonly Color MediumQualityColor = new Color(0.7f, 0.7f, 0.3f);
-        private static readonly Color HighQualityColor = new Color(0.7f, 0.3f, 0.3f);
+        private static readonly Color LowQualityColor = new(0.3f, 0.7f, 0.3f);
+        private static readonly Color MediumQualityColor = new(0.7f, 0.7f, 0.3f);
+        private static readonly Color HighQualityColor = new(0.7f, 0.3f, 0.3f);
 
         private struct QualityBarData
         {
@@ -37,7 +37,7 @@ namespace Grass.Editor
             }
         }
 
-        public static bool DrawLODSettingsPanel(GrassSettingSO settings)
+        public static void DrawLODSettingsPanel(GrassSettingSO settings)
         {
             var rect = GUILayoutUtility.GetRect(0, 50, GUILayout.ExpandWidth(true));
             rect.y += 5;
@@ -48,7 +48,7 @@ namespace Grass.Editor
 
             EditorGUILayout.Space(5);
 
-            return DrawDistanceSliders(settings);
+            DrawDistanceSliders(settings);
         }
 
         private static void DrawQualityBar(Rect position, QualityBarData barData)
@@ -118,56 +118,18 @@ namespace Grass.Editor
                 "High", style);
         }
 
-        private static bool DrawDistanceSliders(GrassSettingSO settings)
+        private static void DrawDistanceSliders(GrassSettingSO settings)
         {
-            EditorGUI.BeginChangeCheck();
+            settings.minFadeDistance = EditorGUILayout.Slider("Min Fade Distance", settings.minFadeDistance,
+                0f, settings.maxFadeDistance - 1);
+            settings.maxFadeDistance = EditorGUILayout.Slider("Max Fade Distance", settings.maxFadeDistance,
+                settings.minFadeDistance + 1, 300f);
 
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Min Fade Distance", GUILayout.Width(150));
-            var minFade = GUILayout.HorizontalSlider(settings.minFadeDistance, 0f, settings.maxFadeDistance);
-            var minFadeFormatted = Mathf.Round(minFade * 10) / 10f;
-            minFade = EditorGUILayout.FloatField(minFadeFormatted, GUILayout.Width(50));
-            EditorGUILayout.EndHorizontal();
-
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Max Fade Distance", GUILayout.Width(150));
-            var maxFade = GUILayout.HorizontalSlider(settings.maxFadeDistance, minFade, 300f);
-            var maxFadeFormatted = Mathf.Round(maxFade * 10) / 10f;
-            maxFade = EditorGUILayout.FloatField(maxFadeFormatted, GUILayout.Width(50));
-            EditorGUILayout.EndHorizontal();
-
-            EditorGUILayout.Space(5);
-
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Low Quality Distance", GUILayout.Width(150));
-            var lowQuality =
-                GUILayout.HorizontalSlider(settings.lowQualityDistance, 0f, settings.mediumQualityDistance);
-            var lowQualityFormatted = Mathf.Round(lowQuality * 100) / 100f;
-            lowQuality = EditorGUILayout.FloatField(lowQualityFormatted, GUILayout.Width(50));
-            EditorGUILayout.EndHorizontal();
-
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Medium Quality Distance", GUILayout.Width(150));
-            var mediumQuality = GUILayout.HorizontalSlider(settings.mediumQualityDistance, lowQuality, 1f);
-            var mediumQualityFormatted = Mathf.Round(mediumQuality * 100) / 100f;
-            mediumQuality = EditorGUILayout.FloatField(mediumQualityFormatted, GUILayout.Width(50));
-            EditorGUILayout.EndHorizontal();
-            EditorGUILayout.EndVertical();
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                settings.minFadeDistance = minFade;
-                settings.maxFadeDistance = maxFade;
-                settings.lowQualityDistance = lowQuality;
-                settings.mediumQualityDistance = mediumQuality;
-
-                EditorUtility.SetDirty(settings);
-                return true;
-            }
-
-            return false;
+            settings.lowQualityDistance = EditorGUILayout.Slider("Low Quality Distance", settings.lowQualityDistance,
+                0.01f, settings.mediumQualityDistance - 0.01f);
+            settings.mediumQualityDistance = EditorGUILayout.Slider("Medium Quality Distance",
+                settings.mediumQualityDistance,
+                settings.lowQualityDistance + 0.01f, 1f);
         }
     }
 }

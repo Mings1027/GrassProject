@@ -1,14 +1,10 @@
 using Grass.GrassScripts;
-using UnityEditor;
 using UnityEngine;
 
 [ExecuteInEditMode]
 public class GrassSeasonZone : MonoBehaviour
 {
-    [SerializeField] private bool showGizmos = true;
-
-    [Header("Season Settings")] [SerializeField]
-    private bool overrideGlobalSettings;
+    [SerializeField] private bool overrideGlobalSettings;
     [SerializeField] private float seasonValue;
     [SerializeField] private SeasonRange seasonRange = new();
     [SerializeField] private SeasonSettings winterSettings = new();
@@ -16,28 +12,32 @@ public class GrassSeasonZone : MonoBehaviour
     [SerializeField] private SeasonSettings summerSettings = new();
     [SerializeField] private SeasonSettings autumnSettings = new();
 
-    private ZoneData zoneData;
-    private Color zoneColor;
-    private Vector3 lastPosition;
-    private Vector3 lastScale;
+    private ZoneData _zoneData;
+    private Color _zoneColor;
+    private Vector3 _lastPosition;
+    private Vector3 _lastScale;
 
-    public bool OverrideGlobalSettings => overrideGlobalSettings;
     public float MinRange => overrideGlobalSettings ? seasonRange.GetRange().min : 0f;
     public float MaxRange => overrideGlobalSettings ? seasonRange.GetRange().max : 4f;
 
+#if UNITY_EDITOR
+    [SerializeField] private bool showGizmos = true;
+    public bool OverrideGlobalSettings => overrideGlobalSettings;
+#endif
+    
     private void OnEnable()
     {
-        lastPosition = transform.position;
-        lastScale = transform.localScale;
+        _lastPosition = Vector3.zero;
+        _lastScale = Vector3.zero;
         UpdateZoneState();
     }
 
-    private void Update()
+    public void UpdateZone()
     {
-        if (transform.position != lastPosition || transform.localScale != lastScale)
+        if (transform.position != _lastPosition || transform.localScale != _lastScale)
         {
-            lastPosition = transform.position;
-            lastScale = transform.localScale;
+            _lastPosition = transform.position;
+            _lastScale = transform.localScale;
             UpdateZoneState();
         }
     }
@@ -60,7 +60,7 @@ public class GrassSeasonZone : MonoBehaviour
     private void UpdateZoneState()
     {
         var state = CalculateZoneState();
-        zoneData = new ZoneData
+        _zoneData = new ZoneData
         {
             position = state.position,
             scale = state.scale,
@@ -69,8 +69,8 @@ public class GrassSeasonZone : MonoBehaviour
             height = state.height,
             isActive = gameObject.activeInHierarchy
         };
-        zoneColor = gameObject.activeInHierarchy ? state.color : Color.white;
-        zoneColor.a = 1;
+        _zoneColor = gameObject.activeInHierarchy ? state.color : Color.white;
+        _zoneColor.a = 1;
 
         GrassEventManager.TriggerEvent(GrassEvent.UpdateShaderData);
     }
@@ -82,9 +82,9 @@ public class GrassSeasonZone : MonoBehaviour
         if (!overrideGlobalSettings && grassSetting == null)
             return (transform.position, transform.localScale, Color.white, 1f, 1f);
 
-        float normalizedValue = seasonValue % 4f;
-        int seasonIndex = Mathf.FloorToInt(normalizedValue);
-        float t = normalizedValue - seasonIndex;
+        var normalizedValue = seasonValue % 4f;
+        var seasonIndex = Mathf.FloorToInt(normalizedValue);
+        var t = normalizedValue - seasonIndex;
 
         var settings = overrideGlobalSettings
             ? new[] { winterSettings, springSettings, summerSettings, autumnSettings, winterSettings }
@@ -107,8 +107,8 @@ public class GrassSeasonZone : MonoBehaviour
         );
     }
 
-    public ZoneData GetZoneData() => zoneData;
-    public Color GetZoneColor() => zoneColor;
+    public ZoneData GetZoneData() => _zoneData;
+    public Color GetZoneColor() => _zoneColor;
 
     public bool ContainsPosition(Vector3 position)
     {

@@ -39,6 +39,8 @@ namespace Grass.GrassScripts
         public static readonly int MaxWidth = Shader.PropertyToID("_MaxWidth");
 
         public static readonly int CameraPositionWs = Shader.PropertyToID("_CameraPositionWS");
+        public static readonly int CameraForward = Shader.PropertyToID("_CameraForward");
+        public static readonly int CameraFOV = Shader.PropertyToID("_CameraFOV");
 
         public static readonly int TopTint = Shader.PropertyToID("_TopTint");
         public static readonly int BottomTint = Shader.PropertyToID("_BottomTint");

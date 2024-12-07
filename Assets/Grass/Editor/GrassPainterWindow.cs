@@ -43,7 +43,6 @@ namespace Grass.Editor
         // options
         public GrassEditorTab GrassEditorTab
         {
-            get => _grassEditorTab;
             set => _grassEditorTab = value;
         }
         private GrassEditorTab _grassEditorTab;
@@ -53,19 +52,18 @@ namespace Grass.Editor
         private GenerateTab _selectedGenerateOption;
 
         private Ray _mousePointRay;
-
         private Vector3 _mousePos;
+        private Vector3 _cachedPos;
+        private Bounds _grassBounds;
 
         [SerializeField] private GrassComputeScript grassCompute;
 
-        private Vector3 _cachedPos;
-
-        private Bounds _grassBounds;
+        private GrassSeasonManager _seasonManager;
 
         private bool _isInit;
         private bool _isProcessing;
         private CancellationTokenSource _cts;
-        private ObjectProgress _objectProgress = new();
+        private readonly ObjectProgress _objectProgress = new();
 
         private bool _isMousePressed;
         private bool _isPainting;
@@ -116,7 +114,12 @@ namespace Grass.Editor
             grassCompute = (GrassComputeScript)EditorGUILayout.ObjectField(
                 "Grass Compute Object", grassCompute, typeof(GrassComputeScript), true);
 
-            if (GUILayout.Button("Manual Update", GUILayout.Height(45)))
+            var manualUpdate = new GUIContent
+            {
+                text = "Manual Update",
+                tooltip = "Update all grass data. Performance may be slower with large amounts of grass data."
+            };
+            if (GUILayout.Button(manualUpdate, GUILayout.Height(40)))
             {
                 Init();
             }
@@ -142,6 +145,13 @@ namespace Grass.Editor
                 _enableGrass = grassCompute.enabled;
             }
 
+            if (GUILayout.Button("Update All Shader Data", GUILayout.Height(30)))
+            {
+                InitSeasonManager();
+                UpdateSeasonZones();
+                grassCompute.SetShaderData();
+            }
+
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
 
             DrawBasicControls();
@@ -154,9 +164,6 @@ namespace Grass.Editor
             DrawControlPanels();
 
             EditorGUILayout.EndScrollView();
-
-            EditorUtility.SetDirty(toolSettings);
-            EditorUtility.SetDirty(grassCompute.GrassSetting);
         }
 
         private void OnEnable()
@@ -355,14 +362,19 @@ namespace Grass.Editor
         private void Init()
         {
             UpdateGrassData();
-            UpdateSeasonEffects();
+            InitSeasonManager();
+            UpdateSeasonZones();
             InitPainters();
         }
 
-        private void UpdateSeasonEffects()
+        private void InitSeasonManager()
         {
-            var seasonManager = FindAnyObjectByType<GrassSeasonManager>();
-            if (seasonManager != null) seasonManager.UpdateSeasonZones();
+            if (_seasonManager == null) _seasonManager = FindAnyObjectByType<GrassSeasonManager>();
+        }
+
+        private void UpdateSeasonZones()
+        {
+            if (_seasonManager != null) _seasonManager.UpdateSeasonZones();
         }
 
         private void InitPainters()
@@ -968,10 +980,6 @@ namespace Grass.Editor
         private void ShowMainSettingsPanel()
         {
             var grassSetting = grassCompute.GrassSetting;
-            if (GUILayout.Button("Set All Shader Data", GUILayout.Height(30)))
-            {
-                grassCompute.SetShaderData();
-            }
 
             GrassEditorHelper.DrawFoldoutSection("Global Season Settings", () => DrawSeasonSettings(grassSetting));
 
@@ -1045,7 +1053,9 @@ namespace Grass.Editor
             });
             GrassEditorHelper.DrawFoldoutSection("LOD Settings", () =>
             {
-                if (GrassLODSettingEditor.DrawLODSettingsPanel(grassSetting))
+                EditorGUI.BeginChangeCheck();
+                GrassLODSettingEditor.DrawLODSettingsPanel(grassSetting);
+                if (EditorGUI.EndChangeCheck())
                 {
                     grassCompute.SetLODSetting();
                 }
@@ -1053,8 +1063,9 @@ namespace Grass.Editor
             GrassEditorHelper.DrawFoldoutSection("Culling Settings", () =>
             {
                 EditorGUILayout.HelpBox(
-                    "Optimizes rendering by dividing space into sections.\n" +
-                    "Only grass within the camera's view frustum will be rendered.",
+                    "Divides the world into grid cells for grass culling.\n" +
+                    "Smaller cells = More precise culling area\n" +
+                    "Larger cells = Larger culling area",
                     MessageType.Info
                 );
 
@@ -1070,8 +1081,8 @@ namespace Grass.Editor
                     grassSetting.drawBounds = newState;
                 }
 
-                grassSetting.cullingTreeDepth =
-                    EditorGUILayout.IntSlider("Tree Depth", grassSetting.cullingTreeDepth, 1, 10);
+                grassSetting.cullingCellSize =
+                    EditorGUILayout.IntSlider("Cell Size", grassSetting.cullingCellSize, 1, 10);
             });
             GrassEditorHelper.DrawFoldoutSection("Other Settings", () =>
             {
@@ -1090,8 +1101,8 @@ namespace Grass.Editor
 
         private void DrawSeasonSettings(GrassSettingSO grassSetting)
         {
-            var seasonManager = FindAnyObjectByType<GrassSeasonManager>();
-            if (seasonManager == null)
+            InitSeasonManager();
+            if (_seasonManager == null)
             {
                 EditorGUILayout.HelpBox("No GrassSeasonManager found in scene. Season effects are disabled.",
                     MessageType.Info);
@@ -1111,17 +1122,16 @@ namespace Grass.Editor
             if (EditorGUI.EndChangeCheck())
             {
                 serializedSettings.ApplyModifiedProperties();
-                EditorUtility.SetDirty(grassSetting);
-                seasonManager.UpdateSeasonZones();
+                _seasonManager.UpdateSeasonZones();
             }
 
             EditorGUILayout.Space(10);
 
             var rect = GUILayoutUtility.GetRect(GUIContent.none, EditorStyles.helpBox, GUILayout.Height(100));
-            GrassEditorHelper.DrawSeasonSettingsTable(rect, grassSetting, seasonManager);
+            GrassEditorHelper.DrawSeasonSettingsTable(rect, grassSetting, _seasonManager);
         }
 
-        private void CreateSeasonController()
+        private static void CreateSeasonController()
         {
             // Create Season Controller
             var controllerObject = new GameObject("Grass Season Manager");
@@ -1140,20 +1150,11 @@ namespace Grass.Editor
             Selection.activeGameObject = controllerObject;
         }
 
-        private void DrawSliderRow(string label, ref float value, float min, float max)
+        private static void DrawSliderRow(string label, ref float value, float min, float max)
         {
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField(label, GUILayout.Width(100));
             value = EditorGUILayout.Slider(value, min, max);
-            EditorGUILayout.EndHorizontal();
-        }
-
-        private void DrawFadeDistanceSlider(string label, ref float value, float min, float max)
-        {
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField(label, GUILayout.Width(120));
-            value = EditorGUILayout.Slider(value, min, max);
-            GUILayout.Label($"{min} / {max}", GUILayout.Width(80));
             EditorGUILayout.EndHorizontal();
         }
 
@@ -1168,7 +1169,6 @@ namespace Grass.Editor
 
             InitSpatialGrid();
 
-            EditorUtility.SetDirty(grassObject);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }
@@ -1378,7 +1378,8 @@ namespace Grass.Editor
             _isProcessing = true;
             _cts = new CancellationTokenSource();
 
-            var removalOperation = new GrassRemovalOperation(this, grassCompute, toolSettings.PaintMask.value);
+            var removalOperation =
+                new GrassRemovalOperation(this, grassCompute, _spatialGrid, toolSettings.PaintMask.value);
             await removalOperation.RemoveGrassFromObjects(selectedObjects);
 
             var generator = new GrassGenerationOperation(this, grassCompute, toolSettings);
@@ -1395,7 +1396,8 @@ namespace Grass.Editor
             _isProcessing = true;
             _cts = new CancellationTokenSource();
 
-            var removalOperation = new GrassRemovalOperation(this, grassCompute, toolSettings.PaintMask.value);
+            var removalOperation =
+                new GrassRemovalOperation(this, grassCompute, _spatialGrid, toolSettings.PaintMask.value);
             await removalOperation.RemoveGrassFromObjects(selectedObjects);
 
             Init();

@@ -1,19 +1,19 @@
 using System.Collections.Generic;
-using System.Linq;
 using Grass.GrassScripts;
 using UnityEngine;
 
 [ExecuteInEditMode]
 public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
 {
-    private const int MAX_ZONES = 9;
-    private GrassComputeScript grassComputeScript;
+    private const int MaxZones = 9;
+    private GrassComputeScript _grassComputeScript;
+    
     [SerializeField] private List<GrassSeasonZone> seasonZones = new();
     [SerializeField] private float globalSeasonValue;
 
     private void OnEnable()
     {
-        grassComputeScript = FindAnyObjectByType<GrassComputeScript>();
+        _grassComputeScript = FindAnyObjectByType<GrassComputeScript>();
 
         GrassEventManager.AddEvent(GrassEvent.UpdateShaderData, UpdateShaderData);
         GrassFuncManager.AddEvent<Vector3, Color>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
@@ -27,15 +27,25 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
         GrassFuncManager.RemoveEvent<Vector3, Color>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
     }
 
+    private void Update()
+    {
+        for (int i = 0; i < seasonZones.Count; i++)
+        {
+            seasonZones[i].UpdateZone();
+        }
+    }
+
     public float GlobalMinRange()
     {
-        var grassSetting = grassComputeScript.GrassSetting;
+        if (_grassComputeScript == null) return 0;
+        var grassSetting = _grassComputeScript.GrassSetting;
         return grassSetting != null ? grassSetting.seasonRange.GetRange().min : 0f;
     }
 
     public float GlobalMaxRange()
     {
-        var grassSetting = grassComputeScript.GrassSetting;
+        if (_grassComputeScript == null) return 0;
+        var grassSetting = _grassComputeScript.GrassSetting;
         return grassSetting != null ? grassSetting.seasonRange.GetRange().max : 4f;
     }
 
@@ -43,7 +53,7 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
     {
         seasonZones.Clear();
         var foundZones = GetComponentsInChildren<GrassSeasonZone>();
-        for (int i = 0; i < Mathf.Min(foundZones.Length, MAX_ZONES); i++)
+        for (int i = 0; i < Mathf.Min(foundZones.Length, MaxZones); i++)
         {
             if (foundZones[i] != null)
             {
@@ -54,7 +64,7 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
         UpdateAllZones();
     }
 
-    private void UpdateAllZones()
+    public void UpdateAllZones()
     {
         var grassSettings = GrassFuncManager.TriggerEvent<GrassSettingSO>(GrassEvent.GetGrassSetting);
         var (min, max) = grassSettings.seasonRange.GetRange();

@@ -84,13 +84,15 @@ public class GrassSettingSO : ScriptableObject
     public SeasonSettings summerSettings = new();
     public SeasonSettings autumnSettings = new();
 
+#if UNITY_EDITOR
     [Header("LOD")] public bool drawBounds;
-    public int cullingTreeDepth = 1;
+#endif
+    public int cullingCellSize = 1;
 
     [Header("LOD Quality Settings")] public float minFadeDistance = 40;
     public float maxFadeDistance = 125;
-    [Range(0, 1)] public float lowQualityDistance = 0.3f;
-    [Range(0, 1)] public float mediumQualityDistance = 0.7f;
+    [Range(0f, 1f)] public float lowQualityDistance = 0.3f;
+    [Range(0f, 1f)] public float mediumQualityDistance = 0.7f;
 
     [Header("Particles")] public GameObject cuttingParticles;
 
