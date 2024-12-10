@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Grass.GrassScripts;
 using UnityEngine;
@@ -7,7 +8,6 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
 {
     private const int MaxZones = 9;
     private GrassComputeScript _grassComputeScript;
-    
     [SerializeField] private List<GrassSeasonZone> seasonZones = new();
     [SerializeField] private float globalSeasonValue;
 
@@ -19,6 +19,11 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
         GrassFuncManager.AddEvent<Vector3, Color>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
         UpdateSeasonZones();
         SetGlobalSeasonValue(globalSeasonValue);
+
+        for (int i = 0; i < seasonZones.Count; i++)
+        {
+            seasonZones[i].Init(_grassComputeScript.GrassSetting);
+        }
     }
 
     private void OnDisable()
@@ -37,14 +42,12 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
 
     public float GlobalMinRange()
     {
-        if (_grassComputeScript == null) return 0;
         var grassSetting = _grassComputeScript.GrassSetting;
         return grassSetting != null ? grassSetting.seasonRange.GetRange().min : 0f;
     }
 
     public float GlobalMaxRange()
     {
-        if (_grassComputeScript == null) return 0;
         var grassSetting = _grassComputeScript.GrassSetting;
         return grassSetting != null ? grassSetting.seasonRange.GetRange().max : 4f;
     }
@@ -66,7 +69,8 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
 
     public void UpdateAllZones()
     {
-        var grassSettings = GrassFuncManager.TriggerEvent<GrassSettingSO>(GrassEvent.GetGrassSetting);
+        var grassSettings = _grassComputeScript.GrassSetting;
+        if (grassSettings == null) return;
         var (min, max) = grassSettings.seasonRange.GetRange();
 
         foreach (var zone in seasonZones)
@@ -95,8 +99,7 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
             widthHeights[i] = new Vector4(data.width, data.height, 0, 0);
         }
 
-        GrassEventManager.TriggerEvent(GrassEvent.UpdateSeasonData, positions, scales, colors, widthHeights,
-            seasonZones.Count);
+        _grassComputeScript.UpdateSeasonData(positions, scales, colors, widthHeights, seasonZones.Count);
     }
 
     private Color TryGetGrassColor(Vector3 position)

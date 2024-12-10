@@ -117,6 +117,7 @@ namespace Grass.Editor
                         var scrollPos = window.ScrollPos;
                         scrollPos.y = 0;
                         window.ScrollPos = scrollPos;
+                        SceneView.RepaintAll();
                     };
                 }
             }

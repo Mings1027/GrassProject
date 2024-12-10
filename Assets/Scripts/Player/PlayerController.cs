@@ -19,7 +19,6 @@ public class PlayerController : MonoBehaviour
         _obstacleDetector = GetComponent<ObstacleCheck>();
         _rigid = GetComponent<Rigidbody>();
         _rigid.freezeRotation = true;
-
         _cameraTransform = Camera.main.transform;
     }
 

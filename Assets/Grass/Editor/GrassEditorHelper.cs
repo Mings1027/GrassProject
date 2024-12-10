@@ -554,7 +554,7 @@ namespace Grass.Editor
             var contentStyle = new GUIStyle(EditorStyles.helpBox)
             {
                 padding = new RectOffset(15, 15, 10, 10),
-                margin = new RectOffset(0, 0, 0, 10)
+                margin = new RectOffset(0, 0, 0, 0)
             };
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);

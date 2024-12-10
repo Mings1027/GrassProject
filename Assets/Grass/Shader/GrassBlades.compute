@@ -2,6 +2,8 @@
 
 #define TWO_PI      6.28318530717958647693
 #define MAX_ZONES 9
+#define GRASS_SEGMENTS 3
+#define GRASS_NUM_VERTICES_PER_BLADE (GRASS_SEGMENTS * 2)+ 1
 
 struct SourceVertex
 {
@@ -34,13 +36,10 @@ struct IndirectArgs
 };
 
 StructuredBuffer<SourceVertex> _SourceVertices;
+StructuredBuffer<int> _VisibleIDBuffer;
 StructuredBuffer<float> _CutBuffer;
 AppendStructuredBuffer<DrawTriangle> _DrawTriangles;
 RWStructuredBuffer<IndirectArgs> _IndirectArgsBuffer;
-
-#define GRASS_BLADES 10
-#define GRASS_SEGMENTS 3
-#define GRASS_NUM_VERTICES_PER_BLADE (GRASS_SEGMENTS * 2)+ 1
 
 int _NumSourceVertices;
 float _Time;
@@ -61,45 +60,19 @@ float _InteractorStrength;
 uniform float4 _InteractorData[100];
 uniform float _InteractorsLength;
 uniform float3 _CameraPositionWS;
-
 float4 _ZonePositions[MAX_ZONES];
 float4 _ZoneScales[MAX_ZONES];
 float4 _ZoneColors[MAX_ZONES];
 float4 _ZoneWidthHeights[MAX_ZONES];
 int _ZoneCount;
 
-float _LowQualityDistance;
-float _MediumQualityDistance;
-
-float3 _CameraForward;
-float _CameraFOV;
-
 float grassWidth, grassHeight;
 
-bool IsInCameraView(float3 position)
-{
-    float3 toVertex = position - _CameraPositionWS;
-    float cosAngle = dot(normalize(toVertex), _CameraForward);
-    float halfFOV = _CameraFOV * 0.9;
-    return cosAngle > cos(halfFOV);
-}
-
-bool IsInAnyZone(float3 position, out int zoneIndex)
-{
-    zoneIndex = -1;
-    for (int i = _ZoneCount - 1; i >= 0; i--)
-    {
-        if (_ZonePositions[i].w < 0.5) continue;
-
-        float3 delta = abs(position - _ZonePositions[i].xyz);
-        if (all(delta <= _ZoneScales[i].xyz * 0.5))
-        {
-            zoneIndex = i;
-            return true;
-        }
-    }
-    return false;
-}
+// float4x4 unity_MatrixV;
+// float3 GetCameraPositionsWS()
+// {
+//     return -mul(unity_MatrixV, float4(0, 0, 0, 1)).xyz;
+// }
 
 float random(float3 co)
 {
@@ -172,8 +145,25 @@ float3x3 CreateTangentToWorld(float3 normal)
 
 float2 GetSimpleBladePosition(float randValue)
 {
-    float2 randomValues = float2(randValue, frac(randValue * 1.61803)); // 황금비
+    float2 randomValues = float2(randValue, frac(randValue * 1.61803)); // 황금비를 사용하여 다른 랜덤값 생성
     return randomValues - 0.5;
+}
+
+bool IsInAnyZone(float3 position, out int zoneIndex)
+{
+    zoneIndex = -1;
+    for (int i = _ZoneCount - 1; i >= 0; i--)
+    {
+        if (_ZonePositions[i].w < 0.5) continue;
+
+        float3 delta = abs(position - _ZonePositions[i].xyz);
+        if (all(delta <= _ZoneScales[i].xyz * 0.5))
+        {
+            zoneIndex = i;
+            return true;
+        }
+    }
+    return false;
 }
 
 DrawVertex GrassVertex(float3 positionWS, float width, float height,
@@ -192,15 +182,15 @@ DrawVertex GrassVertex(float3 positionWS, float width, float height,
 half3 CalculationWind(half3 positionWS, half grassHeight, half distanceFade)
 {
     half timeWind = _Time * _WindSpeed;
-    
+
     // 기본 wind 계산
     half windValue = sin(timeWind + dot(positionWS.xz, _WindDirection));
-    
+
     // 거리에 따른 복잡도 직접 보간 (가까울수록 1.0, 멀수록 0.5)
     half complexityFactor = lerp(0, 1.0, distanceFade);
     windValue *= complexityFactor;
-    
-    return half3(_WindDirection.x * windValue, 0, _WindDirection.y * windValue) 
+
+    return half3(_WindDirection.x * windValue, 0, _WindDirection.y * windValue)
         * grassHeight * _WindStrength;
 }
 
@@ -231,41 +221,34 @@ void Main(uint id : SV_DispatchThreadID)
 {
     if ((int)id >= _NumSourceVertices) return;
 
-    SourceVertex sv = _SourceVertices[id];
-    if (!IsInCameraView(sv.positionWS)) return;
+    int visibleID = _VisibleIDBuffer[id];
+    if (visibleID == -1) return;
+
+    SourceVertex sv = _SourceVertices[visibleID];
 
     half distanceFromCamera = distance(sv.positionWS, _CameraPositionWS);
-    if (distanceFromCamera > _MaxFadeDist) return;
-
     half distanceFade = 1 - saturate((distanceFromCamera - _MinFadeDist) / (_MaxFadeDist - _MinFadeDist));
-    if (distanceFade < 0.1) return;
-
-    // LOD에 따른 세그먼트 수 조절
-    half numSegmentsPerBlade = min(GRASS_SEGMENTS, _MaxSegmentsPerBlade);
-    half numTrianglesPerBlade = (numSegmentsPerBlade - 1) * 2 + 1;
-
-    half normalizedDistance = saturate(distanceFromCamera / _MaxFadeDist);
-    half lodBladeCount = lerp(_MaxBladesPerVertex, 2, normalizedDistance); // 최소 2개의 blade 유지
-    half numBladesPerVertex = ceil(lodBladeCount * distanceFade);
-
-    if (numBladesPerVertex <= 0) return;
+    if (distanceFade < 0) return;
 
     half3 grassNormal = normalize(sv.normalOS);
+
+    uint localVertexCount = 0;
+    half cut = _CutBuffer[visibleID];
+
+    uint heightHash = Hash3Pos(sv.positionWS, 0);
+    half randomOffset = lerp(_GrassRandomHeightMin, _GrassRandomHeightMax, HashToFloat01(heightHash));
 
     grassWidth = sv.uv.x;
     grassHeight = sv.uv.y;
 
-    uint localVertexCount = 0;
-    half cut = _CutBuffer[id];
-
-    uint heightHash = Hash3Pos(sv.positionWS, 0);
-    half randomOffset = lerp(_GrassRandomHeightMin, _GrassRandomHeightMax, HashToFloat01(heightHash));
     grassHeight = clamp(grassHeight + randomOffset, _MinHeight, _MaxHeight);
     grassWidth = clamp(grassWidth, _MinWidth, _MaxWidth);
 
     int zoneIndex;
+    half3 baseColor = sv.color;
     if (IsInAnyZone(sv.positionWS, zoneIndex))
     {
+        baseColor = _ZoneColors[zoneIndex].rgb;
         grassHeight *= _ZoneWidthHeights[zoneIndex].y;
         grassWidth *= _ZoneWidthHeights[zoneIndex].x;
     }
@@ -281,20 +264,22 @@ void Main(uint id : SV_DispatchThreadID)
     half3 interaction = CalculateInteraction(sv.positionWS, grassHeight);
     half3 finalWind = wind * (1 - length(interaction) / (_InteractorStrength * grassHeight));
 
-    for (int j = 0; j < numBladesPerVertex; j++)
+    half numTrianglesPerBlade = (_MaxSegmentsPerBlade - 1) * 2 + 1;
+
+    for (int j = 0; j < _MaxBladesPerVertex * distanceFade; j++)
     {
         DrawVertex drawVertices[GRASS_NUM_VERTICES_PER_BLADE];
 
         uint baseHash = Hash3Pos(sv.positionWS, j);
         float randVar1 = HashToFloat01(FastHash(baseHash));
 
-        float2 bladePos = GetSimpleBladePosition(randVar1);
-        float offset = _BladeRadius * length(bladePos) * (0.5 + randVar1 * 0.5);
+        half bladeRadius = j / _MaxBladesPerVertex;
+        half offset = (1 - bladeRadius) * _BladeRadius;
         half3x3 facingRotationMatrix = AngleAxis3x3(randVar1 * TWO_PI, grassNormal);
 
-        for (int i = 0; i < numSegmentsPerBlade; i++)
+        for (int i = 0; i < _MaxSegmentsPerBlade; i++)
         {
-            half t = i / numSegmentsPerBlade;
+            half t = i / _MaxSegmentsPerBlade;
             half segmentHeight = grassHeight * t;
             half segmentWidth = grassWidth * (1 - t);
 
@@ -313,16 +298,16 @@ void Main(uint id : SV_DispatchThreadID)
         }
 
         half3 topPosOS = sv.positionWS + wind + interaction + grassNormal * grassHeight;
-        drawVertices[numSegmentsPerBlade * 2] = GrassVertex(topPosOS, 0, grassHeight, offset,
-                                                            half2(0.5, 1), _BladeForward, grassNormal,
-                                                            facingRotationMatrix);
+        drawVertices[_MaxSegmentsPerBlade * 2] = GrassVertex(topPosOS, 0, grassHeight, offset,
+                                                             half2(0.5, 1), _BladeForward, grassNormal,
+                                                             facingRotationMatrix);
 
         for (int k = 0; k < numTrianglesPerBlade; ++k)
         {
             DrawTriangle tri = (DrawTriangle)0;
             tri.normalOS = grassNormal;
-            tri.diffuseColor = sv.color;
-            tri.extraBuffer = half4(cut, distanceFade, 0, 0);
+            tri.diffuseColor = baseColor;
+            tri.extraBuffer = half4(cut, 0/*distanceFade*/, 0, 0);
 
             tri.vertices[0] = drawVertices[k];
             tri.vertices[1] = drawVertices[k + 1];

@@ -1,9 +1,11 @@
+using System;
 using Grass.GrassScripts;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class GrassCutter : MonoBehaviour
 {
+    private GrassComputeScript _grassCompute;
     [SerializeField] private InputActionReference cutAction;
     [SerializeField] private float radius = 1f;
     [SerializeField, Range(0, 1)] private float minMoveDistance = 0.5f;
@@ -11,6 +13,11 @@ public class GrassCutter : MonoBehaviour
     public bool updateCuts;
 
     private Vector3 _cachedPos;
+
+    private void Awake()
+    {
+        _grassCompute = FindAnyObjectByType<GrassComputeScript>();
+    }
 
     private void OnEnable()
     {
@@ -37,7 +44,7 @@ public class GrassCutter : MonoBehaviour
 
             if (distance >= minMoveDistance)
             {
-                GrassEventManager.TriggerEvent(GrassEvent.UpdateCutBuffer, transform.position, radius);
+                _grassCompute.UpdateCutBuffer(transform.position, radius);
                 _cachedPos = transform.position;
             }
         }

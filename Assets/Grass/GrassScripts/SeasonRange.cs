@@ -23,8 +23,8 @@ namespace Grass.GrassScripts
 
         public (float min, float max) GetRange()
         {
-            var fromValue = (float)from;
-            var toValue = (float)to;
+            float fromValue = (float)from;
+            float toValue = (float)to;
 
             if (Mathf.Approximately(fromValue, toValue) && isFullCycle)
             {
@@ -63,8 +63,8 @@ namespace Grass.GrassScripts
             if (from == to && isFullCycle)
             {
                 // Full Cycle: 한 바퀴 도는 경우
-                var seasons = "";
-                var current = from;
+                string seasons = "";
+                SeasonType current = from;
                 do
                 {
                     seasons += current + " → ";
@@ -84,8 +84,8 @@ namespace Grass.GrassScripts
             if (from < to)
             {
                 // 정방향 순서
-                var seasons = "";
-                for (var season = from; season <= to; season++)
+                string seasons = "";
+                for (SeasonType season = from; season <= to; season++)
                 {
                     seasons += season + " → ";
                 }
@@ -95,13 +95,13 @@ namespace Grass.GrassScripts
             else
             {
                 // 역방향 순서 (한 사이클)
-                var seasons = "";
-                for (var season = from; season <= SeasonType.Autumn; season++)
+                string seasons = "";
+                for (SeasonType season = from; season <= SeasonType.Autumn; season++)
                 {
                     seasons += season + " → ";
                 }
 
-                for (var season = SeasonType.Winter; season <= to; season++)
+                for (SeasonType season = SeasonType.Winter; season <= to; season++)
                 {
                     seasons += season + " → ";
                 }

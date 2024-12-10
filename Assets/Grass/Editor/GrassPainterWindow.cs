@@ -164,6 +164,9 @@ namespace Grass.Editor
             DrawControlPanels();
 
             EditorGUILayout.EndScrollView();
+
+            EditorUtility.SetDirty(toolSettings);
+            EditorUtility.SetDirty(grassCompute.GrassSetting);
         }
 
         private void OnEnable()
@@ -1081,8 +1084,8 @@ namespace Grass.Editor
                     grassSetting.drawBounds = newState;
                 }
 
-                grassSetting.cullingCellSize =
-                    EditorGUILayout.IntSlider("Cell Size", grassSetting.cullingCellSize, 1, 10);
+                grassSetting.cullingTreeDepth =
+                    EditorGUILayout.IntSlider("Cell Size", grassSetting.cullingTreeDepth, 1, 10);
             });
             GrassEditorHelper.DrawFoldoutSection("Other Settings", () =>
             {
@@ -1122,6 +1125,7 @@ namespace Grass.Editor
             if (EditorGUI.EndChangeCheck())
             {
                 serializedSettings.ApplyModifiedProperties();
+                EditorUtility.SetDirty(grassSetting);
                 _seasonManager.UpdateSeasonZones();
             }
 
@@ -1169,6 +1173,7 @@ namespace Grass.Editor
 
             InitSpatialGrid();
 
+            EditorUtility.SetDirty(grassObject);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }

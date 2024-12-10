@@ -1,7 +1,6 @@
 using Grass.GrassScripts;
 using UnityEngine;
 
-[ExecuteInEditMode]
 public class GrassSeasonZone : MonoBehaviour
 {
     [SerializeField] private bool overrideGlobalSettings;
@@ -12,6 +11,7 @@ public class GrassSeasonZone : MonoBehaviour
     [SerializeField] private SeasonSettings summerSettings = new();
     [SerializeField] private SeasonSettings autumnSettings = new();
 
+    private GrassSettingSO _grassSetting;
     private ZoneData _zoneData;
     private Color _zoneColor;
     private Vector3 _lastPosition;
@@ -25,8 +25,9 @@ public class GrassSeasonZone : MonoBehaviour
     public bool OverrideGlobalSettings => overrideGlobalSettings;
 #endif
     
-    private void OnEnable()
+    public void Init(GrassSettingSO grassSetting)
     {
+        _grassSetting = grassSetting;
         _lastPosition = Vector3.zero;
         _lastScale = Vector3.zero;
         UpdateZoneState();
@@ -77,22 +78,20 @@ public class GrassSeasonZone : MonoBehaviour
 
     private (Vector3 position, Vector3 scale, Color color, float width, float height) CalculateZoneState()
     {
-        var grassSetting = GrassFuncManager.TriggerEvent<GrassSettingSO>(GrassEvent.GetGrassSetting);
-
-        if (!overrideGlobalSettings && grassSetting == null)
+        if (!overrideGlobalSettings && _grassSetting == null)
             return (transform.position, transform.localScale, Color.white, 1f, 1f);
 
-        var normalizedValue = seasonValue % 4f;
-        var seasonIndex = Mathf.FloorToInt(normalizedValue);
-        var t = normalizedValue - seasonIndex;
+        float normalizedValue = seasonValue % 4f;
+        int seasonIndex = Mathf.FloorToInt(normalizedValue);
+        float t = normalizedValue - seasonIndex;
 
         var settings = overrideGlobalSettings
             ? new[] { winterSettings, springSettings, summerSettings, autumnSettings, winterSettings }
             : new[]
             {
-                grassSetting.winterSettings, grassSetting.springSettings,
-                grassSetting.summerSettings, grassSetting.autumnSettings,
-                grassSetting.winterSettings
+                _grassSetting.winterSettings, _grassSetting.springSettings,
+                _grassSetting.summerSettings, _grassSetting.autumnSettings,
+                _grassSetting.winterSettings
             };
 
         var from = settings[seasonIndex];

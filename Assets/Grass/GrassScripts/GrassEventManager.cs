@@ -10,10 +10,8 @@ namespace Grass.GrassScripts
         AddInteractor,
         RemoveInteractor,
         TryGetGrassColor,
-        UpdateSeasonData,
         
         //Func
-        GetGrassSetting,
         UpdateShaderData
     }
 
