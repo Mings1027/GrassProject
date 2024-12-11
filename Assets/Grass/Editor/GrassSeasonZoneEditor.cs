@@ -108,9 +108,9 @@ namespace Grass.Editor
 
                 if (GUILayout.Button(new GUIContent("Open Global Season Settings"), GUILayout.Height(25)))
                 {
-                    var window = EditorWindow.GetWindow<GrassPainterWindow>();
+                    var window = EditorWindow.GetWindow<GrassPainterTool>();
                     window.GrassEditorTab = GrassEditorTab.GeneralSettings;
-                    GrassPainterWindow.Open();
+                    GrassPainterTool.Open();
                     GrassEditorHelper.FoldoutStates["Global Season Settings"] = true;
                     EditorApplication.delayCall += () =>
                     {

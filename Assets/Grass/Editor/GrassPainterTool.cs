@@ -18,7 +18,7 @@ namespace Grass.Editor
         public string progressMessage;
     }
 
-    public class GrassPainterWindow : EditorWindow
+    public class GrassPainterTool : EditorWindow
     {
         private Vector2 _scrollPos;
         public Vector2 ScrollPos
@@ -79,7 +79,7 @@ namespace Grass.Editor
         public static void Open()
         {
             var window =
-                (GrassPainterWindow)GetWindow(typeof(GrassPainterWindow), false, "Grass Tool", true);
+                (GrassPainterTool)GetWindow(typeof(GrassPainterTool), false, "Grass Tool", true);
             var icon = EditorGUIUtility.FindTexture("tree_icon");
             var mToolSettings =
                 (GrassToolSettingSo)AssetDatabase.LoadAssetAtPath("Assets/Grass/Settings/Grass Tool Settings.asset",

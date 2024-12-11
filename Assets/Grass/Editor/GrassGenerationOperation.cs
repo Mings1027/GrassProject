@@ -9,14 +9,14 @@ namespace Grass.Editor
 {
     public class GrassGenerationOperation
     {
-        private readonly GrassPainterWindow _window;
+        private readonly GrassPainterTool _tool;
         private readonly GrassComputeScript _grassCompute;
         private readonly GrassToolSettingSo _toolSettings;
 
-        public GrassGenerationOperation(GrassPainterWindow window,
+        public GrassGenerationOperation(GrassPainterTool tool,
                                         GrassComputeScript grassCompute, GrassToolSettingSo toolSettings)
         {
-            _window = window;
+            _tool = tool;
             _grassCompute = grassCompute;
             _toolSettings = toolSettings;
         }
@@ -87,7 +87,7 @@ namespace Grass.Editor
 
             for (var i = 0; i < numPoints; i++)
             {
-                await _window.UpdateProgress(startPoint + i + 1, totalPoints,
+                await _tool.UpdateProgress(startPoint + i + 1, totalPoints,
                     $"Calculating grass positions on '{sourceMesh.name}'");
 
                 var triIndex = random.Next(0, triangles.Length / 3) * 3;
@@ -157,7 +157,7 @@ namespace Grass.Editor
 
             for (var i = 0; i < numPoints; i++)
             {
-                await _window.UpdateProgress(startPoint + i + 1, totalPoints,
+                await _tool.UpdateProgress(startPoint + i + 1, totalPoints,
                     $"Calculating grass positions on '{terrain.name}'");
 
                 var randomPoint = new Vector3(
@@ -245,7 +245,7 @@ namespace Grass.Editor
 
         private async UniTask UpdateGenerationProgress(int current, int total)
         {
-            await _window.UpdateProgress(
+            await _tool.UpdateProgress(
                 current + 1,
                 total,
                 $"Generating grass data ({current + 1:N0}/{total:N0} points)"

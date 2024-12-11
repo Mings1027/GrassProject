@@ -53,7 +53,7 @@ MonoBehaviour:
   density: 42
   normalLimit: 1
   brushHeight: 0.1
-  generateGrassCount: 1000000
+  generateGrassCount: 4500
   grassMouseButton: 0
   brushSizeShortcut: 2
   brushHeightShortcut: 1

@@ -6,17 +6,17 @@ using UnityEngine;
 
 public class GrassRemovalOperation
 {
-    private readonly GrassPainterWindow _window;
+    private readonly GrassPainterTool _tool;
     private readonly GrassComputeScript _grassCompute;
     private readonly SpatialGrid _spatialGrid;
     private readonly LayerMask _layerMask;
     private readonly List<int> _tempList = new();
     private const float CollisionRadius = 0.1f;
 
-    public GrassRemovalOperation(GrassPainterWindow window, GrassComputeScript grassCompute, SpatialGrid spatialGrid,
+    public GrassRemovalOperation(GrassPainterTool tool, GrassComputeScript grassCompute, SpatialGrid spatialGrid,
                                  LayerMask layerMask)
     {
-        _window = window;
+        _tool = tool;
         _grassCompute = grassCompute;
         _spatialGrid = spatialGrid;
         _layerMask = layerMask;
@@ -26,36 +26,46 @@ public class GrassRemovalOperation
     {
         var grassToRemove = new HashSet<int>();
         var totalGrassToCheck = 0;
-        var currentProgress = 0;
+        var objectBoundsList = new List<(GameObject obj, Bounds bounds)>();
 
-        // First pass - get total grass count to check
+        // First pass - collect bounds and calculate total grass to check
         foreach (var obj in selectedObjects)
         {
             var bounds = GetObjectBounds(obj);
             if (!bounds.HasValue) continue;
+
+            objectBoundsList.Add((obj, bounds.Value));
 
             _tempList.Clear();
             _spatialGrid.GetObjectsInBounds(bounds.Value, _tempList);
             totalGrassToCheck += _tempList.Count;
         }
 
-        // Second pass - actual removal with continuous progress
-        foreach (var obj in selectedObjects)
+        // Second pass - actual removal with progress tracking
+        var currentProgress = 0;
+        foreach (var (obj, bounds) in objectBoundsList)
         {
-            var bounds = GetObjectBounds(obj);
-            if (!bounds.HasValue) continue;
+            _tempList.Clear();
+            _spatialGrid.GetObjectsInBounds(bounds, _tempList);
 
             foreach (var grassIndex in _tempList)
             {
+                // Skip if already marked for removal
+                if (grassToRemove.Contains(grassIndex))
+                {
+                    currentProgress++;
+                    continue;
+                }
+
                 var grassPosition = _grassCompute.GrassDataList[grassIndex].position;
-                if (bounds.Value.Contains(grassPosition) &&
+                if (bounds.Contains(grassPosition) &&
                     Physics.CheckSphere(grassPosition, CollisionRadius, _layerMask))
                 {
                     grassToRemove.Add(grassIndex);
                 }
 
                 currentProgress++;
-                await _window.UpdateProgress(currentProgress, totalGrassToCheck, "Removing grass");
+                await _tool.UpdateProgress(currentProgress, totalGrassToCheck, "Removing grass");
             }
         }
 

@@ -24,7 +24,7 @@ MonoBehaviour:
   maxHeight: 3
   randomHeightMin: 0
   randomHeightMax: 0.19999996
-  windSpeed: 1.5
+  windSpeed: 2
   windStrength: 1
   windDirection: 45
   windDirectionVector: {x: 0.70710677, y: 0.70710677}
@@ -53,8 +53,8 @@ MonoBehaviour:
     seasonColor: {r: 1, g: 0.16862746, b: 0, a: 0}
     width: 1
     height: 1
-  drawBounds: 0
-  cullingTreeDepth: 6
+  drawBounds: 1
+  cullingTreeDepth: 5
   minFadeDistance: 30
   maxFadeDistance: 130
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}
