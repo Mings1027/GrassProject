@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Grass.GrassScripts;
@@ -348,17 +349,221 @@ namespace Grass.Editor
             switch (_grassEditorTab)
             {
                 case GrassEditorTab.PaintEdit:
-                    ShowPaintPanel();
+                    DrawPaintEditPanel();
                     break;
                 case GrassEditorTab.Modify:
-                    ShowModifyPanel();
+                    DrawModifyPanel();
                     break;
                 case GrassEditorTab.Generate:
-                    ShowGeneratePanel();
+                    DrawGeneratePanel();
                     break;
                 case GrassEditorTab.GeneralSettings:
                     ShowMainSettingsPanel();
                     break;
+            }
+        }
+
+        private void DrawPaintEditPanel()
+        {
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                DrawPanelHeader("Paint/Edit Tools");
+                DrawPaintEditToolbar();
+
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    DrawPaintEditContent();
+                }
+            }
+        }
+
+        private void DrawPaintEditToolbar()
+        {
+            _selectedToolOption = (BrushOption)GUILayout.Toolbar(
+                (int)_selectedToolOption,
+                _toolbarStrings,
+                GUILayout.Height(25)
+            );
+            EditorGUILayout.Space(5);
+        }
+
+        private void DrawPaintEditContent()
+        {
+            DrawHitSettings();
+            DrawCommonBrushSettings();
+
+            switch (_selectedToolOption)
+            {
+                case BrushOption.Add:
+                    DrawAddBrushSettings();
+                    break;
+                case BrushOption.Remove:
+                    break;
+                case BrushOption.Edit:
+                    DrawEditBrushSettings();
+                    break;
+                case BrushOption.Reposition:
+                    DrawRepositionBrushSettings();
+                    break;
+            }
+        }
+
+        private void DrawModifyPanel()
+        {
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                DrawPanelHeader("Modify Tools");
+                DrawModifyToolbar();
+
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    DrawModifyContent();
+                    DrawModifyApplyButton();
+                }
+            }
+        }
+
+        private void DrawModifyToolbar()
+        {
+            _selectedModifyOption = (ModifyOption)GUILayout.Toolbar(
+                (int)_selectedModifyOption,
+                _modifyOptionStrings,
+                GUILayout.Height(25)
+            );
+            EditorGUILayout.Space(5);
+        }
+
+        private void DrawModifyContent()
+        {
+            switch (_selectedModifyOption)
+            {
+                case ModifyOption.Color:
+                    DrawBrushColorField();
+                    DrawColorVariationSliders();
+                    break;
+                case ModifyOption.WidthHeight:
+                    DrawWidthHeightSliders();
+                    break;
+                case ModifyOption.Both:
+                    DrawWidthHeightSliders();
+                    DrawBrushColorField();
+                    DrawColorVariationSliders();
+                    break;
+            }
+        }
+
+        private void DrawModifyApplyButton()
+        {
+            EditorGUILayout.Space(5);
+            if (GUILayout.Button("Apply Modify Options", GUILayout.Height(25)))
+            {
+                HandleModifyOptionsButton();
+            }
+        }
+
+        private void DrawGeneratePanel()
+        {
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                DrawPanelHeader("Generate Tools");
+                DrawGenerateToolbar();
+
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    DrawGenerateContent();
+                }
+
+                GrassEditorHelper.DrawHorizontalLine(Color.gray);
+                DrawObjectOperations();
+            }
+        }
+
+        private void DrawGenerateToolbar()
+        {
+            _selectedGenerateOption = (GenerateTab)GUILayout.Toolbar(
+                (int)_selectedGenerateOption,
+                _generateTabStrings,
+                GUILayout.Height(25)
+            );
+            EditorGUILayout.Space(5);
+        }
+
+        private void DrawGenerateContent()
+        {
+            DrawGeneralSettings();
+
+            switch (_selectedGenerateOption)
+            {
+                case GenerateTab.Basic:
+                    DrawBasicGenerateSettings();
+                    break;
+                case GenerateTab.TerrainLayers:
+                    DrawTerrainLayerSettings();
+                    break;
+            }
+        }
+
+        private void DrawBasicGenerateSettings()
+        {
+            DrawHitSettings();
+            DrawVertexSettings();
+            DrawWidthHeightSliders();
+            DrawBrushColorField();
+            DrawColorVariationSliders();
+        }
+
+        private void DrawPanelHeader(string title)
+        {
+            var headerStyle = new GUIStyle(EditorStyles.boldLabel)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontSize = 12
+            };
+            EditorGUILayout.LabelField(title, headerStyle, GUILayout.Height(25));
+        }
+
+        private void HandleModifyOptionsButton()
+        {
+            var operation = _selectedModifyOption switch
+            {
+                ModifyOption.WidthHeight => new ModifyOperation(
+                    "Modify Width and Height",
+                    "Modify the width and height of all grass elements?",
+                    "Modified Size",
+                    ModifySize),
+                ModifyOption.Color => new ModifyOperation(
+                    "Modify Color",
+                    "Modify the color of all grass elements?",
+                    "Modified Color",
+                    ModifyColor),
+                ModifyOption.Both => new ModifyOperation(
+                    "Modify Width Height and Color",
+                    "Modify the width, height and color of all grass elements?",
+                    "Modified Size and Color",
+                    ModifySizeAndColor),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+
+            if (EditorUtility.DisplayDialog(operation.title, operation.message, "Yes", "No"))
+            {
+                Undo.RegisterCompleteObjectUndo(grassCompute, operation.undoMessage);
+                operation.action().Forget();
+            }
+        }
+
+        private readonly struct ModifyOperation
+        {
+            public readonly string title;
+            public readonly string message;
+            public readonly string undoMessage;
+            public readonly Func<UniTask> action;
+
+            public ModifyOperation(string title, string message, string undoMessage, Func<UniTask> action)
+            {
+                this.title = title;
+                this.message = message;
+                this.undoMessage = undoMessage;
+                this.action = action;
             }
         }
 
@@ -785,31 +990,11 @@ namespace Grass.Editor
             );
         }
 
-        private bool _layerGuideExpanded;
-
         private void DrawTerrainLayerSettings()
         {
-            var headerStyle = new GUIStyle(EditorStyles.helpBox)
-            {
-                fontSize = 12,
-                fontStyle = FontStyle.Bold,
-                padding = new RectOffset(5, 5, 10, 10),
-                margin = new RectOffset(0, 0, 10, 10)
-            };
-
-            EditorGUILayout.BeginVertical(headerStyle);
-
             // Foldout을 DrawToggleButton으로 교체
-            if (GrassEditorHelper.DrawToggleButton("Layer Settings Guide",
-                    "Display information about terrain layer settings",
-                    _layerGuideExpanded, out var expanded))
+            GrassEditorHelper.DrawFoldoutSection("Layer Settings Guide", () =>
             {
-                _layerGuideExpanded = expanded;
-            }
-
-            if (_layerGuideExpanded)
-            {
-                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 var helpBoxStyle = new GUIStyle(EditorStyles.label)
                 {
                     fontSize = 13,
@@ -830,10 +1015,7 @@ namespace Grass.Editor
                     "  0 = No grass\n\n",
                     helpBoxStyle
                 );
-                EditorGUILayout.EndVertical();
-            }
-
-            EditorGUILayout.EndVertical();
+            });
 
             var terrain = FindAnyObjectByType<Terrain>();
             if (terrain == null)
@@ -844,6 +1026,28 @@ namespace Grass.Editor
                     "2. Add terrain layers in Paint Terrain tab",
                     MessageType.Warning
                 );
+                return;
+            }
+
+            if (terrain.terrainData == null)
+            {
+                EditorGUILayout.HelpBox("Terrain has no terrain data assigned.", MessageType.Warning);
+                return;
+            }
+
+            var terrainLayers = terrain.terrainData.terrainLayers;
+            if (terrainLayers == null || terrainLayers.Length == 0)
+            {
+                EditorGUILayout.HelpBox(
+                    "No terrain layers found. Click the button below to create a default layer.",
+                    MessageType.Info
+                );
+
+                if (GUILayout.Button("Create Default Terrain Layer", GUILayout.Height(30)))
+                {
+                    CreateDefaultTerrainLayer(terrain);
+                }
+
                 return;
             }
 
@@ -880,11 +1084,51 @@ namespace Grass.Editor
 
             GrassEditorHelper.DrawHorizontalLine(Color.gray, 1, 2);
 
-            var terrainLayers = terrain.terrainData.terrainLayers;
             for (var i = 0; i < terrainLayers.Length; i++)
             {
                 DrawTerrainLayerRow(i, terrainLayers[i], minLayerNameWidth, statusWidth, minSliderWidth);
             }
+        }
+
+        private void CreateDefaultTerrainLayer(Terrain terrain)
+        {
+            // 기본 TerrainLayer 에셋 생성
+            var defaultLayer = new TerrainLayer
+            {
+                name = "Default Layer",
+                tileSize = new Vector2(15, 15)
+            };
+
+            // TerrainLayer 에셋 저장을 위한 폴더 생성
+            if (!AssetDatabase.IsValidFolder("Assets/Terrain"))
+            {
+                AssetDatabase.CreateFolder("Assets", "Terrain");
+            }
+
+            if (!AssetDatabase.IsValidFolder("Assets/Terrain/Layers"))
+            {
+                AssetDatabase.CreateFolder("Assets/Terrain", "Layers");
+            }
+
+            // 저장될 에셋 경로
+            var assetPath = "Assets/Terrain/Layers/DefaultTerrainLayer.terrainlayer";
+
+            // 에셋 저장
+            AssetDatabase.CreateAsset(defaultLayer, assetPath);
+            AssetDatabase.SaveAssets();
+
+            // 테라인에 레이어 추가
+            var terrainData = terrain.terrainData;
+            var layers = new TerrainLayer[1];
+            layers[0] = defaultLayer;
+            terrainData.terrainLayers = layers;
+
+            // 테라인 데이터 업데이트
+            EditorUtility.SetDirty(terrainData);
+            AssetDatabase.Refresh();
+
+            // 상세한 로그 메시지 출력
+            Debug.Log($"Default terrain layer created at {assetPath}");
         }
 
         private void DrawTerrainLayerRow(int index, TerrainLayer layer, float minNameWidth, float statusWidth,
@@ -1085,7 +1329,7 @@ namespace Grass.Editor
                 }
 
                 grassSetting.cullingTreeDepth =
-                    EditorGUILayout.IntSlider("Cell Size", grassSetting.cullingTreeDepth, 1, 10);
+                    EditorGUILayout.IntSlider("Cell Size", grassSetting.cullingTreeDepth, 1, 20);
             });
             GrassEditorHelper.DrawFoldoutSection("Other Settings", () =>
             {

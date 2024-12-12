@@ -225,6 +225,7 @@ public class CullingTree
     /// <param name="radius"></param>
     public void ReturnLeafList(Vector3 point, List<int> grassList, float radius)
     {
+        Profiler.BeginSample("ReturnLeafList");
         var expandedBounds = _bounds;
         expandedBounds.Expand(radius * 2);
         if (!expandedBounds.Contains(point))
@@ -246,6 +247,7 @@ public class CullingTree
                 }
             }
         }
+        Profiler.EndSample();
     }
 
     /// <summary>
