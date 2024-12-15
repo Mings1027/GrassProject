@@ -30,7 +30,7 @@ MonoBehaviour:
   windDirectionVector: {x: 0.70710677, y: 0.70710677}
   bladesPerVertex: 15
   segmentsPerBlade: 2
-  interactorStrength: 2.56
+  interactorStrength: 1.28
   topTint: {r: 1, g: 1, b: 1, a: 1}
   bottomTint: {r: 0.1981132, g: 0.1981132, b: 0.1981132, a: 1}
   seasonRange:

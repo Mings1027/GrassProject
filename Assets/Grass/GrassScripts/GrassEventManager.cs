@@ -6,7 +6,6 @@ namespace Grass.GrassScripts
     public enum GrassEvent
     {
         //Action
-        UpdateCutBuffer,
         AddInteractor,
         RemoveInteractor,
         TryGetGrassColor,
