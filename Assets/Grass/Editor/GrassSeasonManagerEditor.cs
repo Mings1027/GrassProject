@@ -23,14 +23,22 @@ namespace Grass.Editor
         {
             serializedObject.Update();
 
-            var controller = (GrassSeasonManager)target;
-            DrawGizmosToggle(controller);
+            var manager = (GrassSeasonManager)target;
+            DrawManualUpdateButton(manager);
+            DrawGizmosToggle(manager);
             EditorGUILayout.Space(10);
-            DrawSeasonControl(controller);
+            DrawSeasonControl(manager);
 
             serializedObject.ApplyModifiedProperties();
         }
 
+        private void DrawManualUpdateButton(GrassSeasonManager manager)
+        {
+            if(GUILayout.Button("Manual Update", GUILayout.Height(25)))
+            {
+                manager.Init();
+            }
+        }
         private void DrawGizmosToggle(GrassSeasonManager manager)
         {
             var gizmosContent = new GUIContent(EditorIcons.Gizmos) { text = "Toggle All Gizmos" };

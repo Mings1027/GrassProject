@@ -557,7 +557,6 @@ namespace Grass.Editor
                 margin = new RectOffset(0, 0, 0, 0)
             };
 
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
             // Draw header with arrow icon
             var rect = GUILayoutUtility.GetRect(new GUIContent(title), headerStyle, GUILayout.Height(25));
@@ -581,7 +580,6 @@ namespace Grass.Editor
                 EditorGUILayout.EndVertical();
             }
 
-            EditorGUILayout.EndVertical();
             return _foldoutStates[title];
         }
 
@@ -663,6 +661,18 @@ namespace Grass.Editor
             {
                 grassSeasonManager.UpdateShaderData();
             }
+        }
+
+        public static Vector3 GetRandomColor(GrassToolSettingSo toolSettings)
+        {
+            var baseColor = toolSettings.BrushColor;
+            var newRandomCol = new Color(
+                baseColor.r + Random.Range(0, toolSettings.RangeR),
+                baseColor.g + Random.Range(0, toolSettings.RangeG),
+                baseColor.b + Random.Range(0, toolSettings.RangeB),
+                1
+            );
+            return new Vector3(newRandomCol.r, newRandomCol.g, newRandomCol.b);
         }
     }
 }

@@ -9,32 +9,28 @@ public class GrassRemovalOperation
     private readonly GrassPainterTool _tool;
     private readonly GrassComputeScript _grassCompute;
     private readonly SpatialGrid _spatialGrid;
-    private readonly LayerMask _layerMask;
     private readonly List<int> _tempList = new();
-    private const float CollisionRadius = 0.1f;
 
-    public GrassRemovalOperation(GrassPainterTool tool, GrassComputeScript grassCompute, SpatialGrid spatialGrid,
-                                 LayerMask layerMask)
+    public GrassRemovalOperation(GrassPainterTool tool, GrassComputeScript grassCompute, SpatialGrid spatialGrid)
     {
         _tool = tool;
         _grassCompute = grassCompute;
         _spatialGrid = spatialGrid;
-        _layerMask = layerMask;
     }
 
-    public async UniTask RemoveGrassFromObjects(GameObject[] selectedObjects)
+    public async UniTask RemoveGrass(List<MeshFilter> meshFilters)
     {
         var grassToRemove = new HashSet<int>();
         var totalGrassToCheck = 0;
-        var objectBoundsList = new List<(GameObject obj, Bounds bounds)>();
+        var objectBoundsList = new List<Bounds>();
 
         // First pass - collect bounds and calculate total grass to check
-        foreach (var obj in selectedObjects)
+        foreach (var meshFilter in meshFilters)
         {
-            var bounds = GetObjectBounds(obj);
+            var bounds = GetObjectBounds(meshFilter);
             if (!bounds.HasValue) continue;
 
-            objectBoundsList.Add((obj, bounds.Value));
+            objectBoundsList.Add(bounds.Value);
 
             _tempList.Clear();
             _spatialGrid.GetObjectsInBounds(bounds.Value, _tempList);
@@ -43,7 +39,7 @@ public class GrassRemovalOperation
 
         // Second pass - actual removal with progress tracking
         var currentProgress = 0;
-        foreach (var (obj, bounds) in objectBoundsList)
+        foreach (var bounds in objectBoundsList)
         {
             _tempList.Clear();
             _spatialGrid.GetObjectsInBounds(bounds, _tempList);
@@ -58,8 +54,7 @@ public class GrassRemovalOperation
                 }
 
                 var grassPosition = _grassCompute.GrassDataList[grassIndex].position;
-                if (bounds.Contains(grassPosition) &&
-                    Physics.CheckSphere(grassPosition, CollisionRadius, _layerMask))
+                if (bounds.Contains(grassPosition))
                 {
                     grassToRemove.Add(grassIndex);
                 }
@@ -82,13 +77,8 @@ public class GrassRemovalOperation
         }
     }
 
-    private Bounds? GetObjectBounds(GameObject obj)
+    private Bounds? GetObjectBounds(MeshFilter obj)
     {
-        if (obj.TryGetComponent<Terrain>(out var terrain))
-        {
-            return new Bounds(terrain.transform.position + terrain.terrainData.size / 2, terrain.terrainData.size);
-        }
-
         if (obj.TryGetComponent<Renderer>(out var renderer))
         {
             var bounds = renderer.bounds;

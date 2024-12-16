@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Grass.GrassScripts;
 using UnityEngine;
@@ -8,6 +7,8 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
 {
     private const int MaxZones = 9;
     private GrassComputeScript _grassComputeScript;
+    private int _previousChildCount;
+
     [SerializeField] private List<GrassSeasonZone> seasonZones = new();
     [SerializeField] private float globalSeasonValue;
 
@@ -19,11 +20,7 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
         GrassFuncManager.AddEvent<Vector3, Color>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
         UpdateSeasonZones();
         SetGlobalSeasonValue(globalSeasonValue);
-
-        for (int i = 0; i < seasonZones.Count; i++)
-        {
-            seasonZones[i].Init(_grassComputeScript.GrassSetting);
-        }
+        Init();
     }
 
     private void OnDisable()
@@ -37,6 +34,14 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
         for (int i = 0; i < seasonZones.Count; i++)
         {
             seasonZones[i].UpdateZone();
+        }
+    }
+
+    public void Init()
+    {
+        for (int i = 0; i < seasonZones.Count; i++)
+        {
+            seasonZones[i].Init(_grassComputeScript.GrassSetting);
         }
     }
 
@@ -126,6 +131,13 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
 
     private void OnTransformChildrenChanged()
     {
+        var currentChildCount = transform.childCount;
+        if (currentChildCount != _previousChildCount)
+        {
+            _grassComputeScript.Reset();
+            _previousChildCount = currentChildCount;
+        }
+
         UpdateSeasonZones();
     }
 }

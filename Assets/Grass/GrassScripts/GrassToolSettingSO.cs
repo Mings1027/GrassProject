@@ -15,8 +15,8 @@ public class GrassToolSettingSo : ScriptableObject
         Green
     }
 
-    [Header("Terrain Layer Settings")] [SerializeField]
-    private float[] layerBlocking = new float[8];
+    [Header("Terrain Layer Settings")]
+    [SerializeField] private bool[] layerEnabled = new bool[8];
     [SerializeField] private float[] heightFading = new float[8];
 
     [Header("Vertex Color Settings")] [SerializeField]
@@ -74,10 +74,10 @@ public class GrassToolSettingSo : ScriptableObject
     public int MinGrassAmountToGenerate => 0;
 
     // Properties
-    public float[] LayerBlocking
+    public bool[] LayerEnabled
     {
-        get => layerBlocking;
-        set => layerBlocking = value;
+        get => layerEnabled;
+        set => layerEnabled = value;
     }
     public float[] HeightFading
     {
@@ -227,14 +227,13 @@ public class GrassToolSettingSo : ScriptableObject
     public void CreateNewLayers()
     {
         Debug.Log("Setting up initial tool settings");
-        layerBlocking = new float[8];
+        layerEnabled = new bool[8];
         heightFading = new float[8];
 
-        for (int i = 0; i < layerBlocking.Length; i++)
+        for (int i = 0; i < layerEnabled.Length; i++)
         {
-            layerBlocking[i] = 1;
+            layerEnabled[i] = true;
+            heightFading[i] = 1f;
         }
-
-        heightFading[0] = 0;
     }
 }

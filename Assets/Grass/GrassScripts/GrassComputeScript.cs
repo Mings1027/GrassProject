@@ -13,38 +13,31 @@ using UnityEditor;
 [ExecuteInEditMode]
 public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 {
-    //
     private const int SourceVertStride = sizeof(float) * (3 + 3 + 2 + 3);
     private const int DrawStride = sizeof(float) * (3 + 3 + 1 + (3 + 2) * 3);
     private const int MaxBufferSize = 2500000;
 
-    //
     [SerializeField, HideInInspector] private List<GrassData> grassData = new(); // base data lists
     [SerializeField] private Material instantiatedMaterial;
     [SerializeField] private GrassSettingSO grassSetting;
 
     private readonly List<int> _nearbyGrassIds = new();
 
-    // list of all visible grass ids, rest are culled
     [SerializeField, HideInInspector] private List<int> _grassVisibleIDList = new();
     [SerializeField, HideInInspector] private float[] _cutIDs;
 
     private Bounds _bounds; // bounds of the total grass 
 
     private CullingTree _cullingTree;
-
-    //
     private Camera _mainCamera; // main camera
     private List<GrassInteractor> _interactors = new();
-
-    //
+    
     private ComputeBuffer _sourceVertBuffer; // A compute buffer to hold vertex data of the source mesh
     private ComputeBuffer _drawBuffer; // A compute buffer to hold vertex data of the generated mesh
     private GraphicsBuffer _argsBuffer; // A compute buffer to hold indirect draw arguments
     private ComputeBuffer _visibleIDBuffer; // buffer that contains the ids of all visible instances
     private ComputeBuffer _cutBuffer; // added for cutting
 
-    //
     private ComputeShader _instComputeShader;
     private int _idGrassKernel; // The id of the kernel in the grass compute shader
     private int _dispatchSize; // The x dispatch size for the grass compute shader
@@ -215,7 +208,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
             }
         }
     }
- 
+
 #endif
     /*=============================================================================================================
       *                                            Unity Event Functions
@@ -649,6 +642,20 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         }
     }
 
+    public void ResetMaterial()
+    {
+        if (!Application.isPlaying)
+        {
+            DestroyImmediate(instantiatedMaterial);
+        }
+        else
+        {
+            Destroy(instantiatedMaterial);
+        }
+
+        instantiatedMaterial = Instantiate(grassSetting.materialToUse);
+    }
+
 #if UNITY_EDITOR
 
     public void SetupForEditorMode()
@@ -704,6 +711,13 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         _cutIDs = Array.Empty<float>();
         _cullingTree = null;
         _bounds = new Bounds();
+    }
+
+    public float[] GetCutBuffer() => _cutIDs;
+    public void SetCutBuffer(float[] buffer)
+    {
+        _cutIDs = buffer;
+        _cutBuffer.SetData(_cutIDs);
     }
 #endif
 }

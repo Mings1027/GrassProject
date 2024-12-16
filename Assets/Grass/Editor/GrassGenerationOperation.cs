@@ -1,8 +1,7 @@
-using System;
 using System.Collections.Generic;
+using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace Grass.Editor
 {
@@ -12,19 +11,23 @@ namespace Grass.Editor
         private readonly GrassComputeScript _grassCompute;
         private readonly GrassToolSettingSo _toolSettings;
         private readonly SpatialGrid _spatialGrid;
-        private readonly List<int> _nearbyPoints = new();
 
         private struct GrassPlacementData
         {
-            public Vector3 Position;
-            public Vector3 Normal;
+            public Vector3 position;
+            public Vector3 normal;
         }
 
-        public GrassGenerationOperation(
-            GrassPainterTool tool,
-            GrassComputeScript grassCompute,
-            GrassToolSettingSo toolSettings,
-            SpatialGrid spatialGrid)
+        private class ObjectGenerationData
+        {
+            public List<(Vector3[] vertices, Vector3 normal, float area)> triangles;
+            public float totalArea;
+            public int targetGrassCount;
+            public List<GrassPlacementData> validPositions;
+        }
+
+        public GrassGenerationOperation(GrassPainterTool tool, GrassComputeScript grassCompute,
+                                        GrassToolSettingSo toolSettings, SpatialGrid spatialGrid)
         {
             _tool = tool;
             _grassCompute = grassCompute;
@@ -32,98 +35,150 @@ namespace Grass.Editor
             _spatialGrid = spatialGrid;
         }
 
-        public async UniTask GenerateGrass(GameObject[] selectedObjects)
+        public async UniTask GenerateGrass(List<MeshFilter> meshFilters)
         {
             var spacing = _toolSettings.GrassSpacing;
             var existingGrassCount = _grassCompute.GrassDataList.Count;
             var totalArea = 0f;
-            var triangleData = new List<(Vector3[] vertices, Vector3 normal, float area)>();
 
-            // 1단계: 메시 데이터 수집
+            // 1단계: 메시 데이터 수집 및 초기 설정
             await _tool.UpdateProgress(0, 100, "Analyzing meshes...");
-            
-            foreach (var obj in selectedObjects)
+
+            var objectDataList = new List<ObjectGenerationData>();
+
+            // 각 오브젝트의 메시 데이터 수집
+            foreach (var obj in meshFilters)
             {
-                var meshFilter = obj.GetComponent<MeshFilter>();
-                if (meshFilter == null) continue;
+                var objectData = CollectMeshData(obj);
+                if (objectData != null)
+                {
+                    objectDataList.Add(objectData);
+                    totalArea += objectData.totalArea;
+                }
+            }
+
+            if (objectDataList.Count == 0)
+            {
+                Debug.LogWarning("No valid triangles found for grass generation!");
+                return;
+            }
+
+            // 전체 목표 잔디 수 계산
+            var maxGrassForArea = Mathf.FloorToInt(totalArea / (spacing * spacing));
+            var totalTargetGrassCount = Mathf.Min(_toolSettings.GenerateGrassCount, maxGrassForArea);
+
+            // 각 오브젝트별 목표 잔디 수 할당
+            foreach (var objData in objectDataList)
+            {
+                objData.targetGrassCount = Mathf.FloorToInt((objData.totalArea / totalArea) * totalTargetGrassCount);
+            }
+
+            // 2단계: 병렬로 각 오브젝트의 잔디 위치 계산
+            await _tool.UpdateProgress(0, 100, "Calculating positions...");
+
+            var generationTasks = new UniTask[objectDataList.Count];
+            for (int i = 0; i < objectDataList.Count; i++)
+            {
+                generationTasks[i] = GenerateGrassForObject(objectDataList[i]);
+            }
+
+            // 모든 작업 병렬 실행
+            await UniTask.WhenAll(generationTasks);
+
+            // 3단계: 결과 수집 및 최종 데이터 생성
+            await _tool.UpdateProgress(0, 100, "Finalizing grass generation...");
+
+            var allGrassData = new List<GrassData>();
+            var currentIndex = existingGrassCount;
+
+            foreach (var objData in objectDataList)
+            {
+                foreach (var placement in objData.validPositions)
+                {
+                    var grassData = new GrassData
+                    {
+                        position = placement.position,
+                        normal = placement.normal,
+                        color = GrassEditorHelper.GetRandomColor(_toolSettings),
+                        widthHeight = new Vector2(_toolSettings.GrassWidth, _toolSettings.GrassHeight)
+                    };
+
+                    allGrassData.Add(grassData);
+                    _spatialGrid.AddObject(placement.position, currentIndex++);
+                }
+            }
+
+            _grassCompute.GrassDataList.AddRange(allGrassData);
+            await _tool.UpdateProgress(100, 100, $"Complete! Generated {allGrassData.Count} grass instances");
+        }
+
+        private ObjectGenerationData CollectMeshData(MeshFilter meshFilter)
+        {
+            {
+                var objectData = new ObjectGenerationData
+                {
+                    triangles = new List<(Vector3[] vertices, Vector3 normal, float area)>(),
+                    validPositions = new List<GrassPlacementData>()
+                };
 
                 var mesh = meshFilter.sharedMesh;
                 var vertices = mesh.vertices;
                 var triangles = mesh.triangles;
                 var normals = mesh.normals;
-                var transform = obj.transform;
+                var transform = meshFilter.transform;
+                var objectUp = transform.up;
 
                 for (int i = 0; i < triangles.Length; i += 3)
                 {
                     var v1 = transform.TransformPoint(vertices[triangles[i]]);
                     var v2 = transform.TransformPoint(vertices[triangles[i + 1]]);
                     var v3 = transform.TransformPoint(vertices[triangles[i + 2]]);
-                    
+
                     var normal = transform.TransformDirection(
                         (normals[triangles[i]] + normals[triangles[i + 1]] + normals[triangles[i + 2]]) / 3f
                     ).normalized;
 
                     var area = Vector3.Cross(v2 - v1, v3 - v1).magnitude * 0.5f;
-                    
-                    var objectUp = transform.up;
                     var normalDot = Mathf.Abs(Vector3.Dot(normal, objectUp));
-        
+
                     if (normalDot >= 1 - _toolSettings.NormalLimit)
                     {
-                        triangleData.Add((new[] { v1, v2, v3 }, normal, area));
-                        totalArea += area;
+                        objectData.triangles.Add((new[] { v1, v2, v3 }, normal, area));
+                        objectData.totalArea += area;
                     }
                 }
+
+                return objectData;
             }
+        }
 
-            if (triangleData.Count == 0)
-            {
-                Debug.LogWarning("No valid triangles found for grass generation!");
-                return;
-            }
-
-            // 2단계: 유효한 잔디 위치 계산           
-            await _tool.UpdateProgress(0, 100, "Starting position calculation...");
-            
-            var validPositions = new List<GrassPlacementData>();
-            var maxGrassForArea = Mathf.FloorToInt(totalArea / (spacing * spacing));
-            var targetGrassCount = Mathf.Min(_toolSettings.GenerateGrassCount, maxGrassForArea);
-            var attempts = 0;
-            var maxAttempts = targetGrassCount * 2;
-
-            // 위치 계산용 임시 SpatialGrid 생성
+        private async UniTask GenerateGrassForObject(ObjectGenerationData objData)
+        {
+            var spacing = _toolSettings.GrassSpacing;
             var bounds = new Bounds(Vector3.zero, new Vector3(1000, 1000, 1000));
-            var tempGrid = new SpatialGrid(bounds, spacing);
-            var tempPositionIds = new List<int>();
-            
-            Debug.Log($"Starting position calculation. Target: {targetGrassCount}, Max attempts: {maxAttempts}");
+            var objectGrid = new SpatialGrid(bounds, spacing);
+            var attempts = 0;
+            var maxAttempts = objData.targetGrassCount * 2;
 
-            while (validPositions.Count < targetGrassCount && attempts < maxAttempts)
+            while (objData.validPositions.Count < objData.targetGrassCount && attempts < maxAttempts)
             {
                 attempts++;
-                
-                // maxAttempts의 1%마다 업데이트
-                int updateInterval = maxAttempts / 100;
-                // 최소한 1의 간격은 보장
-                updateInterval = Mathf.Max(1, updateInterval);
-    
-                if (attempts % updateInterval == 0)
+
+                if (attempts % Mathf.Max(1, maxAttempts / 100) == 0)
                 {
                     var progress = Mathf.RoundToInt((float)attempts / maxAttempts * 100);
                     progress = Mathf.Min(progress, 100);
-
-                    await _tool.UpdateProgress(progress, 100, 
-                        $"Calculating positions... {validPositions.Count}/{targetGrassCount}");
+                    await _tool.UpdateProgress(progress, 100, "Calculating positions... ");
                 }
 
                 // 면적 기반으로 삼각형 선택
-                var randomValue = Random.value * totalArea;
+                var randomValue = Random.value * objData.totalArea;
                 var currentSum = 0f;
                 int selectedIndex = 0;
-                
-                for (int i = 0; i < triangleData.Count; i++)
+
+                for (int i = 0; i < objData.triangles.Count; i++)
                 {
-                    currentSum += triangleData[i].area;
+                    currentSum += objData.triangles[i].area;
                     if (currentSum >= randomValue)
                     {
                         selectedIndex = i;
@@ -131,95 +186,35 @@ namespace Grass.Editor
                     }
                 }
 
-                var (vertices, normal, _) = triangleData[selectedIndex];
+                var (vertices, normal, _) = objData.triangles[selectedIndex];
                 var randomPoint = GetRandomPointInTriangle(vertices[0], vertices[1], vertices[2]);
-                
-                // 간격 체크 - 기존 잔디
-                _nearbyPoints.Clear();
-                _spatialGrid.GetObjectsInRadius(randomPoint, spacing, _nearbyPoints);
-                
-                if (_nearbyPoints.Count > 0) continue;
 
-                // 간격 체크 - 새로운 위치
-                tempPositionIds.Clear();
-                tempGrid.GetObjectsInRadius(randomPoint, spacing, tempPositionIds);
-                
+                // 현재 오브젝트의 그리드에서만 간격 체크
+                var tempPositionIds = new List<int>();
+                objectGrid.GetObjectsInRadius(randomPoint, spacing, tempPositionIds);
+
                 if (tempPositionIds.Count > 0) continue;
 
                 // 장애물 체크
-                if (Physics.Raycast(randomPoint + normal * 0.5f, -normal, out _, 1f, _toolSettings.PaintBlockMask))
+                if (Physics.CheckSphere(randomPoint, 0.01f, _toolSettings.PaintBlockMask))
                     continue;
 
-                validPositions.Add(new GrassPlacementData 
-                { 
-                    Position = randomPoint, 
-                    Normal = normal 
-                });
-                
-                // 임시 그리드에 위치 추가
-                tempGrid.AddObject(randomPoint, validPositions.Count - 1);
-            }
-
-            // 최종 위치 계산 진행률 표시
-            await _tool.UpdateProgress(100, 100, 
-                $"Position calculation complete. Found {validPositions.Count} valid positions");
-
-            Debug.Log($"Found {validPositions.Count} valid positions after {attempts} attempts");
-
-            // 3단계: 실제 잔디 생성 시작
-            await _tool.UpdateProgress(0, 100, "Starting grass generation...");
-            
-            var generatedCount = 0;
-            var grassDataList = new List<GrassData>();
-
-            foreach (var placementData in validPositions)
-            {
-                var grassData = new GrassData
+                var placementData = new GrassPlacementData
                 {
-                    position = placementData.Position,
-                    normal = placementData.Normal,
-                    color = GetRandomColor(),
-                    widthHeight = new Vector2(_toolSettings.GrassWidth, _toolSettings.GrassHeight)
+                    position = randomPoint,
+                    normal = normal
                 };
 
-                grassDataList.Add(grassData);
-                _spatialGrid.AddObject(placementData.Position, existingGrassCount + generatedCount);
-                generatedCount++;
-
-                // 현재 진행률 계산 (0-100%)
-                if (generatedCount % 1000 == 0 || generatedCount == validPositions.Count)
-                {
-                    var progress = Mathf.RoundToInt((float)generatedCount / validPositions.Count * 100);
-                    await _tool.UpdateProgress(
-                        progress,
-                        100,
-                        $"Generating grass... {generatedCount}/{validPositions.Count}"
-                    );
-                }
+                objData.validPositions.Add(placementData);
+                objectGrid.AddObject(randomPoint, objData.validPositions.Count - 1);
             }
-
-            _grassCompute.GrassDataList.AddRange(grassDataList);
-            await _tool.UpdateProgress(100, 100,
-                $"Complete! Generated {grassDataList.Count} grass instances");
-        }
-
-        private Vector3 GetRandomColor()
-        {
-            var baseColor = _toolSettings.BrushColor;
-            var newRandomCol = new Color(
-                baseColor.r + Random.Range(0, _toolSettings.RangeR),
-                baseColor.g + Random.Range(0, _toolSettings.RangeG),
-                baseColor.b + Random.Range(0, _toolSettings.RangeB),
-                1
-            );
-            return new Vector3(newRandomCol.r, newRandomCol.g, newRandomCol.b);
         }
 
         private Vector3 GetRandomPointInTriangle(Vector3 v1, Vector3 v2, Vector3 v3)
         {
             float r1 = Mathf.Sqrt(Random.value);
             float r2 = Random.value;
-            
+
             float m1 = 1 - r1;
             float m2 = r1 * (1 - r2);
             float m3 = r1 * r2;
