@@ -40,7 +40,6 @@ public class RenderTerrainMap : MonoBehaviour
         GetBounds();
         SetUpCam();
         DrawToMap(TerrainDiffuse);
-
     }
 
     private void Start()
@@ -77,6 +76,7 @@ public class RenderTerrainMap : MonoBehaviour
                 {
                     _bounds = new Bounds(render.transform.position, Vector3.zero);
                 }
+
                 _bounds.Encapsulate(render.bounds);
             }
         }
@@ -89,6 +89,7 @@ public class RenderTerrainMap : MonoBehaviour
                 {
                     _bounds = new Bounds(terrain.transform.position, Vector3.zero);
                 }
+
                 var terrainCenter = terrain.GetPosition() + terrain.terrainData.bounds.center;
                 var worldBounds = new Bounds(terrainCenter, terrain.terrainData.bounds.size);
                 _bounds.Encapsulate(worldBounds);
@@ -102,6 +103,7 @@ public class RenderTerrainMap : MonoBehaviour
         {
             camToDrawWith = GetComponentInChildren<Camera>();
         }
+
         var size = _bounds.size.magnitude;
         camToDrawWith.cullingMask = layer;
         camToDrawWith.orthographicSize = size / adjustScaling;

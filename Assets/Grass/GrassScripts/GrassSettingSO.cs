@@ -7,7 +7,6 @@ using UnityEngine.Serialization;
 public class GrassSettingSO : ScriptableObject
 {
     public ComputeShader shaderToUse;
-
     public Material materialToUse;
 
     // Blade
@@ -29,17 +28,14 @@ public class GrassSettingSO : ScriptableObject
     public float MaxBottomWidth => 2f;
 
     public float minWidth = 0.01f;
-    public float MinWidthLimit => 0.01f;
     public float maxWidth = 1f;
-    public float MaxWidthLimit => 3f;
 
     public float minHeight = 0.01f;
-    public float MinHeightLimit => 0.01f;
     public float maxHeight = 3f;
-    public float MaxHeightLimit => 3f;
 
     public float randomHeightMin = 0.01f;
     public float randomHeightMax = 3f;
+
     // Wind
     [Header("Wind")] public float windSpeed = 0.05f;
     public float MinWindSpeed => -10f;
@@ -77,7 +73,8 @@ public class GrassSettingSO : ScriptableObject
     [Header("Tinting")] public Color topTint = new(1, 1, 1);
     public Color bottomTint = new(0, 0, 1);
 
-    [Header("Season Settings")] public SeasonRange seasonRange = new();
+    [Header("Season Settings")] public int maxZoneCount = 1;    
+    public SeasonRange seasonRange = new();
     public SeasonSettings winterSettings = new();
     public SeasonSettings springSettings = new();
     public SeasonSettings summerSettings = new();
@@ -85,13 +82,12 @@ public class GrassSettingSO : ScriptableObject
 
 #if UNITY_EDITOR
     [Header("LOD")] public bool drawBounds;
+    public bool drawAllBounds;
 #endif
     public int cullingTreeDepth = 1;
 
     [Header("LOD Quality Settings")] public float minFadeDistance = 40;
     public float maxFadeDistance = 125;
-    // [Range(0, 1)] public float lowQualityDistance = 0.3f;
-    // [Range(0, 1)] public float mediumQualityDistance = 0.7f;
 
     [Header("Particles")] public GameObject cuttingParticles;
 

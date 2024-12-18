@@ -13,17 +13,17 @@ MonoBehaviour:
   m_Name: Grass Settings
   m_EditorClassIdentifier: 
   shaderToUse: {fileID: 7200000, guid: 11036af5f2d1499c8845585fb5fadb4c, type: 3}
-  materialToUse: {fileID: 2100000, guid: 7725493650b5a4b4d9c0d612493ca34d, type: 2}
-  bladeRadius: 0.41
-  bladeForward: 1.4
+  materialToUse: {fileID: 2100000, guid: 62e33da08240646939128cbd216c0c12, type: 2}
+  bladeRadius: 0.5
+  bladeForward: 1.5
   bladeCurve: 2
-  bottomWidth: 0.227
+  bottomWidth: 0.2
   minWidth: 0.14974791
-  maxWidth: 0.44974813
-  minHeight: 0.1
+  maxWidth: 0.6
+  minHeight: 0.01
   maxHeight: 3
   randomHeightMin: 0
-  randomHeightMax: 0.2
+  randomHeightMax: 0.10654206
   windSpeed: 2
   windStrength: 1
   windDirection: 45
@@ -33,9 +33,10 @@ MonoBehaviour:
   interactorStrength: 1.28
   topTint: {r: 1, g: 1, b: 1, a: 1}
   bottomTint: {r: 0.1981132, g: 0.1981132, b: 0.1981132, a: 1}
+  maxZoneCount: 20
   seasonRange:
     from: 1
-    to: 0
+    to: 1
     isFullCycle: 1
   winterSettings:
     seasonColor: {r: 1, g: 1, b: 1, a: 0}
@@ -53,8 +54,9 @@ MonoBehaviour:
     seasonColor: {r: 1, g: 0.16862746, b: 0, a: 0}
     width: 1
     height: 1
-  drawBounds: 0
-  cullingTreeDepth: 5
+  drawBounds: 1
+  drawAllBounds: 0
+  cullingTreeDepth: 7
   minFadeDistance: 30
   maxFadeDistance: 300
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}

@@ -5,9 +5,7 @@ using UnityEngine;
 [ExecuteInEditMode]
 public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
 {
-    private const int MaxZones = 9;
     private GrassComputeScript _grassComputeScript;
-    private int _previousChildCount;
 
     [SerializeField] private List<GrassSeasonZone> seasonZones = new();
     [SerializeField] private float globalSeasonValue;
@@ -15,11 +13,9 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
     private void OnEnable()
     {
         _grassComputeScript = FindAnyObjectByType<GrassComputeScript>();
-
         GrassEventManager.AddEvent(GrassEvent.UpdateShaderData, UpdateShaderData);
         GrassFuncManager.AddEvent<Vector3, Color>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
         UpdateSeasonZones();
-        SetGlobalSeasonValue(globalSeasonValue);
         Init();
     }
 
@@ -47,12 +43,14 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
 
     public float GlobalMinRange()
     {
+        if (_grassComputeScript == null) return 0;
         var grassSetting = _grassComputeScript.GrassSetting;
         return grassSetting != null ? grassSetting.seasonRange.GetRange().min : 0f;
     }
 
     public float GlobalMaxRange()
     {
+        if (_grassComputeScript == null) return 0;
         var grassSetting = _grassComputeScript.GrassSetting;
         return grassSetting != null ? grassSetting.seasonRange.GetRange().max : 4f;
     }
@@ -61,7 +59,8 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
     {
         seasonZones.Clear();
         var foundZones = GetComponentsInChildren<GrassSeasonZone>();
-        for (int i = 0; i < Mathf.Min(foundZones.Length, MaxZones); i++)
+        var seasonZoneCount = Mathf.Min(foundZones.Length, _grassComputeScript.GrassSetting.maxZoneCount);
+        for (int i = 0; i < seasonZoneCount; i++)
         {
             if (foundZones[i] != null)
             {
@@ -131,13 +130,7 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
 
     private void OnTransformChildrenChanged()
     {
-        var currentChildCount = transform.childCount;
-        if (currentChildCount != _previousChildCount)
-        {
-            _grassComputeScript.Reset();
-            _previousChildCount = currentChildCount;
-        }
-
+        _grassComputeScript.Reset();
         UpdateSeasonZones();
     }
 }

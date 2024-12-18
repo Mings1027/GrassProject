@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -114,42 +113,42 @@ namespace Grass.Editor
 
         private ObjectGenerationData CollectMeshData(MeshFilter meshFilter)
         {
+            var objectData = new ObjectGenerationData
             {
-                var objectData = new ObjectGenerationData
+                triangles = new List<(Vector3[] vertices, Vector3 normal, float area)>(),
+                validPositions = new List<GrassPlacementData>()
+            };
+
+            var mesh = meshFilter.sharedMesh;
+            var vertices = mesh.vertices;
+            var triangles = mesh.triangles;
+            var normals = mesh.normals;
+            var transform = meshFilter.transform;
+
+            for (int i = 0; i < triangles.Length; i += 3)
+            {
+                var v1 = transform.TransformPoint(vertices[triangles[i]]);
+                var v2 = transform.TransformPoint(vertices[triangles[i + 1]]);
+                var v3 = transform.TransformPoint(vertices[triangles[i + 2]]);
+
+                var normal = transform.TransformDirection(
+                    (normals[triangles[i]] + normals[triangles[i + 1]] + normals[triangles[i + 2]]) / 3f
+                ).normalized;
+
+                var area = Vector3.Cross(v2 - v1, v3 - v1).magnitude * 0.5f;
+                    
+                var surfaceAngle = _toolSettings.allowUndersideGrass 
+                    ? Mathf.Acos(Mathf.Abs(normal.y)) * Mathf.Rad2Deg  // 위아래 모두 허용
+                    : Mathf.Acos(normal.y) * Mathf.Rad2Deg;           // 위쪽만 허용
+                
+                if (surfaceAngle <= _toolSettings.NormalLimit * 90.01f)
                 {
-                    triangles = new List<(Vector3[] vertices, Vector3 normal, float area)>(),
-                    validPositions = new List<GrassPlacementData>()
-                };
-
-                var mesh = meshFilter.sharedMesh;
-                var vertices = mesh.vertices;
-                var triangles = mesh.triangles;
-                var normals = mesh.normals;
-                var transform = meshFilter.transform;
-                var objectUp = transform.up;
-
-                for (int i = 0; i < triangles.Length; i += 3)
-                {
-                    var v1 = transform.TransformPoint(vertices[triangles[i]]);
-                    var v2 = transform.TransformPoint(vertices[triangles[i + 1]]);
-                    var v3 = transform.TransformPoint(vertices[triangles[i + 2]]);
-
-                    var normal = transform.TransformDirection(
-                        (normals[triangles[i]] + normals[triangles[i + 1]] + normals[triangles[i + 2]]) / 3f
-                    ).normalized;
-
-                    var area = Vector3.Cross(v2 - v1, v3 - v1).magnitude * 0.5f;
-                    var normalDot = Mathf.Abs(Vector3.Dot(normal, objectUp));
-
-                    if (normalDot >= 1 - _toolSettings.NormalLimit)
-                    {
-                        objectData.triangles.Add((new[] { v1, v2, v3 }, normal, area));
-                        objectData.totalArea += area;
-                    }
+                    objectData.triangles.Add((new[] { v1, v2, v3 }, normal, area));
+                    objectData.totalArea += area;
                 }
-
-                return objectData;
             }
+
+            return objectData;
         }
 
         private async UniTask GenerateGrassForObject(ObjectGenerationData objData)

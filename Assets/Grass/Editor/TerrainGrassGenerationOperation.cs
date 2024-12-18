@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -215,9 +214,9 @@ namespace Grass.Editor
 
                 // Calculate normal and check slope
                 var normal = terrainData.terrainData.GetInterpolatedNormal(normX, normZ);
-                var normalDot = Mathf.Abs(Vector3.Dot(normal, Vector3.up));
-                if (normalDot < 1 - _toolSettings.NormalLimit) continue;
-
+                var surfaceAngle = Mathf.Acos(normal.y) * Mathf.Rad2Deg;
+                if (surfaceAngle > _toolSettings.NormalLimit * 90.01f) continue;
+                
                 // Check obstacles
                 if (Physics.CheckSphere(worldPos, 0.01f, _toolSettings.PaintBlockMask.value))
                     continue;

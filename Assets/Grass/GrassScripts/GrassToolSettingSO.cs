@@ -15,9 +15,9 @@ public class GrassToolSettingSo : ScriptableObject
         Green
     }
 
-    [Header("Terrain Layer Settings")]
-    [SerializeField] private bool[] layerEnabled = new bool[8];
-    [SerializeField] private float[] heightFading = new float[8];
+    [Header("Terrain Layer Settings")] [SerializeField]
+    private List<bool> layerEnabled = new List<bool>();
+    [SerializeField] private List<float> heightFading = new List<float>();
 
     [Header("Vertex Color Settings")] [SerializeField]
     private VertexColorSetting vertexColorSettings;
@@ -45,6 +45,7 @@ public class GrassToolSettingSo : ScriptableObject
     private float brushSize = 4f;
     [SerializeField] private float brushTransitionSpeed = 0.5f;
     [SerializeField] private float normalLimit = 1f;
+    public bool allowUndersideGrass;
     [SerializeField] private int density = 1;
     [SerializeField] private float grassSpacing = 1f;
     [SerializeField] private float brushHeight = 1f;
@@ -61,7 +62,7 @@ public class GrassToolSettingSo : ScriptableObject
     public float MinSizeWidth => 0.01f;
     public float MaxSizeWidth => 2f;
     public float MinSizeHeight => 0.01f;
-    public float MaxSizeHeight => 2f;
+    public float MaxSizeHeight => 3f;
     public float MinAdjust => -1f;
     public float MaxAdjust => 1f;
     public float MinBrushSize => 0.1f;
@@ -74,12 +75,12 @@ public class GrassToolSettingSo : ScriptableObject
     public int MinGrassAmountToGenerate => 0;
 
     // Properties
-    public bool[] LayerEnabled
+    public List<bool> LayerEnabled
     {
         get => layerEnabled;
         set => layerEnabled = value;
     }
-    public float[] HeightFading
+    public List<float> HeightFading
     {
         get => heightFading;
         set => heightFading = value;
@@ -224,16 +225,33 @@ public class GrassToolSettingSo : ScriptableObject
         RangeB = rangeB;
     }
 
-    public void CreateNewLayers()
+    public void CreateNewLayers(int layerCount)
     {
-        Debug.Log("Setting up initial tool settings");
-        layerEnabled = new bool[8];
-        heightFading = new float[8];
+        Debug.Log($"Setting up initial tool settings for {layerCount} layers");
+        layerEnabled = new List<bool>();
+        heightFading = new List<float>();
 
-        for (int i = 0; i < layerEnabled.Length; i++)
+        for (int i = 0; i < layerCount; i++)
         {
-            layerEnabled[i] = true;
-            heightFading[i] = 1f;
+            layerEnabled.Add(true);
+            heightFading.Add(1f);
+        }
+    }
+
+    public void UpdateLayerCount(int newLayerCount)
+    {
+        // Add new layers if needed
+        while (layerEnabled.Count < newLayerCount)
+        {
+            layerEnabled.Add(true);
+            heightFading.Add(1f);
+        }
+
+        // Remove excess layers if needed
+        if (layerEnabled.Count > newLayerCount)
+        {
+            layerEnabled.RemoveRange(newLayerCount, layerEnabled.Count - newLayerCount);
+            heightFading.RemoveRange(newLayerCount, heightFading.Count - newLayerCount);
         }
     }
 }

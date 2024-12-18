@@ -1,7 +1,7 @@
 #pragma kernel Main
 
 #define TWO_PI      6.28318530717958647693
-#define MAX_ZONES 9
+#define MAX_ZONES 20
 #define GRASS_SEGMENTS 3
 #define GRASS_NUM_VERTICES_PER_BLADE (GRASS_SEGMENTS * 2)+ 1
 
@@ -60,6 +60,7 @@ float _InteractorStrength;
 uniform float4 _InteractorData[100];
 uniform float _InteractorsLength;
 uniform float3 _CameraPositionWS;
+
 float4 _ZonePositions[MAX_ZONES];
 float4 _ZoneScales[MAX_ZONES];
 float4 _ZoneColors[MAX_ZONES];
@@ -248,7 +249,9 @@ void Main(uint id : SV_DispatchThreadID)
     half3 baseColor = sv.color;
     if (IsInAnyZone(sv.positionWS, zoneIndex))
     {
-        baseColor = _ZoneColors[zoneIndex].rgb;
+        uint hash = Hash3Pos(sv.positionWS, visibleID);
+        half randomValue = HashToFloat01(hash) * 0.3;
+        baseColor = _ZoneColors[zoneIndex].rgb + randomValue;
         grassHeight *= _ZoneWidthHeights[zoneIndex].y;
         grassWidth *= _ZoneWidthHeights[zoneIndex].x;
     }
@@ -307,7 +310,7 @@ void Main(uint id : SV_DispatchThreadID)
             DrawTriangle tri = (DrawTriangle)0;
             tri.normalOS = grassNormal;
             tri.diffuseColor = baseColor;
-            tri.extraBuffer = half4(cut, 0/*distanceFade*/, 0, 0);
+            tri.extraBuffer = half4(cut, 0, 0, 0);
 
             tri.vertices[0] = drawVertices[k];
             tri.vertices[1] = drawVertices[k + 1];

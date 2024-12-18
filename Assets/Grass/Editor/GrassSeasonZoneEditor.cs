@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Grass.GrassScripts;
 using UnityEditor;
 using UnityEngine;
@@ -55,7 +54,7 @@ namespace Grass.Editor
             if (_overrideGlobalSettings.boolValue)
             {
                 EditorGUILayout.Space(10);
-                DrawSeasonSettingsSection();
+                GrassEditorHelper.DrawFoldoutSection("Season Settings", DrawAllSeasonSettings);
             }
 
             serializedObject.ApplyModifiedProperties();
@@ -130,39 +129,6 @@ namespace Grass.Editor
                 _overrideGlobalSettings.boolValue = overrideState;
                 serializedObject.ApplyModifiedProperties();
                 UpdateController();
-            }
-        }
-
-        private void DrawSeasonSettingsSection()
-        {
-            const string tooltip = "Customize how grass looks in each season\n\n" +
-                                   "• Colors: Set unique grass colors for each season\n" +
-                                   "• Width Scale: Set grass blade width for each season\n" +
-                                   "• Height Scale: Set grass blade height for each season\n\n" +
-                                   "Changes here only apply when 'Override Global Settings' is enabled";
-
-            if (_seasonSettingsExpanded)
-            {
-                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                {
-                    DrawSeasonSettingsHeader(tooltip);
-                    EditorGUILayout.Space(5);
-                    DrawAllSeasonSettings();
-                }
-                EditorGUILayout.EndVertical();
-            }
-            else
-            {
-                DrawSeasonSettingsHeader(tooltip);
-            }
-        }
-
-        private void DrawSeasonSettingsHeader(string tooltip)
-        {
-            if (GrassEditorHelper.DrawToggleButton("Season Settings", tooltip, _seasonSettingsExpanded,
-                    out var expanded))
-            {
-                _seasonSettingsExpanded = expanded;
             }
         }
 
@@ -311,7 +277,7 @@ namespace Grass.Editor
                 var (min, max) = zone.OverrideGlobalSettings
                     ? (zone.MinRange, zone.MaxRange)
                     : grassSettings.seasonRange.GetRange();
-                
+
                 zone.UpdateSeasonValue(_seasonValue.floatValue, min, max);
             }
         }

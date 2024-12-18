@@ -11,7 +11,7 @@ public class GrassSeasonZone : MonoBehaviour
     [SerializeField] private SeasonSettings summerSettings = new();
     [SerializeField] private SeasonSettings autumnSettings = new();
 
-    private GrassSettingSO _grassSetting;
+    private static GrassSettingSO _grassSetting;
     private ZoneData _zoneData;
     private Color _zoneColor;
     private Vector3 _lastPosition;

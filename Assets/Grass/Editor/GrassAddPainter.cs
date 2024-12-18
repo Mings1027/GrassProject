@@ -16,7 +16,6 @@ namespace Grass.Editor
             var paintMaskValue = toolSettings.PaintMask.value;
             var brushSize = toolSettings.BrushSize;
             var density = toolSettings.Density;
-            var normalLimit = toolSettings.NormalLimit;
 
             if (Physics.Raycast(mousePointRay, out var hit, grassCompute.GrassSetting.maxFadeDistance))
             {
@@ -52,12 +51,11 @@ namespace Grass.Editor
                             var hitLayer = hit2.collider.gameObject.layer;
                             if (((1 << hitLayer) & paintMaskValue) != 0)
                             {
-                                var hitObj = hit2.collider.gameObject;
-                                var objectUp = hitObj.transform.up;
-                                var normalDot = Mathf.Abs(Vector3.Dot(hit2.normal, objectUp));
-
-                                // normalDot 에 Abs를 제거하면 오브젝트가 회전했을 때 아래를 바라보는 면에는 잔디를 안그릴 수 있음 절댓값을 취했기 때문에 아래면도 그리고 있는것
-                                if (normalDot >= 1 - normalLimit)
+                                var surfaceAngle = toolSettings.allowUndersideGrass 
+                                    ? Mathf.Acos(Mathf.Abs(hit2.normal.y)) * Mathf.Rad2Deg  // 위아래 모두 허용
+                                    : Mathf.Acos(hit2.normal.y) * Mathf.Rad2Deg;           // 위쪽만 허용
+                                
+                                if (surfaceAngle <= toolSettings.NormalLimit * 90.01f)
                                 {
                                     _nearbyGrassIds.Clear();
                                     spatialGrid.GetObjectsInRadius(hit2.point, toolSettings.GrassSpacing,
@@ -105,23 +103,11 @@ namespace Grass.Editor
         {
             return new GrassData
             {
-                color = GetRandomColor(toolSettings),
+                color = GrassEditorHelper.GetRandomColor(toolSettings),
                 position = grassPosition,
                 widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight),
                 normal = grassNormal
             };
-        }
-
-        private Vector3 GetRandomColor(GrassToolSettingSo toolSettings)
-        {
-            var baseColor = toolSettings.BrushColor;
-            var newRandomCol = new Color(
-                baseColor.r + Random.Range(0, toolSettings.RangeR),
-                baseColor.g + Random.Range(0, toolSettings.RangeG),
-                baseColor.b + Random.Range(0, toolSettings.RangeB),
-                1
-            );
-            return new Vector3(newRandomCol.r, newRandomCol.g, newRandomCol.b);
         }
 
         public override void Clear()

@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 public class CullingTree
 {
     private Bounds _bounds; // 현재 노드의 영역
-    private readonly CullingTree[] _children; // 자식 노드들
+    private CullingTree[] _children; // 자식 노드들
     private readonly List<int> _grassIDHeld = new(); // 현재 노드에 포함된 잔디 ID들
 
 #if UNITY_EDITOR
@@ -24,25 +25,9 @@ public class CullingTree
 
         if (depth > 0)
         {
-            var size = _bounds.size / 4.0f;
-            var childSize = _bounds.size / 2.0f;
-            var center = _bounds.center;
-
-            var isEvenDepth = depth % 2 == 0;
-            var childCount = isEvenDepth ? 4 : 8;
-
-            _children = new CullingTree[childCount];
-
-            if (isEvenDepth)
-            {
-                childSize.y = _bounds.size.y;
-            }
-
-            for (var i = 0; i < childCount; i++)
-            {
-                var childCenter = CalculateChildCenter(center, size, i, isEvenDepth);
-                _children[i] = new CullingTree(new Bounds(childCenter, childSize), depth - 1);
-            }
+            // 4분할만 하든 4,8 번갈아 하든 ReturnLeafList 성능은 유의미한 차이가 보이지 않음
+            CreateChildFourEight(depth);
+            // CreateChildEight(depth);
         }
         else
         {
@@ -50,39 +35,54 @@ public class CullingTree
         }
     }
 
-    /// <summary>
-    /// 자식 노드의 중심점 계산
-    /// </summary>
-    /// <param name="parentCenter"></param>
-    /// <param name="size"></param>
-    /// <param name="index"></param>
-    /// <param name="isEvenDepth"></param>
-    /// <returns></returns>
-    private Vector3 CalculateChildCenter(Vector3 parentCenter, Vector3 size, int index, bool isEvenDepth)
+    private void CreateChildFourEight(int depth)
     {
-        var x = parentCenter.x + ((index & 1) == 0 ? -size.x : size.x);
-        var z = (index & 2) == 0 ? -size.z : size.z;
-        float y;
+        var size = _bounds.size / 4.0f;
+        var childSize = _bounds.size / 2.0f;
+        var center = _bounds.center;
+
+        var isEvenDepth = depth % 2 == 0;
+        var childCount = isEvenDepth ? 4 : 8;
+
+        _children = new CullingTree[childCount];
 
         if (isEvenDepth)
         {
-            y = parentCenter.y;
+            childSize.y = _bounds.size.y;
         }
-        else
+
+        for (var index = 0; index < childCount; index++)
         {
-            y = parentCenter.y + (index < 4 ? -size.y : size.y);
+            var x = (index & 1) == 0 ? -size.x : size.x;
+            var y = isEvenDepth ? 0 : index < 4 ? -size.y : size.y;
+            var z = (index & 2) == 0 ? -size.z : size.z;
+            var childCenter = new Vector3(x, y, z) + center;
+            _children[index] = new CullingTree(new Bounds(childCenter, childSize), depth - 1);
         }
+    }
 
-        z += parentCenter.z;
+    private void CreateChildEight(int depth)
+    {
+        var childSize = _bounds.size / 2.0f;
+        var center = _bounds.center;
 
-        return new Vector3(x, y, z);
+        _children = new CullingTree[8];
+
+        for (var i = 0; i < 8; i++)
+        {
+            var x = (i & 1) == 0 ? -childSize.x : childSize.x;
+            var y = (i & 2) == 0 ? -childSize.y : childSize.y;
+            var z = (i & 4) == 0 ? -childSize.z : childSize.z;
+
+            var childCenter = new Vector3(x / 2, y / 2, z / 2) + center;
+            _children[i] = new CullingTree(new Bounds(childCenter, childSize), depth - 1);
+        }
     }
 
     /// <summary>
     /// 카메라 프러스텀 내에 있는 잔디 찾아서 반환
     /// </summary>
     /// <param name="frustum">카메라 프러스텀 평면들</param>
-    /// <param name="list">결과 영역들을 저장할 리스트</param>
     /// <param name="visibleIDList">보이는 잔디 ID들을 저장할 리스트</param>
     public void RetrieveLeaves(Plane[] frustum, List<int> visibleIDList)
     {
@@ -127,20 +127,19 @@ public class CullingTree
     {
         if (_bounds.Contains(point))
         {
-            if (_children.Length != 0) // 내부 노드면 자식 검사
-            {
-                for (var i = 0; i < _children.Length; i++)
-                {
-                    if (_children[i] != null && _children[i].FindLeaf(point, index))
-                    {
-                        return true;
-                    }
-                }
-            }
-            else // 리프 노드면 ID 추가
+            if (_children.Length == 0) // 내부 노드면 자식 검사
+                // 리프 노드면 ID 추가
             {
                 _grassIDHeld.Add(index);
                 return true;
+            }
+
+            for (var i = 0; i < _children.Length; i++)
+            {
+                if (_children[i] != null && _children[i].FindLeaf(point, index))
+                {
+                    return true;
+                }
             }
         }
 
@@ -213,6 +212,7 @@ public class CullingTree
     /// <param name="radius"></param>
     public void ReturnLeafList(List<int> resultList, Vector3 point, float radius)
     {
+        Profiler.BeginSample("ReturnLeafList");
         var expandedBounds = _bounds;
         expandedBounds.Expand(radius * 2);
         if (!expandedBounds.Contains(point))
@@ -234,6 +234,8 @@ public class CullingTree
                 }
             }
         }
+
+        Profiler.EndSample();
     }
 
     /// <summary>
@@ -281,14 +283,42 @@ public class CullingTree
 
     public void DrawAllBounds()
     {
-        var allNodes = new List<CullingTree>();
-        RetrieveAllLeaves(allNodes);
-        Gizmos.color = new Color(1, 1, 1, 0.3f);
-        foreach (var node in allNodes)
+        DrawNodeBounds(this);
+    }
+
+    private void DrawNodeBounds(CullingTree node)
+    {
+        if (node == null) return;
+
+        if (node._children.Length == 0) // 리프 노드
         {
-            var bounds = node._bounds;
-            Gizmos.DrawWireCube(bounds.center, bounds.size);
+            if (node._grassIDHeld.Count > 0) // 잔디가 있는 리프 노드만
+            {
+                // 리프 노드는 초록색으로 표시
+                Gizmos.color = new Color(0.0f, 1.0f, 0.0f, 0.3f);
+                Gizmos.DrawWireCube(node._bounds.center, node._bounds.size);
+
+                // 내부를 반투명하게 채움
+                Gizmos.color = new Color(0.0f, 1.0f, 0.0f, 0.1f);
+                Gizmos.DrawCube(node._bounds.center, node._bounds.size);
+            }
+        }
+        else // 내부 노드
+        {
+            // 흰색으로 표시
+            Gizmos.color = new Color(1.0f, 1.0f, 1.0f, 0.3f);
+            Gizmos.DrawWireCube(node._bounds.center, node._bounds.size);
+        }
+
+        // 자식 노드들 재귀적으로 그리기
+        foreach (var child in node._children)
+        {
+            if (child != null)
+            {
+                DrawNodeBounds(child);
+            }
         }
     }
+
 #endif
 }

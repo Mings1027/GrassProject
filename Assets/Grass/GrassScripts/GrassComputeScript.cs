@@ -31,7 +31,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
     private CullingTree _cullingTree;
     private Camera _mainCamera; // main camera
     private List<GrassInteractor> _interactors = new();
-    
+
     private ComputeBuffer _sourceVertBuffer; // A compute buffer to hold vertex data of the source mesh
     private ComputeBuffer _drawBuffer; // A compute buffer to hold vertex data of the generated mesh
     private GraphicsBuffer _argsBuffer; // A compute buffer to hold indirect draw arguments
@@ -190,8 +190,16 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         UnregisterEvents();
         ReleaseBuffer();
         _interactors.Clear();
-        Destroy(_instComputeShader);
-        Destroy(instantiatedMaterial);
+        if (!Application.isPlaying)
+        {
+            DestroyImmediate(_instComputeShader);
+            DestroyImmediate(instantiatedMaterial);
+        }
+        else
+        {
+            Destroy(_instComputeShader);
+            Destroy(instantiatedMaterial);
+        }
     }
 
 #if UNITY_EDITOR
@@ -203,8 +211,13 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
             if (grassSetting.drawBounds)
             {
                 if (_cullingTree == null) return;
-                _cullingTree.DrawAllBounds();
                 _cullingTree.DrawBounds();
+            }
+
+            if (grassSetting.drawAllBounds)
+            {
+                if (_cullingTree == null) return;
+                _cullingTree.DrawAllBounds();
             }
         }
     }
@@ -239,9 +252,15 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
     private void MainSetup(bool full)
     {
         SetupCamera();
+        if (grassData.Count <= 0)
+        {
+            ClearAllData();
+            return;
+        }
+
         if (ValidateSetup()) return;
-        InitializeShader();
-        InitializeBuffers();
+        InitShader();
+        InitBuffers();
         SetupComputeShader();
         SetupQuadTree(full);
         GetFrustumData();
@@ -272,13 +291,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
     private bool ValidateSetup()
     {
-        // Don't do anything if resources are not found,
-        // or no vertex is put on the mesh.
-        if (grassData.Count == 0)
-        {
-            return true;
-        }
-
         if (!grassSetting.shaderToUse || !grassSetting.materialToUse)
         {
             Debug.LogWarning("Missing Compute Shader/Material in grass Settings", this);
@@ -294,7 +306,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         return false;
     }
 
-    private void InitializeShader()
+    private void InitShader()
     {
         _instComputeShader = Instantiate(grassSetting.shaderToUse);
         instantiatedMaterial = Instantiate(grassSetting.materialToUse);
@@ -302,7 +314,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         _instComputeShader.GetKernelThreadGroupSizes(_idGrassKernel, out _threadGroupSize, out _, out _);
     }
 
-    private void InitializeBuffers()
+    private void InitBuffers()
     {
         _sourceVertBuffer = new ComputeBuffer(grassData.Count, SourceVertStride, ComputeBufferType.Structured);
         _sourceVertBuffer.SetData(grassData);
@@ -314,7 +326,11 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         _cutBuffer = new ComputeBuffer(grassData.Count, sizeof(float), ComputeBufferType.Structured);
 
         // added for cutting
-        InitializeCutData();
+        _cutIDs = new float[grassData.Count];
+        for (var i = 0; i < _cutIDs.Length; i++)
+        {
+            _cutIDs[i] = -1;
+        }
 
         _cutBuffer.SetData(_cutIDs);
     }
@@ -339,18 +355,9 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
     private void SetupQuadTree(bool full)
     {
-        if (grassData.Count <= 0) return;
-
         if (full)
         {
-            InitCullingTree(grassSetting.cullingTreeDepth);
-            for (int i = 0; i < grassData.Count; i++)
-            {
-                if (FindLeafForGrass(grassData[i].position, i))
-                {
-                    _grassVisibleIDList.Add(i);
-                }
-            }
+            InitCullingTree();
         }
 #if UNITY_EDITOR
         else
@@ -445,25 +452,18 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
                 var squaredDistance = (hitPoint - grassPosition).sqrMagnitude;
 
                 if (squaredDistance <= squaredRadius &&
-                    (_cutIDs[currentIndex] > hitPointY ||
-                     Mathf.Approximately(_cutIDs[currentIndex], -1)))
+                    (_cutIDs[currentIndex] > hitPointY || Mathf.Approximately(_cutIDs[currentIndex], -1)))
                 {
-                    if (_cutIDs[currentIndex] - 0.1f > hitPointY ||
-                        Mathf.Approximately(_cutIDs[currentIndex], -1))
+                    if (_cutIDs[currentIndex] - 0.1f > hitPointY || Mathf.Approximately(_cutIDs[currentIndex], -1))
                     {
+                        var baseColor = new Color(
+                            grassData[currentIndex].color.x,
+                            grassData[currentIndex].color.y,
+                            grassData[currentIndex].color.z
+                        );
                         var zoneColor =
-                            GrassFuncManager.TriggerEvent<Vector3, Color>(GrassEvent.TryGetGrassColor,
-                                grassPosition);
-
-                        // zone 안이면 zone 색상, 밖이면 원래 색상 사용
-                        var particleColor = zoneColor == Color.white
-                            ? new Color(
-                                grassData[currentIndex].color.x,
-                                grassData[currentIndex].color.y,
-                                grassData[currentIndex].color.z
-                            )
-                            : zoneColor;
-
+                            GrassFuncManager.TriggerEvent<Vector3, Color>(GrassEvent.TryGetGrassColor, grassPosition);
+                        var particleColor = zoneColor == Color.clear ? baseColor : zoneColor;
                         SpawnCuttingParticle(grassPosition, particleColor);
                     }
 
@@ -492,26 +492,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         _interactors.Remove(interactor);
     }
 
-    public void InitCullingTree(int cullingTreeDepth)
-    {
-        if (grassData.Count == 0)
-        {
-            ResetBounds();
-            return;
-        }
-
-        InitializeBounds();
-        _cullingTree = new CullingTree(_bounds, cullingTreeDepth);
-    }
-
-    private void ResetBounds()
-    {
-        _bounds = new Bounds();
-        _cullingTree = null;
-        _grassVisibleIDList = new List<int>();
-    }
-
-    private void InitializeBounds()
+    private void InitCullingTree()
     {
         _bounds = new Bounds(grassData[0].position, Vector3.zero);
         foreach (var grass in grassData)
@@ -521,6 +502,16 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
         var extents = _bounds.extents;
         _bounds.extents = extents * 1.1f;
+        _cullingTree = new CullingTree(_bounds, grassSetting.cullingTreeDepth);
+        _grassVisibleIDList = new List<int>();
+
+        for (int i = 0; i < grassData.Count; i++)
+        {
+            if (_cullingTree.FindLeaf(grassData[i].position, i))
+            {
+                _grassVisibleIDList.Add(i);
+            }
+        }
     }
 
     public void UpdateCulling(Plane[] cameraFrustumPlanes)
@@ -529,24 +520,10 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         _cullingTree?.RetrieveLeaves(cameraFrustumPlanes, _grassVisibleIDList);
     }
 
-    public bool FindLeafForGrass(Vector3 position, int index)
-    {
-        return _cullingTree != null && _cullingTree.FindLeaf(position, index);
-    }
-
     public void GetNearbyGrass(Vector3 point, float radius)
     {
         _nearbyGrassIds.Clear();
         _cullingTree?.ReturnLeafList(_nearbyGrassIds, point, radius);
-    }
-
-    public void InitializeCutData()
-    {
-        _cutIDs = new float[grassData.Count];
-        for (var i = 0; i < _cutIDs.Length; i++)
-        {
-            _cutIDs[i] = -1;
-        }
     }
 
     /*=======================================================================================
@@ -631,29 +608,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
             _instComputeShader.SetVectorArray(GrassShaderPropertyID.ZoneWidthHeights, widthHeights);
             _instComputeShader.SetInt(GrassShaderPropertyID.ZoneCount, zoneCount);
         }
-
-        if (instantiatedMaterial != null)
-        {
-            instantiatedMaterial.SetVectorArray(GrassShaderPropertyID.ZonePositions, positions);
-            instantiatedMaterial.SetVectorArray(GrassShaderPropertyID.ZoneScales, scales);
-            instantiatedMaterial.SetVectorArray(GrassShaderPropertyID.ZoneColors, colors);
-            instantiatedMaterial.SetVectorArray(GrassShaderPropertyID.ZoneWidthHeights, widthHeights);
-            instantiatedMaterial.SetInt(GrassShaderPropertyID.ZoneCount, zoneCount);
-        }
-    }
-
-    public void ResetMaterial()
-    {
-        if (!Application.isPlaying)
-        {
-            DestroyImmediate(instantiatedMaterial);
-        }
-        else
-        {
-            Destroy(instantiatedMaterial);
-        }
-
-        instantiatedMaterial = Instantiate(grassSetting.materialToUse);
     }
 
 #if UNITY_EDITOR
@@ -694,23 +648,15 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
     public void ClearAllData()
     {
-        AllClear();
-        _cutBuffer?.SetData(_cutIDs);
-
-        _drawBuffer.SetCounterValue(0);
-        _argsBuffer.SetData(_argsBufferReset);
-
-        _dispatchSize = 0;
-    }
-
-    public void AllClear()
-    {
         grassData.Clear();
         _nearbyGrassIds.Clear();
         _grassVisibleIDList.Clear();
         _cutIDs = Array.Empty<float>();
         _cullingTree = null;
         _bounds = new Bounds();
+        ReleaseResources();
+
+        _dispatchSize = 0;
     }
 
     public float[] GetCutBuffer() => _cutIDs;
