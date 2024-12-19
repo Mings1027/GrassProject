@@ -674,5 +674,25 @@ namespace Grass.Editor
             );
             return new Vector3(newRandomCol.r, newRandomCol.g, newRandomCol.b);
         }
+
+        public static bool IsLayerInMask(int layer, LayerMask layerMask)
+        {
+            return ((1 << layer) & layerMask.value) != 0;
+        }
+
+        public static bool IsLayerInMask(int layer, int layerMask)
+        {
+            return ((1 << layer) & layerMask) != 0;
+        }
+
+        public static bool IsNotLayerInMask(int layer, LayerMask layerMask)
+        {
+            return ((1 << layer) & layerMask.value) == 0;
+        }
+
+        public static bool IsNotLayerInMask(int layer, int layerMask)
+        {
+            return ((1 << layer) & layerMask) == 0;
+        }
     }
 }

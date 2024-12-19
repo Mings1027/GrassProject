@@ -166,17 +166,6 @@ namespace Grass.Editor
                 var mapX = Mathf.FloorToInt(normX * (terrainData.alphamapWidth - 1));
                 var mapZ = Mathf.FloorToInt(normZ * (terrainData.alphamapHeight - 1));
 
-                var worldPos = terrainData.terrainPosition + new Vector3(randomX, 0, randomZ);
-                worldPos.y = terrainData.terrainData.GetHeight(
-                    Mathf.RoundToInt(normX * terrainData.terrainData.heightmapResolution),
-                    Mathf.RoundToInt(normZ * terrainData.terrainData.heightmapResolution)
-                );
-
-                var tempLocalPositionIds = new List<int>();
-                objectGrid.GetObjectsInRadius(worldPos, spacing, tempLocalPositionIds);
-
-                if (tempLocalPositionIds.Count > 0) continue;
-
                 var finalHeightScale = 1f;
                 var isLayerEnabled = true;
 
@@ -206,17 +195,28 @@ namespace Grass.Editor
                     }
                 }
 
-                // 레이어가 비활성화되어 있으면 스킵
+                // 레이어가 비활성화되어 있으면 즉시 다음 위치로
                 if (!isLayerEnabled) continue;
 
-                // 높이 스케일이 0이면 스킵
+                // 높이 스케일이 0이면 즉시 다음 위치로
                 if (finalHeightScale <= 0) continue;
 
+                var worldPos = terrainData.terrainPosition + new Vector3(randomX, 0, randomZ);
+                worldPos.y = terrainData.terrainData.GetHeight(
+                    Mathf.RoundToInt(normX * terrainData.terrainData.heightmapResolution),
+                    Mathf.RoundToInt(normZ * terrainData.terrainData.heightmapResolution)
+                );
+
+                var tempLocalPositionIds = new List<int>();
+                objectGrid.GetObjectsInRadius(worldPos, spacing, tempLocalPositionIds);
+
+                if (tempLocalPositionIds.Count > 0) continue;
+                
                 // Calculate normal and check slope
                 var normal = terrainData.terrainData.GetInterpolatedNormal(normX, normZ);
                 var surfaceAngle = Mathf.Acos(normal.y) * Mathf.Rad2Deg;
                 if (surfaceAngle > _toolSettings.NormalLimit * 90.01f) continue;
-                
+
                 // Check obstacles
                 if (Physics.CheckSphere(worldPos, 0.01f, _toolSettings.PaintBlockMask.value))
                     continue;

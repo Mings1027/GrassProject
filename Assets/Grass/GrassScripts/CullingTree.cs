@@ -26,7 +26,7 @@ public class CullingTree
         if (depth > 0)
         {
             // 4분할만 하든 4,8 번갈아 하든 ReturnLeafList 성능은 유의미한 차이가 보이지 않음
-            CreateChildFourEight(depth);
+            CreateChild(depth);
             // CreateChildEight(depth);
         }
         else
@@ -35,7 +35,7 @@ public class CullingTree
         }
     }
 
-    private void CreateChildFourEight(int depth)
+    private void CreateChild(int depth)
     {
         var size = _bounds.size / 4.0f;
         var childSize = _bounds.size / 2.0f;
@@ -289,25 +289,25 @@ public class CullingTree
     private void DrawNodeBounds(CullingTree node)
     {
         if (node == null) return;
-
+        var center = node._bounds.center + new Vector3(0, 0.01f, 0);
         if (node._children.Length == 0) // 리프 노드
         {
             if (node._grassIDHeld.Count > 0) // 잔디가 있는 리프 노드만
             {
                 // 리프 노드는 초록색으로 표시
                 Gizmos.color = new Color(0.0f, 1.0f, 0.0f, 0.3f);
-                Gizmos.DrawWireCube(node._bounds.center, node._bounds.size);
+                Gizmos.DrawWireCube(center, node._bounds.size);
 
                 // 내부를 반투명하게 채움
                 Gizmos.color = new Color(0.0f, 1.0f, 0.0f, 0.1f);
-                Gizmos.DrawCube(node._bounds.center, node._bounds.size);
+                Gizmos.DrawCube(center, node._bounds.size);
             }
         }
         else // 내부 노드
         {
             // 흰색으로 표시
             Gizmos.color = new Color(1.0f, 1.0f, 1.0f, 0.3f);
-            Gizmos.DrawWireCube(node._bounds.center, node._bounds.size);
+            Gizmos.DrawWireCube(center, node._bounds.size);
         }
 
         // 자식 노드들 재귀적으로 그리기

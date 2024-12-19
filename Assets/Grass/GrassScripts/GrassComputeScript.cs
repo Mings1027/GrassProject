@@ -14,7 +14,7 @@ using UnityEditor;
 public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 {
     private const int SourceVertStride = sizeof(float) * (3 + 3 + 2 + 3);
-    private const int DrawStride = sizeof(float) * (3 + 3 + 1 + (3 + 2) * 3);
+    private const int DrawStride = sizeof(float) * (3 + 3 + 4 + (3 + 2) * 3);
     private const int MaxBufferSize = 2500000;
 
     [SerializeField, HideInInspector] private List<GrassData> grassData = new(); // base data lists
@@ -49,7 +49,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
     // speeding up the editor a bit
     private Vector3 _cachedCamPos;
     private Quaternion _cachedCamRot;
-    private bool _fastMode;
     private int _interactorDataID;
 
     private readonly uint[] _argsBufferReset =
@@ -78,7 +77,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
     public void Reset()
     {
-        _fastMode = false;
         ReleaseResources();
         MainSetup(true);
 
@@ -124,13 +122,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         {
             _mainCamera = Camera.main;
         }
-    }
-
-    public void ResetFaster()
-    {
-        _fastMode = true;
-        ReleaseResources();
-        MainSetup(false);
     }
 
     private void ReleaseResources()
@@ -392,13 +383,10 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
         // Get frustum data from the main camera without modifying far clip plane
         GeometryUtility.CalculateFrustumPlanes(_mainCamera, _cameraFrustumPlanes);
+        _mainCamera.farClipPlane = grassSetting.maxFadeDistance;
 
-        if (!_fastMode)
-        {
-            _mainCamera.farClipPlane = grassSetting.maxFadeDistance;
-            UpdateCulling(_cameraFrustumPlanes);
-            _visibleIDBuffer.SetData(_grassVisibleIDList);
-        }
+        UpdateCulling(_cameraFrustumPlanes);
+        _visibleIDBuffer.SetData(_grassVisibleIDList);
     }
 
     // Update the shader with frame specific data
@@ -612,14 +600,43 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
 #if UNITY_EDITOR
 
+    public void ResetFaster()
+    {
+        ReleaseResources();
+        MainSetup(false);
+    }
+
     public void SetupForEditorMode()
     {
         if (grassData.Count == 0) return;
 
-        _grassVisibleIDList = new List<int>(grassData.Count);
-        for (int i = 0; i < grassData.Count; i++)
+        _grassVisibleIDList ??= new List<int>();
+        var startIndex = _grassVisibleIDList.Count;
+        for (int i = startIndex; i < grassData.Count; i++)
         {
             _grassVisibleIDList.Add(i);
+        }
+    }
+
+    public void AddNewGrassToCullingTree(Vector3 position, int index)
+    {
+        if (_bounds.Contains(position))
+        {
+            if (_cullingTree != null)
+            {
+                if (_cullingTree.FindLeaf(position, index))
+                {
+                    _grassVisibleIDList.Add(index);
+                }
+            }
+            else
+            {
+                _grassVisibleIDList.Add(index);
+            }
+        }
+        else
+        {
+            InitCullingTree();
         }
     }
 

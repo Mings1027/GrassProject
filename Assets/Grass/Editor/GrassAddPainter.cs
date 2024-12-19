@@ -6,7 +6,7 @@ namespace Grass.Editor
     public sealed class GrassAddPainter : BasePainter
     {
         private Vector3 _lastPosition = Vector3.zero;
-        private readonly List<int> _nearbyGrassIds = new List<int>();
+        private readonly List<int> _nearbyGrassIds = new();
 
         public GrassAddPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
             spatialGrid) { }
@@ -14,11 +14,16 @@ namespace Grass.Editor
         public void AddGrass(Ray mousePointRay, GrassToolSettingSo toolSettings)
         {
             var paintMaskValue = toolSettings.PaintMask.value;
+            var paintBlockMaskValue = toolSettings.PaintBlockMask.value;
             var brushSize = toolSettings.BrushSize;
             var density = toolSettings.Density;
+            var maxFadeDistance = grassCompute.GrassSetting.maxFadeDistance;
 
-            if (Physics.Raycast(mousePointRay, out var hit, grassCompute.GrassSetting.maxFadeDistance))
+            if (Physics.Raycast(mousePointRay, out var hit, maxFadeDistance))
             {
+                if (GrassEditorHelper.IsLayerInMask(hit.collider.gameObject.layer, paintBlockMaskValue)) return;
+                if (GrassEditorHelper.IsNotLayerInMask(hit.collider.gameObject.layer, paintMaskValue)) return;
+
                 var distanceMoved = Vector3.Distance(_lastPosition, hit.point);
                 if (distanceMoved >= brushSize * 0.5f)
                 {
@@ -39,50 +44,59 @@ namespace Grass.Editor
 
                         var randomOffset = right * (radius * Mathf.Cos(angle)) +
                                            forward * (radius * Mathf.Sin(angle));
-                        var randomOrigin = hit.point + randomOffset;
+                        var randomPoint = hit.point + randomOffset;
 
-                        var newRay = new Ray(randomOrigin - rayDirection * brushSize, rayDirection);
-
-                        // 랜덤 포인트 시각화 (흰색)
-                        // Debug.DrawLine(randomOrigin + Vector3.up, randomOrigin - Vector3.up, Color.white, 2f);
-
-                        if (Physics.Raycast(newRay, out var hit2, grassCompute.GrassSetting.maxFadeDistance))
+                        var cameraToPointRay = new Ray(mousePointRay.origin,
+                            (randomPoint - mousePointRay.origin).normalized);
+                        
+                        if (Physics.Raycast(cameraToPointRay, out var cameraHit, maxFadeDistance))
                         {
-                            var hitLayer = hit2.collider.gameObject.layer;
-                            if (((1 << hitLayer) & paintMaskValue) != 0)
+                            if (GrassEditorHelper.IsLayerInMask(cameraHit.collider.gameObject.layer,
+                                    paintBlockMaskValue))
+                                continue;
+
+                            var newRay = new Ray(randomPoint - rayDirection * brushSize, rayDirection);
+
+                            if (Physics.Raycast(newRay, out var hit2, maxFadeDistance))
                             {
-                                var surfaceAngle = toolSettings.allowUndersideGrass 
-                                    ? Mathf.Acos(Mathf.Abs(hit2.normal.y)) * Mathf.Rad2Deg  // 위아래 모두 허용
-                                    : Mathf.Acos(hit2.normal.y) * Mathf.Rad2Deg;           // 위쪽만 허용
-                                
-                                if (surfaceAngle <= toolSettings.NormalLimit * 90.01f)
+                                var hitLayer = hit2.collider.gameObject.layer;
+                                if (GrassEditorHelper.IsLayerInMask(hitLayer, paintMaskValue))
                                 {
-                                    _nearbyGrassIds.Clear();
-                                    spatialGrid.GetObjectsInRadius(hit2.point, toolSettings.GrassSpacing,
-                                        _nearbyGrassIds);
+                                    var surfaceAngle = toolSettings.allowUndersideGrass
+                                        ? Mathf.Acos(Mathf.Abs(hit2.normal.y)) * Mathf.Rad2Deg // 위아래 모두 허용
+                                        : Mathf.Acos(hit2.normal.y) * Mathf.Rad2Deg; // 위쪽만 허용
 
-                                    var tooClose = false;
-                                    foreach (var nearbyId in _nearbyGrassIds)
+                                    if (surfaceAngle <= toolSettings.NormalLimit * 90.01f)
                                     {
-                                        var existingGrass = grassCompute.GrassDataList[nearbyId];
-                                        if (Vector3.Distance(existingGrass.position, hit2.point) <
-                                            toolSettings.GrassSpacing)
+                                        _nearbyGrassIds.Clear();
+                                        spatialGrid.GetObjectsInRadius(hit2.point, toolSettings.GrassSpacing,
+                                            _nearbyGrassIds);
+
+                                        var tooClose = false;
+                                        foreach (var nearbyId in _nearbyGrassIds)
                                         {
-                                            tooClose = true;
-                                            break;
+                                            var existingGrass = grassCompute.GrassDataList[nearbyId];
+                                            if (Vector3.Distance(existingGrass.position, hit2.point) <
+                                                toolSettings.GrassSpacing)
+                                            {
+                                                tooClose = true;
+                                                break;
+                                            }
                                         }
-                                    }
 
-                                    if (!tooClose)
-                                    {
-                                        var newData = CreateGrassData(hit2.point, hit2.normal, toolSettings);
-                                        var newIndex = grassCompute.GrassDataList.Count;
+                                        if (!tooClose)
+                                        {
+                                            var newData = CreateGrassData(hit2.point, hit2.normal, toolSettings);
+                                            var newIndex = grassCompute.GrassDataList.Count;
 
-                                        grassCompute.GrassDataList.Add(newData);
-                                        spatialGrid.AddObject(hit2.point, newIndex);
+                                            grassCompute.GrassDataList.Add(newData);
+                                            spatialGrid.AddObject(hit2.point, newIndex);
 
-                                        grassAdded = true;
-                                        successfulPlacements++;
+                                            grassCompute.AddNewGrassToCullingTree(newData.position, newIndex);
+
+                                            grassAdded = true;
+                                            successfulPlacements++;
+                                        }
                                     }
                                 }
                             }
@@ -99,7 +113,7 @@ namespace Grass.Editor
             }
         }
 
-        private GrassData CreateGrassData(Vector3 grassPosition, Vector3 grassNormal, GrassToolSettingSo toolSettings)
+        private static GrassData CreateGrassData(Vector3 grassPosition, Vector3 grassNormal, GrassToolSettingSo toolSettings)
         {
             return new GrassData
             {

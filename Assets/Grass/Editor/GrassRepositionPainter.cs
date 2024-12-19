@@ -47,6 +47,9 @@ namespace Grass.Editor
                 var index = sharedIndices[i];
                 var grassData = grassList[index];
 
+                // 잔디가 재배치 가능한지 검사
+                if (!CanRepositionGrass(grassData, toolSettings)) continue;
+
                 var xzDistance = new Vector2(
                     grassData.position.x - hitPoint.x,
                     grassData.position.z - hitPoint.z).sqrMagnitude;
@@ -58,10 +61,11 @@ namespace Grass.Editor
                     {
                         // 지면에 재배치하기 위한 레이캐스트
                         var ray = new Ray(
-                            new Vector3(grassData.position.x, cylinderTop.y, grassData.position.z), 
+                            new Vector3(grassData.position.x, cylinderTop.y, grassData.position.z),
                             Vector3.down);
-                            
-                        if (Physics.Raycast(ray, out var groundHit, toolSettings.BrushHeight * 2f, toolSettings.PaintMask))
+
+                        if (Physics.Raycast(ray, out var groundHit, toolSettings.BrushHeight * 2f,
+                                toolSettings.PaintMask))
                         {
                             var newData = grassData;
                             newData.position = groundHit.point;
@@ -75,8 +79,27 @@ namespace Grass.Editor
                             _changedIndices.Add(index);
                         }
                     }
-                } 
+                }
             }
+        }
+
+        private bool CanRepositionGrass(GrassData grassData, GrassToolSettingSo toolSettings)
+        {
+            // 노말이 정확히 90도인지 확인
+            bool isExactly90Degrees = Mathf.Approximately(Vector3.Dot(grassData.normal, Vector3.up), 0f);
+
+            if (!isExactly90Degrees)
+            {
+                // 90도가 아니면 항상 재배치 가능
+                return true;
+            }
+
+            // 90도인 경우, CheckSphere로 주변 검사
+            const float checkRadius = 0.1f; // 검사 반경
+            var foundPaintMask = Physics.CheckSphere(grassData.position, checkRadius, toolSettings.PaintMask);
+
+            // 90도이고 주변에 PaintMask 오브젝트가 없으면 재배치 가능
+            return !foundPaintMask;
         }
 
         private (int startIndex, int count) GetModifiedRange()

@@ -89,13 +89,14 @@ namespace Grass.Editor
                 mToolSettings = CreateInstance<GrassToolSettingSo>();
 
                 AssetDatabase.CreateAsset(mToolSettings, "Assets/Grass/Settings/Grass Tool Settings.asset");
-   
+
                 var terrain = FindAnyObjectByType<Terrain>();
-                int layerCount = terrain != null && terrain.terrainData != null ? 
-                    terrain.terrainData.terrainLayers.Length : 1;
-        
+                int layerCount = terrain != null && terrain.terrainData != null
+                    ? terrain.terrainData.terrainLayers.Length
+                    : 1;
+
                 mToolSettings.CreateNewLayers(layerCount);
-            
+
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
             }
@@ -389,20 +390,22 @@ namespace Grass.Editor
 
         private void DrawPaintEditContent()
         {
-            DrawHitSettings();
             DrawCommonBrushSettings();
 
             switch (_selectedToolOption)
             {
                 case BrushOption.Add:
+                    DrawHitSettings();
                     DrawAddBrushSettings();
                     break;
                 case BrushOption.Remove:
                     break;
                 case BrushOption.Edit:
+                    DrawHitSettings();
                     DrawEditBrushSettings();
                     break;
                 case BrushOption.Reposition:
+                    DrawHitSettings();
                     DrawRepositionBrushSettings();
                     break;
             }
@@ -521,7 +524,7 @@ namespace Grass.Editor
             DrawColorVariationSliders();
         }
 
-        private void DrawPanelHeader(string toolName)
+        private static void DrawPanelHeader(string toolName)
         {
             var headerStyle = new GUIStyle(EditorStyles.boldLabel)
             {
@@ -659,6 +662,10 @@ namespace Grass.Editor
 
         private void DrawSurfaceAngleSettings()
         {
+            EditorGUILayout.Separator();
+
+            EditorGUILayout.LabelField("Surface Settings", EditorStyles.boldLabel);
+
             EditorGUILayout.BeginHorizontal();
             toolSettings.NormalLimit = GrassEditorHelper.FloatSlider(
                 "Normal Limit",
@@ -677,19 +684,16 @@ namespace Grass.Editor
 
         private void DrawAddBrushSettings()
         {
+            EditorGUILayout.Separator();
+
+            EditorGUILayout.LabelField("Brush Placement", EditorStyles.boldLabel);
             toolSettings.Density = GrassEditorHelper.IntSlider(
                 "Density",
                 "Amount of grass placed in one brush stroke",
                 toolSettings.Density,
                 toolSettings.MinDensity, toolSettings.MaxDensity
             );
-            toolSettings.GrassSpacing = GrassEditorHelper.FloatSlider(
-                "Grass Spacing",
-                "Minimum distance between grass placements",
-                toolSettings.GrassSpacing,
-                0.1f, 1f
-            );
-
+            DrawGrassSpacingSlider();
             DrawSurfaceAngleSettings();
             DrawWidthHeightSliders();
             DrawGrassColorSettings();
@@ -724,7 +728,7 @@ namespace Grass.Editor
         {
             EditorGUILayout.Separator();
 
-            EditorGUILayout.LabelField("Width and Height", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Width / Height", EditorStyles.boldLabel);
             toolSettings.GrassWidth = EditorGUILayout.Slider("Grass Width", toolSettings.GrassWidth,
                 toolSettings.MinSizeWidth, toolSettings.MaxSizeWidth);
 
@@ -746,6 +750,8 @@ namespace Grass.Editor
 
         private void DrawEditBrushSettings()
         {
+            EditorGUILayout.Separator();
+
             _selectedEditOption =
                 (EditOption)GUILayout.Toolbar((int)_selectedEditOption, _editOptionStrings, GUILayout.Height(25));
             EditorGUILayout.Separator();
@@ -813,6 +819,10 @@ namespace Grass.Editor
 
         private void DrawRepositionBrushSettings()
         {
+            EditorGUILayout.Separator();
+
+            EditorGUILayout.LabelField("Brush Height", EditorStyles.boldLabel);
+            
             toolSettings.BrushHeight = GrassEditorHelper.FloatSlider(
                 "Brush Height",
                 "Height limit for repositioning grass",
@@ -836,7 +846,11 @@ namespace Grass.Editor
                 toolSettings.MinGrassAmountToGenerate,
                 toolSettings.MaxGrassAmountToGenerate
             );
+            DrawGrassSpacingSlider();
+        }
 
+        private void DrawGrassSpacingSlider()
+        {
             toolSettings.GrassSpacing = GrassEditorHelper.FloatSlider(
                 "Grass Spacing",
                 "Minimum distance between grass placements",
