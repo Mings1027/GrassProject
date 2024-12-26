@@ -1,6 +1,6 @@
 #pragma kernel Main
 
-#define TWO_PI      6.28318530717958647693
+#define TWO_PI 6.28318530717958647693
 #define MAX_ZONES 20
 #define GRASS_SEGMENTS 3
 #define GRASS_NUM_VERTICES_PER_BLADE (GRASS_SEGMENTS * 2)+ 1
@@ -67,14 +67,6 @@ float4 _ZoneColors[MAX_ZONES];
 float4 _ZoneWidthHeights[MAX_ZONES];
 int _ZoneCount;
 
-float grassWidth, grassHeight;
-
-// float4x4 unity_MatrixV;
-// float3 GetCameraPositionsWS()
-// {
-//     return -mul(unity_MatrixV, float4(0, 0, 0, 1)).xyz;
-// }
-
 float random(float3 co)
 {
     return frac(sin(dot(co.xyz, float3(12.9898, 78.233, 53.539))) * 43758.5453);
@@ -86,27 +78,20 @@ float RandomRange(float3 seed, float min, float max)
     return lerp(min, max, rand);
 }
 
-uint FastHash(uint x)
-{
-    x ^= x >> 16;
-    x *= 0x7feb352dU;
-    x ^= x >> 15;
-    x *= 0x846ca68bU;
-    x ^= x >> 16;
-    return x;
-}
-
-uint Hash3Pos(float3 pos, uint index)
+float Hash3DToFloat01(float3 pos, uint index)
 {
     uint x = asuint(pos.x * 100);
     uint y = asuint(pos.y * 100);
     uint z = asuint(pos.z * 100);
-    uint hash = x ^ (y << 8) ^ (z << 16) ^ index;
-    return FastHash(hash);
-}
+    uint hash = x ^ y << 8 ^ z << 16 ^ index;
 
-float HashToFloat01(uint hash)
-{
+    hash ^= hash >> 16;
+    hash *= 0x7feb352dU;
+    hash ^= hash >> 15;
+    hash *= 0x846ca68bU;
+    hash ^= hash >> 16;
+
+    // Convert to float in [0,1] range
     return float(hash & 0xFFFFFF) / 0x1000000;
 }
 
@@ -180,25 +165,19 @@ DrawVertex GrassVertex(float3 positionWS, float width, float height,
     return output;
 }
 
-half3 CalculationWind(half3 positionWS, half grassHeight, half distanceFade)
+half3 CalculationWind(half3 positionWS, half grassHeight)
 {
     half timeWind = _Time * _WindSpeed;
-
-    // 기본 wind 계산
     half windValue = sin(timeWind + dot(positionWS.xz, _WindDirection));
-
-    // 거리에 따른 복잡도 직접 보간 (가까울수록 1.0, 멀수록 0.5)
-    half complexityFactor = lerp(0, 1.0, distanceFade);
-    windValue *= complexityFactor;
 
     return half3(_WindDirection.x * windValue, 0, _WindDirection.y * windValue)
         * grassHeight * _WindStrength;
 }
 
-float3 CalculateInteraction(float3 grassPosition, half grassHeight)
+float4 CalculateInteraction(float3 grassPosition, half grassHeight)
 {
     float3 totalBend = float3(0, 0, 0);
-
+    float outFallOff = 0;
     for (int i = 0; i < _InteractorsLength; i++)
     {
         float3 interactorPos = _InteractorData[i].xyz;
@@ -206,15 +185,22 @@ float3 CalculateInteraction(float3 grassPosition, half grassHeight)
         float3 distanceVector = grassPosition - interactorPos;
         float distance = length(distanceVector);
 
-        if (distance < interactorRadius)
+        if (distance < interactorRadius && _InteractorStrength > 0) // interactorStrength가 0이면 아예 작동 안하도록
         {
-            float strength = (1.0 - distance / interactorRadius) * _InteractorStrength * grassHeight;
+            float normalizedDist = distance / interactorRadius;
+            float falloff = 1.0 - (normalizedDist * normalizedDist * normalizedDist);
+            outFallOff = max(outFallOff, falloff);
             float3 bendDirection = normalize(distanceVector);
-            bendDirection.y = 0;
-            totalBend += bendDirection * strength;
+            // interactorStrength를 전체 강도에 곱해서 0일때는 효과없고 1일때 최대로
+            float bendStrength = _InteractorStrength * falloff;
+            bendDirection.y = -(bendStrength *2);
+
+            float3 bend = bendDirection * grassHeight;
+            totalBend = lerp(totalBend, bend, bendStrength); // 여기도 bendStrength 사용
         }
     }
-    return totalBend;
+
+    return float4(totalBend, outFallOff);
 }
 
 [numthreads(256, 1, 1)]
@@ -236,11 +222,10 @@ void Main(uint id : SV_DispatchThreadID)
     uint localVertexCount = 0;
     half cut = _CutBuffer[visibleID];
 
-    uint heightHash = Hash3Pos(sv.positionWS, 0);
-    half randomOffset = lerp(_GrassRandomHeightMin, _GrassRandomHeightMax, HashToFloat01(heightHash));
+    half randomOffset = lerp(_GrassRandomHeightMin, _GrassRandomHeightMax, Hash3DToFloat01(sv.positionWS, 0));
 
-    grassWidth = sv.uv.x;
-    grassHeight = sv.uv.y;
+    half grassWidth = sv.uv.x;
+    half grassHeight = sv.uv.y;
 
     grassHeight = clamp(grassHeight + randomOffset, _MinHeight, _MaxHeight);
     grassWidth = clamp(grassWidth, _MinWidth, _MaxWidth);
@@ -249,8 +234,7 @@ void Main(uint id : SV_DispatchThreadID)
     half3 baseColor = sv.color;
     if (IsInAnyZone(sv.positionWS, zoneIndex))
     {
-        uint hash = Hash3Pos(sv.positionWS, visibleID);
-        half randomValue = HashToFloat01(hash) * 0.3;
+        half randomValue = Hash3DToFloat01(sv.positionWS, visibleID) * 0.3;
         baseColor = _ZoneColors[zoneIndex].rgb + randomValue;
         grassHeight *= _ZoneWidthHeights[zoneIndex].y;
         grassWidth *= _ZoneWidthHeights[zoneIndex].x;
@@ -263,9 +247,11 @@ void Main(uint id : SV_DispatchThreadID)
 
     _BladeForward *= grassHeight;
 
-    half3 wind = CalculationWind(sv.positionWS, grassHeight, distanceFade);
-    half3 interaction = CalculateInteraction(sv.positionWS, grassHeight);
-    half3 finalWind = wind * (1 - length(interaction) / (_InteractorStrength * grassHeight));
+    half4 interactionData = CalculateInteraction(sv.positionWS, grassHeight);
+    half3 interaction = interactionData.xyz;
+    
+    half3 wind = CalculationWind(sv.positionWS, grassHeight);
+    half3 finalWind = wind * lerp(1.0, 0.1, interactionData.w);
 
     half numTrianglesPerBlade = (_MaxSegmentsPerBlade - 1) * 2 + 1;
 
@@ -273,8 +259,7 @@ void Main(uint id : SV_DispatchThreadID)
     {
         DrawVertex drawVertices[GRASS_NUM_VERTICES_PER_BLADE];
 
-        uint baseHash = Hash3Pos(sv.positionWS, j);
-        float randVar1 = HashToFloat01(FastHash(baseHash));
+        float randVar1 = Hash3DToFloat01(sv.positionWS, j);
 
         half bladeRadius = j / _MaxBladesPerVertex;
         half offset = (1 - bladeRadius) * _BladeRadius;
@@ -284,13 +269,10 @@ void Main(uint id : SV_DispatchThreadID)
         {
             half t = i / _MaxSegmentsPerBlade;
             half segmentHeight = grassHeight * t;
-            half segmentWidth = grassWidth * (1 - t);
+            half segmentWidth = grassWidth * _BottomWidth * (1 - t);
 
-            segmentWidth = i == 0 ? _BottomWidth * segmentWidth : segmentWidth;
+            half3 newPos = sv.positionWS + (finalWind + grassNormal * grassHeight + interaction) * t;
 
-            half3 newPos = i == 0
-                               ? sv.positionWS
-                               : sv.positionWS + (finalWind + grassNormal * grassHeight + interaction) * t;
             half curveStrength = pow(abs(t), _BladeCurve) * _BladeForward;
 
             drawVertices[i * 2] = GrassVertex(newPos, segmentWidth, segmentHeight,
@@ -300,7 +282,7 @@ void Main(uint id : SV_DispatchThreadID)
                                                   facingRotationMatrix);
         }
 
-        half3 topPosOS = sv.positionWS + wind + interaction + grassNormal * grassHeight;
+        half3 topPosOS = sv.positionWS + finalWind + interaction + grassNormal * grassHeight;
         drawVertices[_MaxSegmentsPerBlade * 2] = GrassVertex(topPosOS, 0, grassHeight, offset,
                                                              half2(0.5, 1), _BladeForward, grassNormal,
                                                              facingRotationMatrix);

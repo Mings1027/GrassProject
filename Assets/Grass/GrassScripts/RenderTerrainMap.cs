@@ -107,9 +107,9 @@ public class RenderTerrainMap : MonoBehaviour
         var size = _bounds.size.magnitude;
         camToDrawWith.cullingMask = layer;
         camToDrawWith.orthographicSize = size / adjustScaling;
-        camToDrawWith.transform.parent = null;
+        // camToDrawWith.transform.parent = null;
         camToDrawWith.transform.position = _bounds.center + new Vector3(0, _bounds.extents.y + 5f, 0);
-        camToDrawWith.transform.parent = gameObject.transform;
+        // camToDrawWith.transform.parent = gameObject.transform;
     }
 
     private void DrawToMap(int target)

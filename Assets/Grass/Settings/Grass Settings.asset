@@ -14,41 +14,41 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shaderToUse: {fileID: 7200000, guid: 11036af5f2d1499c8845585fb5fadb4c, type: 3}
   materialToUse: {fileID: 2100000, guid: 7725493650b5a4b4d9c0d612493ca34d, type: 2}
-  bladeRadius: 0.5
-  bladeForward: 1.5
+  bladeRadius: 0.79
+  bladeForward: 1
   bladeCurve: 2
-  bottomWidth: 0.2
-  minWidth: 0.14974791
-  maxWidth: 0.6
+  bottomWidth: 0.4
+  minWidth: 0.01
+  maxWidth: 0.6137143
   minHeight: 0.01
   maxHeight: 3
   randomHeightMin: 0
-  randomHeightMax: 0.10654206
+  randomHeightMax: 0.3
   windSpeed: 2
   windStrength: 1
   windDirection: 45
   windDirectionVector: {x: 0.70710677, y: 0.70710677}
-  bladesPerVertex: 10
-  segmentsPerBlade: 2
-  interactorStrength: 1.28
+  bladesPerVertex: 20
+  segmentsPerBlade: 1
+  interactorStrength: 1
   topTint: {r: 1, g: 1, b: 1, a: 1}
   bottomTint: {r: 0.1981132, g: 0.1981132, b: 0.1981132, a: 1}
   maxZoneCount: 20
   seasonRange:
     from: 1
-    to: 1
+    to: 0
     isFullCycle: 1
   winterSettings:
     seasonColor: {r: 1, g: 1, b: 1, a: 0}
-    width: 0.2
+    width: 0.5
     height: 0.3
   springSettings:
     seasonColor: {r: 0.93333334, g: 0.7822454, b: 0.25882357, a: 0}
-    width: 1
+    width: 1.5
     height: 1
   summerSettings:
     seasonColor: {r: 0.10568706, g: 0.8962264, b: 0.109960265, a: 0}
-    width: 1.3528291
+    width: 2
     height: 2
   autumnSettings:
     seasonColor: {r: 1, g: 0.16862746, b: 0, a: 0}
@@ -56,8 +56,8 @@ MonoBehaviour:
     height: 1
   drawBounds: 0
   drawAllBounds: 0
-  cullingTreeDepth: 5
-  minFadeDistance: 30
+  cullingTreeDepth: 7
+  minFadeDistance: 50
   maxFadeDistance: 200
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}
-  castShadow: 0
+  castShadow: 1

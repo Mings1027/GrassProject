@@ -1,6 +1,8 @@
+using System;
 using Grass.GrassScripts;
 using UnityEngine;
 
+[ExecuteInEditMode]
 public class GrassSeasonZone : MonoBehaviour
 {
     [SerializeField] private bool overrideGlobalSettings;
@@ -24,7 +26,16 @@ public class GrassSeasonZone : MonoBehaviour
     [SerializeField] private bool showGizmos = true;
     public bool OverrideGlobalSettings => overrideGlobalSettings;
 #endif
-    
+    private void OnEnable()
+    {
+        UpdateZoneState();
+    }
+
+    private void OnDisable()
+    {
+        UpdateZoneState();
+    }
+
     public void Init(GrassSettingSO grassSetting)
     {
         _grassSetting = grassSetting;

@@ -38,37 +38,33 @@ public class FPSChecker : MonoBehaviour
         ApplyTargetFrameRate();
     }
 
-    // private void Update()
-    // {
-    //     _deltaTime += (Time.unscaledDeltaTime - _deltaTime) * 0.1f;
-    //
-    //     _frameCounter++;
-    //     if (_frameCounter >= framesToSkip)
-    //     {
-    //         _msec = _deltaTime * 1000.0f;
-    //         _fps = 1.0f / _deltaTime;
-    //         _frameCounter = 0;
-    //         totalGrassCount = GrassFuncManager.TriggerEvent<int>(GrassEvent.TotalGrassCount);
-    //         visibleGrassCount = GrassFuncManager.TriggerEvent<int>(GrassEvent.VisibleGrassCount);
-    //     }
-    // }
-    //
-    // private void OnGUI()
-    // {
-    //     int w = Screen.width, h = Screen.height;
-    //
-    //     var style = new GUIStyle();
-    //     var rect = new Rect(w * xPosition, h * yPosition, w,
-    //         h * 0.02f); // Adjust position using xPosition and yPosition
-    //     style.alignment = TextAnchor.UpperLeft;
-    //     style.fontSize = h * 2 / fFontSize;
-    //     style.normal.textColor = new Color(red, green, blue, 1.0f);
-    //     var text = $"{_msec:0.0} ms ({_fps:0.} fps)\n" +
-    //                $"Total Grass: {totalGrassCount}\n" +
-    //                $"Visible Grass: {visibleGrassCount}";
-    //
-    //     GUI.Label(rect, text, style);
-    // }
+    private void Update()
+    {
+        _deltaTime += (Time.unscaledDeltaTime - _deltaTime) * 0.1f;
+    
+        _frameCounter++;
+        if (_frameCounter >= framesToSkip)
+        {
+            _msec = _deltaTime * 1000.0f;
+            _fps = 1.0f / _deltaTime;
+            _frameCounter = 0;
+        }
+    }
+    
+    private void OnGUI()
+    {
+        int w = Screen.width, h = Screen.height;
+    
+        var style = new GUIStyle();
+        var rect = new Rect(w * xPosition, h * yPosition, w,
+            h * 0.02f); // Adjust position using xPosition and yPosition
+        style.alignment = TextAnchor.UpperLeft;
+        style.fontSize = h * 2 / fFontSize;
+        style.normal.textColor = new Color(red, green, blue, 1.0f);
+        var text = $"{_msec:0.0} ms ({_fps:0.} fps)\n";
+    
+        GUI.Label(rect, text, style);
+    }
 
     private void ApplyTargetFrameRate()
     {

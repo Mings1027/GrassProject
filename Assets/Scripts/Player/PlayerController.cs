@@ -52,13 +52,15 @@ public class PlayerController : MonoBehaviour
     {
         if (_moveDir != Vector3.zero)
         {
-            var targetRotation = Quaternion.LookRotation(_moveDir);
-            _rigid.MoveRotation(Quaternion.RotateTowards(_rigid.rotation, targetRotation,
-                rotationSpeed * Time.fixedDeltaTime));
+            var (actualMoveDir, speedMultiplier) = _obstacleDetector.GetMoveDirection(_moveDir);
 
-            if (_obstacleDetector.CanMove(_moveDir))
+            if (actualMoveDir != Vector3.zero)
             {
-                var movement = moveSpeed * Time.fixedDeltaTime * _moveDir;
+                var targetRotation = Quaternion.LookRotation(_moveDir);
+                _rigid.MoveRotation(Quaternion.RotateTowards(_rigid.rotation, targetRotation,
+                    rotationSpeed * Time.fixedDeltaTime));
+                
+                var movement = moveSpeed * speedMultiplier * Time.fixedDeltaTime * actualMoveDir;
                 _rigid.MovePosition(_rigid.position + movement);
             }
         }

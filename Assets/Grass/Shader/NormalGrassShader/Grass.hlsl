@@ -17,7 +17,6 @@ struct DrawTriangle
 // A buffer containing the generated mesh
 StructuredBuffer<DrawTriangle> _DrawTriangles;  // 읽는 역할
 
-
 //get the data from the compute shader
 void GetComputeData_float(uint vertexID, out float3 worldPos, out float3 normal, out float2 uv, out float3 col,
                           out float4 extraBuffer)

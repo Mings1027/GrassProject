@@ -14,7 +14,7 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
     {
         _grassComputeScript = FindAnyObjectByType<GrassComputeScript>();
         GrassEventManager.AddEvent(GrassEvent.UpdateShaderData, UpdateShaderData);
-        GrassFuncManager.AddEvent<Vector3, Color>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
+        GrassFuncManager.AddEvent<Vector3, (Color, bool)>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
         UpdateSeasonZones();
         Init();
     }
@@ -22,7 +22,8 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
     private void OnDisable()
     {
         GrassEventManager.RemoveEvent(GrassEvent.UpdateShaderData, UpdateShaderData);
-        GrassFuncManager.RemoveEvent<Vector3, Color>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
+        GrassFuncManager.RemoveEvent<Vector3, (Color, bool)>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
+        Init();
     }
 
     private void Update()
@@ -106,7 +107,7 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
         _grassComputeScript.UpdateSeasonData(positions, scales, colors, widthHeights, seasonZones.Count);
     }
 
-    private Color TryGetGrassColor(Vector3 position)
+    private (Color, bool) TryGetGrassColor(Vector3 position)
     {
         for (int i = 0; i < seasonZones.Count; i++)
         {
@@ -115,11 +116,11 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
 
             if (zone.ContainsPosition(position))
             {
-                return zone.GetZoneColor();
+                return (zone.GetZoneColor(), true);
             }
         }
 
-        return Color.white;
+        return (Color.clear, false);
     }
 
     public void SetGlobalSeasonValue(float value)
@@ -130,7 +131,6 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
 
     private void OnTransformChildrenChanged()
     {
-        _grassComputeScript.Reset();
         UpdateSeasonZones();
     }
 }

@@ -20,7 +20,7 @@ public class ShaderVariantChecker : EditorWindow
 
     private Vector2 _scrollPosition;
 
-    [MenuItem("CustomTool/ShaderVariantChecker")]
+    [MenuItem("Tools/ShaderVariantChecker")]
     private static void ShowWindow()
     {
         GetWindow<ShaderVariantChecker>().Show();

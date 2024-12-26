@@ -202,6 +202,12 @@ namespace Grass.Editor
             return EditorGUILayout.Slider(new GUIContent(label, tooltip), roundedValue, minValue, maxValue);
         }
 
+        public static void FloatSlider(ref float value, string label, string tooltip, float minValue, float maxValue)
+        {
+            var roundedValue = (float)Math.Round(value, 2);
+            value = EditorGUILayout.Slider(new GUIContent(label, tooltip), roundedValue, minValue, maxValue);
+        }
+
         /// <summary>
         /// Creates a float slider with tooltip and an additional header label
         /// </summary>
@@ -538,9 +544,17 @@ namespace Grass.Editor
             EditorGUI.LabelField(mediumRect, $"{mediumQualityDistance:P0}", percentStyle);
         }
 
+        // GrassEditorHelper.cs
         public static bool DrawFoldoutSection(string title, Action drawContent)
         {
-            _foldoutStates.TryAdd(title, true);
+            return DrawFoldoutSection(new GUIContent(title), drawContent);
+        }
+
+        public static bool DrawFoldoutSection(GUIContent titleContent, Action drawContent)
+        {
+            var title = titleContent.text;
+            var prefKey = $"GrassTool_Foldout_{title}";
+            _foldoutStates.TryAdd(title, EditorPrefs.GetBool(prefKey, true));
 
             var headerStyle = new GUIStyle(GUI.skin.button)
             {
@@ -557,22 +571,19 @@ namespace Grass.Editor
                 margin = new RectOffset(0, 0, 0, 0)
             };
 
-
-            // Draw header with arrow icon
-            var rect = GUILayoutUtility.GetRect(new GUIContent(title), headerStyle, GUILayout.Height(25));
+            var rect = GUILayoutUtility.GetRect(titleContent, headerStyle, GUILayout.Height(25));
             var arrowRect = new Rect(rect.x + 10, rect.y + 5, 20, 20);
 
-            if (GUI.Button(rect, title, headerStyle))
+            if (GUI.Button(rect, titleContent, headerStyle))
             {
                 _foldoutStates[title] = !_foldoutStates[title];
+                EditorPrefs.SetBool(prefKey, _foldoutStates[title]);
                 GUI.changed = true;
             }
 
-            // Draw arrow
             var arrowContent = EditorGUIUtility.IconContent(_foldoutStates[title] ? "d_dropdown" : "d_forward");
             GUI.Label(arrowRect, arrowContent);
 
-            // Draw content if expanded
             if (_foldoutStates[title])
             {
                 EditorGUILayout.BeginVertical(contentStyle);
@@ -583,8 +594,7 @@ namespace Grass.Editor
             return _foldoutStates[title];
         }
 
-        public static void DrawSeasonSettingsTable(Rect position, GrassSettingSO grassSetting,
-                                                   GrassSeasonManager grassSeasonManager)
+        public static void DrawSeasonSettingsTable(Rect position, GrassSettingSO grassSetting)
         {
             var labelWidth = 40f;
             var cellWidth = (position.width - labelWidth) / 4;
@@ -609,7 +619,6 @@ namespace Grass.Editor
                 grassSetting.summerSettings, grassSetting.autumnSettings
             };
 
-            EditorGUI.BeginChangeCheck();
             EditorGUI.LabelField(new Rect(position.x, y, labelWidth, rowHeight), "Color", EditorStyles.boldLabel);
             for (int i = 0; i < settings.Length; i++)
             {
@@ -617,14 +626,8 @@ namespace Grass.Editor
                 settings[i].seasonColor = EditorGUI.ColorField(rect, settings[i].seasonColor);
             }
 
-            if (EditorGUI.EndChangeCheck())
-            {
-                grassSeasonManager.UpdateShaderData();
-            }
-
             y += rowHeight + padding;
 
-            EditorGUI.BeginChangeCheck();
             EditorGUI.LabelField(new Rect(position.x, y, labelWidth, rowHeight), "Width", EditorStyles.boldLabel);
             for (int i = 0; i < settings.Length; i++)
             {
@@ -637,14 +640,8 @@ namespace Grass.Editor
                 settings[i].width = Mathf.Clamp(settings[i].width, 0.1f, 2f);
             }
 
-            if (EditorGUI.EndChangeCheck())
-            {
-                grassSeasonManager.UpdateShaderData();
-            }
-
             y += rowHeight + padding;
 
-            EditorGUI.BeginChangeCheck();
             EditorGUI.LabelField(new Rect(position.x, y, labelWidth, rowHeight), "Height", EditorStyles.boldLabel);
             for (int i = 0; i < settings.Length; i++)
             {
@@ -655,11 +652,6 @@ namespace Grass.Editor
                 settings[i].height = GUI.HorizontalSlider(sliderRect, settings[i].height, 0.1f, 2f);
                 settings[i].height = EditorGUI.FloatField(fieldRect, settings[i].height);
                 settings[i].height = Mathf.Clamp(settings[i].height, 0.1f, 2f);
-            }
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                grassSeasonManager.UpdateShaderData();
             }
         }
 
@@ -675,24 +667,12 @@ namespace Grass.Editor
             return new Vector3(newRandomCol.r, newRandomCol.g, newRandomCol.b);
         }
 
-        public static bool IsLayerInMask(int layer, LayerMask layerMask)
-        {
-            return ((1 << layer) & layerMask.value) != 0;
-        }
+        public static bool IsLayerInMask(int layer, LayerMask layerMask) => ((1 << layer) & layerMask.value) != 0;
 
-        public static bool IsLayerInMask(int layer, int layerMask)
-        {
-            return ((1 << layer) & layerMask) != 0;
-        }
+        public static bool IsLayerInMask(int layer, int layerMask) => ((1 << layer) & layerMask) != 0;
 
-        public static bool IsNotLayerInMask(int layer, LayerMask layerMask)
-        {
-            return ((1 << layer) & layerMask.value) == 0;
-        }
+        public static bool IsNotLayerInMask(int layer, LayerMask layerMask) => ((1 << layer) & layerMask.value) == 0;
 
-        public static bool IsNotLayerInMask(int layer, int layerMask)
-        {
-            return ((1 << layer) & layerMask) == 0;
-        }
+        public static bool IsNotLayerInMask(int layer, int layerMask) => ((1 << layer) & layerMask) == 0;
     }
 }

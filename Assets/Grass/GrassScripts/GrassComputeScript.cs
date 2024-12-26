@@ -164,7 +164,9 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         {
             // Dispatch the grass shader. It will run on the GPU
             _instComputeShader.Dispatch(_idGrassKernel, _dispatchSize, 1, 1);
-
+#if UNITY_EDITOR
+            UpdateBufferCount();
+#endif
             var renderParams = new RenderParams(instantiatedMaterial)
             {
                 worldBounds = _bounds,
@@ -444,14 +446,18 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
                 {
                     if (_cutIDs[currentIndex] - 0.1f > hitPointY || Mathf.Approximately(_cutIDs[currentIndex], -1))
                     {
-                        var baseColor = new Color(
-                            grassData[currentIndex].color.x,
-                            grassData[currentIndex].color.y,
-                            grassData[currentIndex].color.z
-                        );
-                        var zoneColor =
-                            GrassFuncManager.TriggerEvent<Vector3, Color>(GrassEvent.TryGetGrassColor, grassPosition);
-                        var particleColor = zoneColor == Color.clear ? baseColor : zoneColor;
+                        var (seasonZoneColor, foundSeasonZone) =
+                            GrassFuncManager.TriggerEvent<Vector3, (Color, bool)>(GrassEvent.TryGetGrassColor,
+                                grassPosition);
+
+                        var particleColor = foundSeasonZone
+                            ? seasonZoneColor
+                            : new Color(
+                                grassData[currentIndex].color.x,
+                                grassData[currentIndex].color.y,
+                                grassData[currentIndex].color.z
+                            );
+
                         SpawnCuttingParticle(grassPosition, particleColor);
                     }
 
@@ -598,7 +604,34 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         }
     }
 
+    public void ClearAllData()
+    {
+        grassData.Clear();
+        _nearbyGrassIds.Clear();
+        _grassVisibleIDList.Clear();
+        _cutIDs = Array.Empty<float>();
+        _cullingTree = null;
+        _bounds = new Bounds();
+        ReleaseBuffer();
+
+        _dispatchSize = 0;
+    }
+
 #if UNITY_EDITOR
+
+    public int MaximumBufferSize => MaxBufferSize;
+    public int CurrentBufferCount => _currentBufferCount;
+    private int _currentBufferCount;
+
+    private void UpdateBufferCount()
+    {
+        var counterBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
+        ComputeBuffer.CopyCount(_drawBuffer, counterBuffer, 0);
+        int[] counterArray = new int[1];
+        counterBuffer.GetData(counterArray);
+        _currentBufferCount = counterArray[0];
+        counterBuffer.Release();
+    }
 
     public void ResetFaster()
     {
@@ -661,19 +694,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
         _dispatchSize = (_grassVisibleIDList.Count + (int)_threadGroupSize - 1) >>
                         (int)Math.Log(_threadGroupSize, 2);
-    }
-
-    public void ClearAllData()
-    {
-        grassData.Clear();
-        _nearbyGrassIds.Clear();
-        _grassVisibleIDList.Clear();
-        _cutIDs = Array.Empty<float>();
-        _cullingTree = null;
-        _bounds = new Bounds();
-        ReleaseResources();
-
-        _dispatchSize = 0;
     }
 
     public float[] GetCutBuffer() => _cutIDs;

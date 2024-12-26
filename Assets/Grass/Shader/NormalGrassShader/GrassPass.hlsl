@@ -1,7 +1,3 @@
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-#include "GrassInput.hlsl"
-#include "Grass.hlsl"
-
 half CalculateVerticalFade(half2 uv)
 {
     half blendMul = uv.y * _BlendMult;
@@ -20,11 +16,15 @@ half3 CalculateMainLight(half3 albedo, half3 normalWS, half3 worldPos)
     half4 shadowCoord = TransformWorldToShadowCoord(worldPos);
     Light mainLight = GetMainLight(shadowCoord);
 
-    // 노멀 계산 최적화 (half dot product)
+    float distanceFromCamera = length(_WorldSpaceCameraPos - worldPos);
+
+    float shadowFade = saturate((distanceFromCamera - _ShadowDistance) / _ShadowFadeRange);
+    float shadowAtten = lerp(mainLight.shadowAttenuation, 1, shadowFade);
+
     half NdotL = saturate(dot(normalWS, mainLight.direction));
 
     // ambient 상수화 0.4 값을 줄이면 그림자가 어두워짐
-    return albedo * mainLight.color * (mainLight.shadowAttenuation * NdotL + 0.3);
+    return albedo * mainLight.color * (shadowAtten * NdotL + 0.3);
 }
 
 half3 CalculateAdditionalLight(half3 worldPos, half3 worldNormal)
@@ -50,13 +50,14 @@ half3 CalculateAdditionalLight(half3 worldPos, half3 worldNormal)
         Light light = GetAdditionalLight(lightIndex, worldPos, shadowMask);
 
         #ifdef _LIGHT_LAYERS
-    uint meshRenderingLayers = GetMeshRenderingLayer();
-    if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
+        uint meshRenderingLayers = GetMeshRenderingLayer();
+        if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
         #endif
         {
             half NdotL = saturate(dot(worldNormal, light.direction));
             half3 lightColor = light.color * light.distanceAttenuation * NdotL * _AdditionalLightIntensity;
-            diffuseColor += lerp(lightColor * _AdditionalShadowColor.rgb, lightColor, light.shadowAttenuation);
+            half shadowAttenuation = lerp(1, light.shadowAttenuation, _AdditionalLightShadowStrength);
+            diffuseColor += lerp(lightColor * _AdditionalShadowColor.rgb, lightColor, shadowAttenuation);
         }
     LIGHT_LOOP_END
 
