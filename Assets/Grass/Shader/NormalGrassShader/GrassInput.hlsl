@@ -20,7 +20,9 @@ CBUFFER_START(UnityPerMaterial)
     float4 _TopTint;
     float4 _BottomTint;
 
-    // Additional Light
+    half _AmbientStrength;
+
+// Additional Light
     float _AdditionalLightIntensity;
     float _AdditionalLightShadowStrength;
     float4 _AdditionalShadowColor;

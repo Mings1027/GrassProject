@@ -6,14 +6,18 @@ Shader "Custom/TextureWithShadow"
 		[MainColor] _BaseColor("Color", Color) = (1, 1, 1, 1)
 
 		[Header(Additional Light)]
-		_AdditionalLightIntensity("Light Intensity", Range(0, 1)) = 0.5
-		_AdditionalLightShadowStrength("Shadow Strength", Range(0, 1)) = 0.8
+		_AdditionalLightIntensity("Light Intensity", Range(0, 1)) = 1
+		_AdditionalLightShadowStrength("Shadow Strength", Range(0, 1)) = 1
 		_AdditionalShadowColor("Shadow Color", Color) = (0, 0, 0, 1)
-		_AmbientStrength("Ambient Strength", Range(0, 1)) = 0.3
+		_AmbientStrength("Ambient Strength", Range(0, 1)) = 0.2
 
 		[Header(Shadow Settings)]
 		_ShadowDistance("Shadow Distance", Range(0, 100)) = 50
 		_ShadowFadeRange("Shadow Fade Range", Range(0.1, 30)) = 10
+
+		[Header(Toon Settings)]
+		_ToonSteps("Toon Steps", Range(1, 10)) = 3
+		_EdgeSmoothness("Edge Smoothness", Range(0, 1)) = 0
 	}
 
 	SubShader
@@ -35,12 +39,10 @@ Shader "Custom/TextureWithShadow"
 			HLSLPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
-			#pragma multi_compile_instancing
 
 			#pragma multi_compile _ _FORWARD_PLUS
 			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
 			#pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
-			// #pragma multi_compile_fragment _ _SHADOWS_SOFT
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -74,6 +76,9 @@ Shader "Custom/TextureWithShadow"
 				half _AmbientStrength;
 				float _ShadowDistance;
 				float _ShadowFadeRange;
+
+				half _ToonSteps;
+				half _EdgeSmoothness;
 			CBUFFER_END
 
 			half3 CalculateMainLight(half3 albedo, half3 normalWS, half3 worldPos)
@@ -82,15 +87,19 @@ Shader "Custom/TextureWithShadow"
 				Light mainLight = GetMainLight(shadowCoord);
 
 				float distanceFromCamera = length(_WorldSpaceCameraPos - worldPos);
-
 				float shadowFade = saturate((distanceFromCamera - _ShadowDistance) / _ShadowFadeRange);
 				float shadowAtten = lerp(mainLight.shadowAttenuation, 1, shadowFade);
 
 				half NdotL = saturate(dot(normalWS, mainLight.direction));
-				return albedo * mainLight.color * (shadowAtten * NdotL + _AmbientStrength);
+
+				half steppedNdotL = floor(NdotL * _ToonSteps) / _ToonSteps;
+
+				half finalNdotL = lerp(steppedNdotL, NdotL, _EdgeSmoothness);
+
+				return albedo * (mainLight.color * shadowAtten * finalNdotL + _AmbientStrength);
 			}
 
-			half3 CalculateAdditionalLight(half3 worldPos, half3 worldNormal)
+			half3 CalculateAdditionalLight(half3 albedo, half3 worldPos, half3 worldNormal)
 			{
 				uint pixelLightCount = GetAdditionalLightsCount();
 				InputData inputData;
@@ -118,7 +127,8 @@ Shader "Custom/TextureWithShadow"
 					#endif
 					{
 						half NdotL = saturate(dot(worldNormal, light.direction));
-						half3 lightColor = light.color * light.distanceAttenuation * NdotL * _AdditionalLightIntensity;
+						half3 lightColor = light.color * light.distanceAttenuation * NdotL * _AdditionalLightIntensity *
+							albedo;
 						half shadowAttenuation = lerp(1, light.shadowAttenuation, _AdditionalLightShadowStrength);
 						diffuseColor += lerp(lightColor * _AdditionalShadowColor.rgb, lightColor, shadowAttenuation);
 					}
@@ -147,7 +157,7 @@ Shader "Custom/TextureWithShadow"
 				half4 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
 
 				half3 mainLighting = CalculateMainLight(baseColor.rgb, input.normalWS, input.positionWS);
-				half3 additionalLighting = CalculateAdditionalLight(input.positionWS, input.normalWS);
+				half3 additionalLighting = CalculateAdditionalLight(baseColor.rgb, input.positionWS, input.normalWS);
 
 				return half4(mainLighting + additionalLighting, baseColor.a);
 			}

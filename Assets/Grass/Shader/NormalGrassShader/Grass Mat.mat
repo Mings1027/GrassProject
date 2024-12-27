@@ -45,6 +45,7 @@ Material:
     - _AdditionalLightIntensity: 0.489
     - _AdditionalLightShadowStrength: 1
     - _AlphaTestToggle: 0
+    - _AmbientStrength: 0.3
     - _BlendFloor: 0
     - _BlendMult: 1
     - _BlendOff: 0.2

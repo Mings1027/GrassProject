@@ -56,7 +56,7 @@ MonoBehaviour:
     height: 1
   drawBounds: 0
   drawAllBounds: 0
-  cullingTreeDepth: 7
+  cullingTreeDepth: 5
   minFadeDistance: 50
   maxFadeDistance: 200
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}

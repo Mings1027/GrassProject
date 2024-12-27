@@ -17,14 +17,12 @@ half3 CalculateMainLight(half3 albedo, half3 normalWS, half3 worldPos)
     Light mainLight = GetMainLight(shadowCoord);
 
     float distanceFromCamera = length(_WorldSpaceCameraPos - worldPos);
-
     float shadowFade = saturate((distanceFromCamera - _ShadowDistance) / _ShadowFadeRange);
     float shadowAtten = lerp(mainLight.shadowAttenuation, 1, shadowFade);
 
     half NdotL = saturate(dot(normalWS, mainLight.direction));
 
-    // ambient 상수화 0.4 값을 줄이면 그림자가 어두워짐
-    return albedo * mainLight.color * (shadowAtten * NdotL + 0.3);
+    return albedo * (mainLight.color * shadowAtten * NdotL + _AmbientStrength);
 }
 
 half3 CalculateAdditionalLight(half3 worldPos, half3 worldNormal)
@@ -60,7 +58,6 @@ half3 CalculateAdditionalLight(half3 worldPos, half3 worldNormal)
             diffuseColor += lerp(lightColor * _AdditionalShadowColor.rgb, lightColor, shadowAttenuation);
         }
     LIGHT_LOOP_END
-
     return diffuseColor;
 }
 

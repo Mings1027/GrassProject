@@ -2,6 +2,8 @@ Shader "Custom/GrassShader"
 {
 	Properties
 	{
+		_AmbientStrength("Ambient Strength", Range(0, 1)) = 0.3
+
 		[Header(Additional Light)]
 		_AdditionalLightIntensity("Light Intensity", Range(0, 1)) = 0.5
 		_AdditionalLightShadowStrength("Shadow Strength", Range(0, 1)) = 0.8

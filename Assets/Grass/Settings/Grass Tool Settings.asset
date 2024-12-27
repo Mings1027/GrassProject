@@ -47,7 +47,7 @@ MonoBehaviour:
   brushSize: 10.1
   brushTransitionSpeed: 1
   normalLimit: 1
-  allowUndersideGrass: 0
+  allowUndersideGrass: 1
   density: 52
   grassSpacing: 0.65
   brushHeight: 23.350004
