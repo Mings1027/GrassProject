@@ -636,7 +636,8 @@ namespace Grass.Editor
                 var fieldRect = new Rect(startX + sliderWidth + 2f, y, valueFieldWidth, rowHeight);
 
                 settings[i].width = GUI.HorizontalSlider(sliderRect, settings[i].width, 0.1f, 2f);
-                settings[i].width = EditorGUI.FloatField(fieldRect, settings[i].width);
+                var roundedValue = (float)Math.Round(settings[i].width, 2);
+                settings[i].width = EditorGUI.FloatField(fieldRect, roundedValue);
                 settings[i].width = Mathf.Clamp(settings[i].width, 0.1f, 2f);
             }
 
@@ -650,7 +651,8 @@ namespace Grass.Editor
                 var fieldRect = new Rect(startX + sliderWidth + 2f, y, valueFieldWidth, rowHeight);
 
                 settings[i].height = GUI.HorizontalSlider(sliderRect, settings[i].height, 0.1f, 2f);
-                settings[i].height = EditorGUI.FloatField(fieldRect, settings[i].height);
+                var roundedValue = (float)Math.Round(settings[i].height, 2);
+                settings[i].height = EditorGUI.FloatField(fieldRect, roundedValue);
                 settings[i].height = Mathf.Clamp(settings[i].height, 0.1f, 2f);
             }
         }

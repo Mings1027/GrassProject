@@ -14,6 +14,7 @@ struct FragmentData
     float2 uv : TEXCOORD2;
     float3 diffuseColor : TEXCOORD3;
     float4 extraBuffer : TEXCOORD4;
+    float4 terrainBlendingColor : TEXCOORD5;
 };
 
 CBUFFER_START(UnityPerMaterial)
@@ -29,6 +30,9 @@ CBUFFER_START(UnityPerMaterial)
 
     // Blend
     float _BlendMult, _BlendOff;
+    float4 _AmbientAdjustmentColor;
+    uniform TEXTURE2D(_TerrainDiffuse);
+    uniform SAMPLER(sampler_TerrainDiffuse);
 
     // Shadow
     float _ShadowDistance;

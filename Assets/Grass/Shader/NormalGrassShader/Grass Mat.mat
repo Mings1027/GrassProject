@@ -53,7 +53,7 @@ Material:
     - _Edge: 1
     - _Exposure: 1
     - _Fade: 2.2
-    - _Glossiness: 1
+    - _Glossiness: 4.5
     - _LodBias: 0
     - _MainLightShadowStrength: 0.494
     - _MainLightStrengthOverride: 0
@@ -77,6 +77,8 @@ Material:
     - _ShadowLightInteraction: 1
     - _ShadowLightOverlapIntensity: 0.785
     - _ShadowStrength: 1
+    - _SpecularHeight: 0.5
+    - _SpecularStrength: 1
     - _Stretch: 2.36
     - _Surface: 0
     m_Colors:

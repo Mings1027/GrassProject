@@ -27,10 +27,18 @@ Material:
     m_Floats:
     - _AdditionalLightIntensity: 0.5
     - _AdditionalLightShadowStrength: 0.8
+    - _AmbientStrength: 0.3
     - _BlendMult: 0.93
-    - _BlendOff: 0.161
+    - _BlendOff: 0.14
+    - _Glossiness: 4.5
+    - _ShadowDistance: 50
+    - _ShadowFadeRange: 10
+    - _SpecularHeight: 0.5
+    - _SpecularStrength: 1
     m_Colors:
     - _AdditionalShadowColor: {r: 0, g: 0, b: 0, a: 1}
     - _AmbientAdjustmentColor: {r: 0, g: 0, b: 0, a: 1}
+    - _BottomTint: {r: 0.9528302, g: 0.9303578, b: 0.9303578, a: 1}
+    - _TopTint: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

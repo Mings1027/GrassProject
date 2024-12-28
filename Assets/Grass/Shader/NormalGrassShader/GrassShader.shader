@@ -12,10 +12,19 @@ Shader "Custom/GrassShader"
 		[Header(Blend)]
 		_BlendMult("Blend Multiply", Range(0, 5)) = 1
 		_BlendOff("Blend Offset", Range(0, 1)) = 0.2
-		
+
+		[Header(Tint)]
+		_TopTint("Top Tint", Color) = (1,1,1,1)
+		_BottomTint("Bottom Tint", Color) = (1,1,1,1)
+
 		[Header(Shadow Settings)]
 		_ShadowDistance("Shadow Distance", Range(0, 300)) = 50
 		_ShadowFadeRange("Shadow Fade Range", Range(0.1, 30)) = 10
+
+		[Header(Specular)]
+		_Glossiness("Smoothness", Range(0, 10)) = 0.5
+		_SpecularStrength("Specular Strength", Range(0, 1)) = 0.5
+		_SpecularHeight("Specular Height", Range(0, 1)) = 0.7
 	}
 
 	SubShader

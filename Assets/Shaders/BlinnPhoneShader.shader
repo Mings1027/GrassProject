@@ -1,0 +1,156 @@
+Shader "Custom/BlinnPhong"
+{
+    Properties
+    {
+       _MainTex ("Albedo (RGB)", 2D) = "white" {}
+       _Smoothness ("Smoothness", Range(0, 1)) = 0.5
+       _SpecularPower ("Specular Power", Range(0, 256)) = 50
+    }
+
+    SubShader
+    {
+       Tags
+       {
+          "RenderType"="Opaque"
+       }
+       LOD 100
+
+       Pass
+       {
+          HLSLPROGRAM
+          #pragma vertex vert
+          #pragma fragment frag
+
+          #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+          #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+
+          struct Attributes
+          {
+             float4 positionOS : POSITION;
+             float3 normalOS : NORMAL;
+             float2 uv : TEXCOORD0;
+          };
+
+          struct Varyings
+          {
+             float4 positionCS : SV_POSITION;
+             float3 normalWS : TEXCOORD0;
+             float3 positionWS : TEXCOORD1;
+             float2 uv : TEXCOORD2;
+          };
+
+          TEXTURE2D(_MainTex);
+          SAMPLER(sampler_MainTex);
+
+          CBUFFER_START(UnityPerMaterial)
+             float4 _MainTex_ST;
+             float _Smoothness;
+             float _SpecularPower;
+          CBUFFER_END
+
+          Varyings vert(Attributes input)
+          {
+             Varyings output;
+
+             float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
+             output.positionCS = TransformWorldToHClip(positionWS);
+             output.positionWS = positionWS;
+             output.normalWS = TransformObjectToWorldNormal(input.normalOS);
+             output.uv = TRANSFORM_TEX(input.uv, _MainTex);
+
+             return output;
+          }
+
+          float4 frag(Varyings input) : SV_Target
+          {
+             float4 albedo = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
+             float3 normalWS = normalize(input.normalWS);
+             Light mainLight = GetMainLight();
+             float3 viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
+
+             // Ambient
+             float3 ambient = SampleSH(normalWS);
+
+             // Diffuse (Lambert)
+             float NdotL = max(dot(normalWS, mainLight.direction), 0);
+             float3 diffuse = mainLight.color * NdotL;
+
+             // Specular (Blinn-Phong)
+             float3 halfVector = normalize(mainLight.direction + viewDirectionWS);
+             float NdotH = max(dot(normalWS, halfVector), 0);
+             float specularIntensity = pow(NdotH, _SpecularPower) * _Smoothness;
+             float3 specular = mainLight.color * specularIntensity;
+
+             float3 finalColor = (ambient + diffuse) * albedo.rgb + specular;
+             return float4(finalColor, albedo.a);
+          }
+          ENDHLSL
+       }
+       Pass
+       {
+          Name "ShadowCaster"
+          Tags
+          {
+             "LightMode" = "ShadowCaster"
+          }
+
+          ZWrite On
+          ZTest LEqual
+          ColorMask 0
+          Cull Back
+
+          HLSLPROGRAM
+          #pragma vertex ShadowPassVertex
+          #pragma fragment ShadowPassFragment
+
+          #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+          #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+
+          float3 _LightDirection;
+
+          struct Attributes
+          {
+             float4 positionOS : POSITION;
+             float3 normalOS : NORMAL;
+          };
+
+          struct Varyings
+          {
+             float4 positionCS : SV_POSITION;
+          };
+
+          float4 GetShadowPositionHClip(Attributes input)
+          {
+             float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
+             float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
+
+             float3 lightDirectionWS = _LightDirection;
+             float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, lightDirectionWS));
+
+             #if UNITY_REVERSED_Z
+             positionCS.z = min(positionCS.z, UNITY_NEAR_CLIP_VALUE);
+             #else
+                    positionCS.z = max(positionCS.z, UNITY_NEAR_CLIP_VALUE);
+             #endif
+
+             return positionCS;
+          }
+
+          Varyings ShadowPassVertex(Attributes input)
+          {
+             Varyings output;
+             UNITY_SETUP_INSTANCE_ID(input);
+             UNITY_TRANSFER_INSTANCE_ID(input, output);
+
+             output.positionCS = GetShadowPositionHClip(input);
+             return output;
+          }
+
+          half4 ShadowPassFragment(Varyings input) : SV_TARGET
+          {
+             return 0;
+          }
+          ENDHLSL
+       }
+    }
+}

@@ -312,6 +312,11 @@ namespace Grass.Editor
                 grassCompute.enabled = newEnableGrass;
             }
 
+            if (GrassEditorHelper.DrawToggleButton("Paint Mode", _paintModeActive, out var newPaintMode))
+            {
+                _paintModeActive = newPaintMode;
+            }
+
             if (GrassEditorHelper.DrawToggleButton("Auto Update", "Slow but always update",
                     _autoUpdate, out var newAutoUpdate))
             {
@@ -324,11 +329,6 @@ namespace Grass.Editor
                 {
                     EditorApplication.update -= grassCompute.Reset;
                 }
-            }
-
-            if (GrassEditorHelper.DrawToggleButton("Paint Mode", _paintModeActive, out var newPaintMode))
-            {
-                _paintModeActive = newPaintMode;
             }
 
             EditorGUILayout.EndHorizontal();

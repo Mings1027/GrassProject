@@ -11,18 +11,28 @@ void CalculateCutOff(half extraBufferX, half worldPosY)
     clip(cutOffTop - 0.01);
 }
 
-half3 CalculateMainLight(half3 albedo, half3 normalWS, half3 worldPos)
+half3 CalculateMainLight(half3 albedo, FragmentData input)
 {
-    half4 shadowCoord = TransformWorldToShadowCoord(worldPos);
+    half4 shadowCoord = TransformWorldToShadowCoord(input.worldPos);
     Light mainLight = GetMainLight(shadowCoord);
 
-    float distanceFromCamera = length(_WorldSpaceCameraPos - worldPos);
+    float distanceFromCamera = length(_WorldSpaceCameraPos - input.worldPos);
     float shadowFade = saturate((distanceFromCamera - _ShadowDistance) / _ShadowFadeRange);
     float shadowAtten = lerp(mainLight.shadowAttenuation, 1, shadowFade);
 
-    half NdotL = saturate(dot(normalWS, mainLight.direction));
+    // Diffuse
+    half NdotL = saturate(dot(input.normalWS, mainLight.direction));
+    half3 diffuse = albedo * (mainLight.color * shadowAtten * NdotL);
 
-    return albedo * (mainLight.color * shadowAtten * NdotL + _AmbientStrength);
+    // Specular
+    half3 viewDir = normalize(_WorldSpaceCameraPos - input.worldPos);
+    half3 halfVector = normalize(mainLight.direction + viewDir);
+    half NdotH = saturate(dot(input.normalWS, halfVector));
+    half specularPower = exp2(_Glossiness);
+    half heightFactor = saturate((input.uv.y - _SpecularHeight) / (1 - _SpecularHeight));
+    half3 specular = mainLight.color * _SpecularStrength * pow(NdotH, specularPower) * shadowAtten * heightFactor;
+
+    return diffuse + specular + albedo * _AmbientStrength;
 }
 
 half3 CalculateAdditionalLight(half3 worldPos, half3 worldNormal)
@@ -60,14 +70,7 @@ half3 CalculateAdditionalLight(half3 worldPos, half3 worldNormal)
     LIGHT_LOOP_END
     return diffuseColor;
 }
-
-half4 HighQualityLighting(half3 baseColor, half3 normalWS, half3 worldPos)
-{
-    half3 mainLighting = CalculateMainLight(baseColor, normalWS, worldPos);
-    half3 additionalLight = CalculateAdditionalLight(worldPos, normalWS);
-    return half4(mainLighting + additionalLight, 1);
-}
-
+ 
 FragmentData Vertex(VertexData input)
 {
     FragmentData output;
@@ -86,5 +89,7 @@ half4 Fragment(FragmentData input) : SV_Target
     half verticalFade = CalculateVerticalFade(input.uv);
     half4 baseColor = lerp(_BottomTint, _TopTint, verticalFade) * half4(input.diffuseColor, 0);
 
-    return HighQualityLighting(baseColor.rgb, input.normalWS, input.worldPos);
+    half3 mainLighting = CalculateMainLight(baseColor.rgb, input);
+    half3 additionalLight = CalculateAdditionalLight(input.worldPos, input.normalWS);
+    return half4(mainLighting + additionalLight, 1);
 }
