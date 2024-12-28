@@ -33,6 +33,14 @@ MonoBehaviour:
   interactorStrength: 1
   topTint: {r: 0.9056604, g: 0.9056604, b: 0.9056604, a: 1}
   bottomTint: {r: 0.23584908, g: 0.23584908, b: 0.23584908, a: 1}
+  blendMultiply: 0.98
+  blendOffset: 0.21
+  ambientAdjustmentColor: {r: 0, g: 0, b: 0, a: 0}
+  shadowDistance: 111
+  shadowFadeRange: 22.1
+  additionalLightIntensity: 0.55
+  additionalLightShadowStrength: 1
+  additionalLightShadowColor: {r: 0, g: 0, b: 0, a: 1}
   maxZoneCount: 20
   seasonRange:
     from: 1

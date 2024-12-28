@@ -6,215 +6,20 @@
   <component name="ChangeListManager">
     <list default="true" id="84e81331-7910-473f-9ad1-7a03a025416d" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassEditorHelper.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassEditorHelper.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterTool.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterTool.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Material/GreenGroundMat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Material/GreenGroundMat.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassShaderPropertyID.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassShaderPropertyID.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/Grass Blend Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/Grass Blend Mat.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/GrassBlendData.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/GrassBlendInput.hlsl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/GrassBlendData.hlsl.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/GrassBlendInput.hlsl.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/GrassBlendInput.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/GrassBlendInput.hlsl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/GrassBlendPass.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/GrassBlendPass.hlsl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/GrassBlendShader.shader" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/GrassBlendShader.shader" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/Grass Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/Grass Mat.mat" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassInput.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassInput.hlsl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassPass.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassPass.hlsl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassShader.shader" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassShader.shader" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Material/New Material.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Material/New Material.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Prefabs/Spider.prefab" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Prefabs/Spider.prefab.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_Blend.anim" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_Blend.anim.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_ChainIk.anim" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_ChainIk.anim.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_Damp.anim" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_Damp.anim.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_LookAround.anim" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_LookAround.anim.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_Offsets.anim" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_Offsets.anim.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_gunFire.anim" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_gunFire.anim.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_gunUp.anim" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_gunUp.anim.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_idle.anim" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_idle.anim.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_mRef.anim" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_mRef.anim.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_onBack.anim" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_onBack.anim.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_pickup.anim" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_pickup.anim.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_twist.anim" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_twist.anim.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_twistChain.anim" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_twistChain.anim.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_walk.anim" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_walk.anim.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_walkLegs.anim" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/Anim_walkLegs.anim.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/aimTarget.anim" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/aimTarget.anim.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/chainIKtarget.anim" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Animation/chainIKtarget.anim.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/aimTarget.controller" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/aimTarget.controller.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/root2bIK.controller" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/root2bIK.controller.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootBlend.controller" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootBlend.controller.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootCAim.controller" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootCAim.controller.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootChainIK.controller" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootChainIK.controller.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootDamp.controller" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootDamp.controller.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootOver.controller" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootOver.controller.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootParent.controller" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootParent.controller.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootPos.controller" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootPos.controller.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootRot.controller" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootRot.controller.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootTwist.controller" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootTwist.controller.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootTwistChain.controller" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootTwistChain.controller.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootmRef.controller" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/rootmRef.controller.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/target.controller" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Controllers/target.controller.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Info.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Info/Icons.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Info/Icons/ARicon.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Info/Icons/ARicon.png.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Info/Scripts.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Info/Scripts/Editor.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Info/Scripts/Editor/ReadmeEditor.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Info/Scripts/Editor/ReadmeEditor.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Info/Scripts/Readme.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Info/Scripts/Readme.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Materials.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Materials/A.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Materials/A.png.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Materials/AB.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Materials/AB.png.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Materials/B.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Materials/B.png.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Materials/ground.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Materials/ground.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Materials/red.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Materials/red.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Materials/target.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Materials/target.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Materials/yellow.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Materials/yellow.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Prefabs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Prefabs/aimTarget.prefab" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Prefabs/aimTarget.prefab.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Prefabs/env.prefab" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Prefabs/env.prefab.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Prefabs/lights.prefab" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Prefabs/lights.prefab.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Prefabs/sword.prefab" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Prefabs/sword.prefab.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Prefabs/target.prefab" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Prefabs/target.prefab.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Readme.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Readme.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/2BoneIK.unity" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/2BoneIK.unity.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/Aim.unity" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/Aim.unity.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/Blend.unity" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/Blend.unity.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/ChainIK.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/ChainIK.unity" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/ChainIK.unity.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/ChainIK/LightingData.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/ChainIK/LightingData.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/ChainIKSettings.lighting" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/ChainIKSettings.lighting.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/Damp.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/Damp.unity" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/Damp.unity.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/Damp/LightingData.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/Damp/LightingData.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/DampSettings.lighting" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/DampSettings.lighting.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/Override.unity" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/Override.unity.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/TwistChain.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/TwistChain.unity" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/TwistChain.unity.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/TwistChain/LightingData.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/TwistChain/LightingData.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/TwistCorrection.unity" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/TwistCorrection.unity.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/mParent.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/mParent.unity" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/mParent.unity.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/mParent/LightingData.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/mParent/LightingData.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/mParentSettings.lighting" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/mParentSettings.lighting.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/mPosition.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/mPosition.unity" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/mPosition.unity.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/mPosition/LightingData.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/mPosition/LightingData.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/mRef.unity" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/mRef.unity.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/mRotation.unity" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scenes/mRotation.unity.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scripts.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scripts/mParent.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Animation Rigging/1.3.0/Animation Rigging Constraint Samples/Scripts/mParent.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/IKScene.unity" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/IKScene.unity.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/TestScene.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/TestScene.unity" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/TestScene.unity.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/TestScene/LightingData.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/TestScene/LightingData.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/TestScene/ReflectionProbe-0.exr" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/TestScene/ReflectionProbe-0.exr.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/DecalShader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/DecalShader/CustomDecal.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/DecalShader/CustomDecal.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/DecalShader/CustomDecalMat.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/DecalShader/CustomDecalMat.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/DecalShader/CustomDecalShader.shadergraph" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/DecalShader/CustomDecalShader.shadergraph.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/DecalShader/white-circle-1024-removebg-preview.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/DecalShader/white-circle-1024-removebg-preview.png.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/ForwardPlusShader.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/ForwardPlusShader.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/ForwardPlusShader.shader" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Shaders/TerrainShader.shader" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/ForwardPlusShader.shader.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Shaders/TerrainShader.shader.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Stylized Terrain Textures/Custom Materials/Desert1.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Stylized Terrain Textures/Custom Materials/Desert1.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Stylized Terrain Textures/Custom Materials/Grass1.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Stylized Terrain Textures/Custom Materials/Grass1.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Stylized Terrain Textures/Custom Materials/Mud1.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Stylized Terrain Textures/Custom Materials/Mud1.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/URPShaderTemplate.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/URPShaderTemplate/Scripts.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/URPShaderTemplate/Scripts/CreateURPShaderMenu.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/URPShaderTemplate/Scripts/CreateURPShaderMenu.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/URPShaderTemplate/ShaderTemplates.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/URPShaderTemplate/ShaderTemplates/ForwardPlusShader.shader.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/URPShaderTemplate/ShaderTemplates/ForwardPlusShader.shader.txt.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/URPShaderTemplate/ShaderTemplates/ForwardShader.shader.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/URPShaderTemplate/ShaderTemplates/ForwardShader.shader.txt.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Packages/manifest.json" beforeDir="false" afterPath="$PROJECT_DIR$/Packages/manifest.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Packages/packages-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Packages/packages-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Shaders/BlinnPhongMat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Shaders/BlinnPhongMat.mat" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -753,6 +558,7 @@
       <workItem from="1735257675111" duration="32422000" />
       <workItem from="1735313806339" duration="748000" />
       <workItem from="1735348182587" duration="19558000" />
+      <workItem from="1735392634439" duration="9227000" />
     </task>
     <servers />
   </component>

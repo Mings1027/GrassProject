@@ -48,7 +48,9 @@ Material:
     - _AmbientStrength: 0.3
     - _BlendFloor: 0
     - _BlendMult: 1
+    - _BlendMultiply: 1
     - _BlendOff: 0.2
+    - _BlendOffset: 0.2
     - _DebugVisualization: 0
     - _Edge: 1
     - _Exposure: 1

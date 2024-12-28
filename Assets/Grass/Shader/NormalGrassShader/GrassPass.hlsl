@@ -1,7 +1,7 @@
 half CalculateVerticalFade(half2 uv)
 {
-    half blendMul = uv.y * _BlendMult;
-    half blendAdd = blendMul + _BlendOff;
+    half blendMul = uv.y * _BlendMultiply;
+    half blendAdd = blendMul + _BlendOffset;
     return saturate(blendAdd);
 }
 

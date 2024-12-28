@@ -28,7 +28,7 @@ CBUFFER_START(UnityPerMaterial)
     float4 _AdditionalShadowColor;
 
     // Blend
-    float _BlendMult, _BlendOff;
+    float _BlendMultiply, _BlendOffset;
 
     // Shadow
     float _ShadowDistance;

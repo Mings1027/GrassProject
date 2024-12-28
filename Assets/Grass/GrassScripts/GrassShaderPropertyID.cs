@@ -22,8 +22,6 @@ namespace Grass.GrassScripts
         
         public static readonly int MinFadeDist = Shader.PropertyToID("_MinFadeDist");
         public static readonly int MaxFadeDist = Shader.PropertyToID("_MaxFadeDist");
-        // public static readonly int LowQualityDistance = Shader.PropertyToID("_LowQualityDistance");
-        // public static readonly int MediumQualityDistance = Shader.PropertyToID("_MediumQualityDistance");
         
         public static readonly int InteractorStrength = Shader.PropertyToID("_InteractorStrength");
         public static readonly int InteractorsLength = Shader.PropertyToID("_InteractorsLength");
@@ -42,7 +40,18 @@ namespace Grass.GrassScripts
 
         public static readonly int TopTint = Shader.PropertyToID("_TopTint");
         public static readonly int BottomTint = Shader.PropertyToID("_BottomTint");
-
+        
+        public static readonly int BlendMultiply = Shader.PropertyToID("_BlendMultiply");
+        public static readonly int BlendOffset = Shader.PropertyToID("_BlendOffset");
+        public static readonly int AmbientAdjustmentColor = Shader.PropertyToID("_AmbientAdjustmentColor");
+        
+        public static readonly int ShadowDistance = Shader.PropertyToID("_ShadowDistance");
+        public static readonly int ShadowFadeRange = Shader.PropertyToID("_ShadowFadeRange");
+        
+        public static readonly int AdditionalLightIntensity = Shader.PropertyToID("_AdditionalLightIntensity");
+        public static readonly int AdditionalLightShadowStrength = Shader.PropertyToID("_AdditionalLightShadowStrength");
+        public static readonly int AdditionalShadowColor = Shader.PropertyToID("_AdditionalShadowColor");
+        
         public static readonly int ZonePositions = Shader.PropertyToID("_ZonePositions");
         public static readonly int ZoneScales = Shader.PropertyToID("_ZoneScales");
         public static readonly int ZoneColors = Shader.PropertyToID("_ZoneColors");

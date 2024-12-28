@@ -29,7 +29,7 @@ CBUFFER_START(UnityPerMaterial)
     float4 _AdditionalShadowColor;
 
     // Blend
-    float _BlendMult, _BlendOff;
+    float _BlendMultiply, _BlendOffset;
     float4 _AmbientAdjustmentColor;
     uniform TEXTURE2D(_TerrainDiffuse);
     uniform SAMPLER(sampler_TerrainDiffuse);

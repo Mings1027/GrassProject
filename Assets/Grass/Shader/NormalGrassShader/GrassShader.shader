@@ -10,8 +10,8 @@ Shader "Custom/GrassShader"
 		_AdditionalShadowColor("Shadow Color", Color) = (0, 0, 0, 1)
 
 		[Header(Blend)]
-		_BlendMult("Blend Multiply", Range(0, 5)) = 1
-		_BlendOff("Blend Offset", Range(0, 1)) = 0.2
+		_BlendMultiply("Blend Multiply", Range(0, 5)) = 1
+		_BlendOffset("Blend Offset", Range(0, 1)) = 0.2
 
 		[Header(Tint)]
 		_TopTint("Top Tint", Color) = (1,1,1,1)

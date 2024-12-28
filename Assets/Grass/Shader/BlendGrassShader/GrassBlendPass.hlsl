@@ -20,8 +20,8 @@ half4 BlendWithTerrain(FragmentData input, half verticalFade)
 
 half CalculateVerticalFade(half2 uv)
 {
-    half blendMul = uv.y * _BlendMult;
-    half blendAdd = blendMul + _BlendOff;
+    half blendMul = uv.y * _BlendMultiply;
+    half blendAdd = blendMul + _BlendOffset;
     return saturate(blendAdd);
 }
 
@@ -84,7 +84,8 @@ half3 CalculateAdditionalLight(half3 worldPos, half3 worldNormal)
         {
             half NdotL = saturate(dot(worldNormal, light.direction));
             half3 lightColor = light.color * light.distanceAttenuation * NdotL * _AdditionalLightIntensity;
-            diffuseColor += lerp(lightColor * _AdditionalShadowColor.rgb, lightColor, light.shadowAttenuation);
+            half shadowAttenuation = lerp(1, light.shadowAttenuation, _AdditionalLightShadowStrength);
+            diffuseColor += lerp(lightColor * _AdditionalShadowColor.rgb, lightColor, shadowAttenuation);
         }
     LIGHT_LOOP_END
 

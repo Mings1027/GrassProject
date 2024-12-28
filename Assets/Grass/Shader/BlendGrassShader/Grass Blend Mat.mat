@@ -28,11 +28,13 @@ Material:
     - _AdditionalLightIntensity: 0.5
     - _AdditionalLightShadowStrength: 0.8
     - _AmbientStrength: 0.3
-    - _BlendMult: 0.93
-    - _BlendOff: 0.14
+    - _BlendMult: 0.97
+    - _BlendMultiply: 1
+    - _BlendOff: 0.121
+    - _BlendOffset: 0.2
     - _Glossiness: 4.5
-    - _ShadowDistance: 50
-    - _ShadowFadeRange: 10
+    - _ShadowDistance: 25
+    - _ShadowFadeRange: 12.6
     - _SpecularHeight: 0.5
     - _SpecularStrength: 1
     m_Colors:

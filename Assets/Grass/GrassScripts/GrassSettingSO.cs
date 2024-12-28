@@ -73,7 +73,18 @@ public class GrassSettingSO : ScriptableObject
     [Header("Tinting")] public Color topTint = new(1, 1, 1);
     public Color bottomTint = new(0, 0, 1);
 
-    [Header("Season Settings")] public int maxZoneCount = 1;    
+    [Header("Blend")] public float blendMultiply = 1;
+    public float blendOffset = 0.2f;
+    public Color ambientAdjustmentColor;
+
+    [Header("Shadow")] public float shadowDistance = 50;
+    public float shadowFadeRange = 10;
+    
+    [Header("Additional Light")] public float additionalLightIntensity = 1;
+    public float additionalLightShadowStrength = 0.2f;
+    public Color additionalLightShadowColor = Color.black;
+
+    [Header("Season Settings")] public int maxZoneCount = 1;
     public SeasonRange seasonRange = new();
     public SeasonSettings winterSettings = new();
     public SeasonSettings springSettings = new();

@@ -536,6 +536,9 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         SetBladeMinMax();
         SetLODSetting();
         SetTint();
+        BlendSetting();
+        ShadowSetting();
+        AdditionalLightSetting();
     }
 
     public void SetRandomHeightMinMax()
@@ -570,6 +573,34 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
     {
         instantiatedMaterial.SetColor(GrassShaderPropertyID.TopTint, grassSetting.topTint);
         instantiatedMaterial.SetColor(GrassShaderPropertyID.BottomTint, grassSetting.bottomTint);
+    }
+
+    public void BlendSetting()
+    {
+        instantiatedMaterial.SetFloat(GrassShaderPropertyID.BlendMultiply, grassSetting.blendMultiply);
+        instantiatedMaterial.SetFloat(GrassShaderPropertyID.BlendOffset, grassSetting.blendOffset);
+
+        if (instantiatedMaterial.HasProperty(GrassShaderPropertyID.AmbientAdjustmentColor))
+        {
+            instantiatedMaterial.SetColor(GrassShaderPropertyID.AmbientAdjustmentColor,
+                grassSetting.ambientAdjustmentColor);
+        }
+    }
+
+    public void ShadowSetting()
+    {
+        instantiatedMaterial.SetFloat(GrassShaderPropertyID.ShadowDistance, grassSetting.shadowDistance);
+        instantiatedMaterial.SetFloat(GrassShaderPropertyID.ShadowFadeRange, grassSetting.shadowFadeRange);
+    }
+
+    public void AdditionalLightSetting()
+    {
+        instantiatedMaterial.SetFloat(GrassShaderPropertyID.AdditionalLightIntensity,
+            grassSetting.additionalLightIntensity);
+        instantiatedMaterial.SetFloat(GrassShaderPropertyID.AdditionalLightShadowStrength,
+            grassSetting.additionalLightShadowStrength);
+        instantiatedMaterial.SetColor(GrassShaderPropertyID.AdditionalShadowColor,
+            grassSetting.additionalLightShadowColor);
     }
 
     public void SetBladeAmount()

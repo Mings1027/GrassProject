@@ -1182,6 +1182,50 @@ namespace Grass.Editor
                     grassCompute.SetTint();
                 }
             });
+            GrassEditorHelper.DrawFoldoutSection("Blend Settings", () =>
+            {
+                EditorGUI.BeginChangeCheck();
+                grassSetting.blendMultiply =
+                    GrassEditorHelper.FloatSlider("Blend Multiply", "", grassSetting.blendMultiply, 0f, 5f);
+                grassSetting.blendOffset =
+                    GrassEditorHelper.FloatSlider("Blend Offset", "", grassSetting.blendOffset, 0f, 1f);
+                if (grassSetting.materialToUse.HasProperty(GrassShaderPropertyID.AmbientAdjustmentColor))
+                {
+                    grassSetting.ambientAdjustmentColor = EditorGUILayout.ColorField("Ambient Adjustment Color",
+                        grassSetting.ambientAdjustmentColor);
+                }
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    grassCompute.BlendSetting();
+                }
+            });
+            GrassEditorHelper.DrawFoldoutSection("Shadow Settings", () =>
+            {
+                EditorGUI.BeginChangeCheck();
+                grassSetting.shadowDistance =
+                    GrassEditorHelper.FloatSlider("Shadow Distance", "", grassSetting.shadowDistance, 0f, 300f);
+                grassSetting.shadowFadeRange =
+                    GrassEditorHelper.FloatSlider("Shadow Fade Range", "", grassSetting.shadowFadeRange, 0.1f, 30f);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    grassCompute.ShadowSetting();
+                }
+            });
+            GrassEditorHelper.DrawFoldoutSection("Additional Light Settings", () =>
+            {
+                EditorGUI.BeginChangeCheck();
+                grassSetting.additionalLightIntensity =
+                    GrassEditorHelper.FloatSlider("Light Intensity", "", grassSetting.additionalLightIntensity, 0f, 1f);
+                grassSetting.additionalLightShadowStrength =
+                    GrassEditorHelper.FloatSlider("Shadow Strength", "", grassSetting.additionalLightShadowStrength, 0f, 1f);
+                grassSetting.additionalLightShadowColor =
+                    EditorGUILayout.ColorField("Shadow Color", grassSetting.additionalLightShadowColor);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    grassCompute.AdditionalLightSetting();
+                }
+            });
             GrassEditorHelper.DrawFoldoutSection(new GUIContent(EditorIcons.Warning) { text = "Blade Amount Settings" },
                 () =>
                 {
