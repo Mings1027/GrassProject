@@ -41,16 +41,23 @@ namespace Grass.GrassScripts
         public static readonly int TopTint = Shader.PropertyToID("_TopTint");
         public static readonly int BottomTint = Shader.PropertyToID("_BottomTint");
         
+        public static readonly int AmbientStrength = Shader.PropertyToID("_AmbientStrength");
         public static readonly int BlendMultiply = Shader.PropertyToID("_BlendMultiply");
         public static readonly int BlendOffset = Shader.PropertyToID("_BlendOffset");
         public static readonly int AmbientAdjustmentColor = Shader.PropertyToID("_AmbientAdjustmentColor");
         
         public static readonly int ShadowDistance = Shader.PropertyToID("_ShadowDistance");
         public static readonly int ShadowFadeRange = Shader.PropertyToID("_ShadowFadeRange");
+        public static readonly int MinShadowBrightness = Shader.PropertyToID("_MinShadowBrightness");
+        public static readonly int ShadowColor = Shader.PropertyToID("_ShadowColor");
         
         public static readonly int AdditionalLightIntensity = Shader.PropertyToID("_AdditionalLightIntensity");
         public static readonly int AdditionalLightShadowStrength = Shader.PropertyToID("_AdditionalLightShadowStrength");
         public static readonly int AdditionalShadowColor = Shader.PropertyToID("_AdditionalShadowColor");
+        
+        public static readonly int Glossiness = Shader.PropertyToID("_Glossiness");
+        public static readonly int SpecularStrength = Shader.PropertyToID("_SpecularStrength");
+        public static readonly int SpecularHeight = Shader.PropertyToID("_SpecularHeight");
         
         public static readonly int ZonePositions = Shader.PropertyToID("_ZonePositions");
         public static readonly int ZoneScales = Shader.PropertyToID("_ZoneScales");

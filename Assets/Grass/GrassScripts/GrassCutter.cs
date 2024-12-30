@@ -44,7 +44,7 @@ public class GrassCutter : MonoBehaviour
 
             if (distance >= minMoveDistance)
             {
-                _grassCompute.UpdateCutBuffer(transform.position, radius);
+                _grassCompute.CutGrass(transform.position, radius);
                 _cachedPos = transform.position;
             }
         }

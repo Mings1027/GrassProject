@@ -7,75 +7,59 @@ namespace Grass.Editor
     [CustomEditor(typeof(GrassSeasonManager))]
     public class GrassSeasonManagerEditor : UnityEditor.Editor
     {
-        private SerializedProperty _globalSeasonValueProp;
         private bool _showAllGizmos;
+        private GrassSeasonManager _manager;
+        private SerializedProperty _seasonValue;
+        private GrassSettingSO _grassSetting;
 
         private void OnEnable()
         {
-            var controller = (GrassSeasonManager)target;
-            var volumes = controller.GetComponentsInChildren<GrassSeasonZone>();
+            _seasonValue = serializedObject.FindProperty("globalSeasonValue");
+            _manager = (GrassSeasonManager)target;
+            var volumes = _manager.GetComponentsInChildren<GrassSeasonZone>();
             _showAllGizmos = AreAllGizmosEnabled(volumes);
-
-            _globalSeasonValueProp = serializedObject.FindProperty("globalSeasonValue");
+            
+            // GrassSettingSO 찾기
+            var grassCompute = FindAnyObjectByType<GrassComputeScript>();
+            if (grassCompute != null)
+            {
+                _grassSetting = grassCompute.GrassSetting;
+            }
         }
 
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
 
-            var manager = (GrassSeasonManager)target;
-            DrawManualUpdateButton(manager);
-            DrawGizmosToggle(manager);
+            DrawManualUpdateButton();
+            DrawGizmosToggle();
+            DrawGlobalSeasonValueSlider();
             EditorGUILayout.Space(10);
-            DrawSeasonControl(manager);
 
             serializedObject.ApplyModifiedProperties();
         }
 
-        private void DrawManualUpdateButton(GrassSeasonManager manager)
+        private void DrawManualUpdateButton()
         {
             if(GUILayout.Button("Manual Update", GUILayout.Height(25)))
             {
-                manager.Init();
+                _manager.Init();
             }
         }
-        private void DrawGizmosToggle(GrassSeasonManager manager)
+
+        private void DrawGizmosToggle()
         {
             var gizmosContent = new GUIContent(EditorIcons.Gizmos) { text = "Toggle All Gizmos" };
             EditorGUI.BeginChangeCheck();
             if (GrassEditorHelper.DrawToggleButton(gizmosContent, _showAllGizmos, out var newState))
             {
                 _showAllGizmos = newState;
-                SetAllGizmos(manager, _showAllGizmos);
+                SetAllGizmos(_showAllGizmos);
             }
 
             if (EditorGUI.EndChangeCheck())
             {
                 serializedObject.ApplyModifiedProperties();
-            }
-        }
-
-        private void DrawSeasonControl(GrassSeasonManager manager)
-        {
-            EditorGUILayout.LabelField("Global Season Control", EditorStyles.boldLabel);
-
-            var min = manager.GlobalMinRange();
-            var max = manager.GlobalMaxRange();
-
-            EditorGUI.BeginChangeCheck();
-
-            var roundedValue = (float)System.Math.Round(_globalSeasonValueProp.floatValue, 2);
-            var newValue = EditorGUILayout.FloatField("Season Value", roundedValue);
-
-            EditorGUILayout.BeginVertical(GUILayout.Height(20));
-            newValue = GUILayout.HorizontalSlider(newValue, min, max);
-            EditorGUILayout.EndVertical();
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                _globalSeasonValueProp.floatValue = Mathf.Clamp(newValue, min, max);
-                manager.SetGlobalSeasonValue(newValue);
-                SceneView.RepaintAll();
             }
         }
 
@@ -95,9 +79,9 @@ namespace Grass.Editor
             return true;
         }
 
-        private void SetAllGizmos(GrassSeasonManager manager, bool state)
+        private void SetAllGizmos(bool state)
         {
-            var volumes = manager.GetComponentsInChildren<GrassSeasonZone>();
+            var volumes = _manager.GetComponentsInChildren<GrassSeasonZone>();
             foreach (var volume in volumes)
             {
                 if (!volume) continue;
@@ -109,6 +93,20 @@ namespace Grass.Editor
             }
 
             SceneView.RepaintAll();
+        }
+
+        private void DrawGlobalSeasonValueSlider()
+        {
+            EditorGUILayout.Space(10);
+            EditorGUILayout.LabelField("Global Season Value", EditorStyles.boldLabel);
+
+            EditorGUI.BeginChangeCheck();
+            var newValue = EditorGUILayout.Slider(_seasonValue.floatValue, 0, _grassSetting.seasonSettings.Count);
+            if (EditorGUI.EndChangeCheck())
+            {
+                _seasonValue.floatValue = newValue;
+                _manager.UpdateAllSeasonZones();
+            }
         }
     }
 }

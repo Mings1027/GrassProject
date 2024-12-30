@@ -174,10 +174,21 @@ half3 CalculationWind(half3 positionWS, half grassHeight)
         * grassHeight * _WindStrength;
 }
 
-float4 CalculateInteraction(float3 grassPosition, half grassHeight)
+struct InteractionResult
 {
-    float3 totalBend = float3(0, 0, 0);
-    float outFallOff = 0;
+    float3 bendOffset;
+    float windAttenuation;
+};
+
+InteractionResult CalculateInteraction(float3 grassPosition, half grassHeight, half cut)
+{
+    InteractionResult result = (InteractionResult)0;
+
+    if (cut > -0.99) // 잘린 잔디는 모든 효과 무시
+    {
+        return result;
+    }
+
     for (int i = 0; i < _InteractorsLength; i++)
     {
         float3 interactorPos = _InteractorData[i].xyz;
@@ -188,19 +199,19 @@ float4 CalculateInteraction(float3 grassPosition, half grassHeight)
         if (distance < interactorRadius && _InteractorStrength > 0) // interactorStrength가 0이면 아예 작동 안하도록
         {
             float normalizedDist = distance / interactorRadius;
-            float falloff = 1.0 - (normalizedDist * normalizedDist * normalizedDist);
-            outFallOff = max(outFallOff, falloff);
+            float influence = 1.0 - (normalizedDist * normalizedDist * normalizedDist);
+            result.windAttenuation = max(result.windAttenuation, influence);
+
             float3 bendDirection = normalize(distanceVector);
-            // interactorStrength를 전체 강도에 곱해서 0일때는 효과없고 1일때 최대로
-            float bendStrength = _InteractorStrength * falloff;
-            bendDirection.y = -(bendStrength *2);
+            float bendStrength = _InteractorStrength * influence;
+            bendDirection.y = -(bendStrength * 2);
 
             float3 bend = bendDirection * grassHeight;
-            totalBend = lerp(totalBend, bend, bendStrength); // 여기도 bendStrength 사용
+            result.bendOffset = lerp(result.bendOffset, bend, bendStrength); // 여기도 bendStrength 사용
         }
     }
 
-    return float4(totalBend, outFallOff);
+    return result;
 }
 
 [numthreads(256, 1, 1)]
@@ -247,11 +258,10 @@ void Main(uint id : SV_DispatchThreadID)
 
     _BladeForward *= grassHeight;
 
-    half4 interactionData = CalculateInteraction(sv.positionWS, grassHeight);
-    half3 interaction = interactionData.xyz;
-    
+    InteractionResult interaction = CalculateInteraction(sv.positionWS, grassHeight, cut);
+
     half3 wind = CalculationWind(sv.positionWS, grassHeight);
-    half3 finalWind = wind * lerp(1.0, 0.1, interactionData.w);
+    half3 finalWind = wind * lerp(1.0, 0.1, interaction.windAttenuation);
 
     half numTrianglesPerBlade = (_MaxSegmentsPerBlade - 1) * 2 + 1;
 
@@ -271,7 +281,7 @@ void Main(uint id : SV_DispatchThreadID)
             half segmentHeight = grassHeight * t;
             half segmentWidth = grassWidth * _BottomWidth * (1 - t);
 
-            half3 newPos = sv.positionWS + (finalWind + grassNormal * grassHeight + interaction) * t;
+            half3 newPos = sv.positionWS + (finalWind + grassNormal * grassHeight + interaction.bendOffset) * t;
 
             half curveStrength = pow(abs(t), _BladeCurve) * _BladeForward;
 
@@ -282,7 +292,7 @@ void Main(uint id : SV_DispatchThreadID)
                                                   facingRotationMatrix);
         }
 
-        half3 topPosOS = sv.positionWS + finalWind + interaction + grassNormal * grassHeight;
+        half3 topPosOS = sv.positionWS + finalWind + interaction.bendOffset + grassNormal * grassHeight;
         drawVertices[_MaxSegmentsPerBlade * 2] = GrassVertex(topPosOS, 0, grassHeight, offset,
                                                              half2(0.5, 1), _BladeForward, grassNormal,
                                                              facingRotationMatrix);

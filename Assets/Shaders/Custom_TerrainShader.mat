@@ -32,12 +32,12 @@ Material:
     - _AdditionalLightIntensity: 1
     - _AdditionalLightShadowStrength: 1
     - _AmbientStrength: 0.2
-    - _EdgeSmoothness: 0
-    - _ShadowDistance: 50
+    - _EdgeSmoothness: 1
+    - _ShadowDistance: 73
     - _ShadowFadeRange: 10
     - _ToonSteps: 3
     m_Colors:
-    - _AdditionalShadowColor: {r: 0, g: 0, b: 0, a: 1}
+    - _AdditionalShadowColor: {r: 0.03530073, g: 0, b: 1, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

@@ -2,7 +2,6 @@ Shader "Custom/GrassShader"
 {
 	Properties
 	{
-		_AmbientStrength("Ambient Strength", Range(0, 1)) = 0.3
 
 		[Header(Additional Light)]
 		_AdditionalLightIntensity("Light Intensity", Range(0, 1)) = 0.5
@@ -10,6 +9,7 @@ Shader "Custom/GrassShader"
 		_AdditionalShadowColor("Shadow Color", Color) = (0, 0, 0, 1)
 
 		[Header(Blend)]
+		_AmbientStrength("Ambient Strength", Range(0, 1)) = 0.3
 		_BlendMultiply("Blend Multiply", Range(0, 5)) = 1
 		_BlendOffset("Blend Offset", Range(0, 1)) = 0.2
 		_AmbientAdjustmentColor("Ambient Adjustment Color", Color) = (0.5, 0.5, 0.5, 1)
@@ -21,11 +21,13 @@ Shader "Custom/GrassShader"
 		[Header(Shadow Settings)]
 		_ShadowDistance("Shadow Distance", Range(0, 300)) = 50
 		_ShadowFadeRange("Shadow Fade Range", Range(0.1, 30)) = 10
+		_MinShadowBrightness ("Min Shadow Brightness", Range(0, 1)) = 0.3
+		_ShadowColor ("Shadow Color", Color) = (0.5, 0.5, 0.5, 1)
 
 		[Header(Specular)]
-		_Glossiness("Smoothness", Range(0, 10)) = 0.5
-		_SpecularStrength("Specular Strength", Range(0, 1)) = 0.5
-		_SpecularHeight("Specular Height", Range(0, 1)) = 0.7 
+		_Glossiness("Glossiness", Range(0, 10)) = 4.5
+		_SpecularStrength("Specular Strength", Range(0, 1)) = 1
+		_SpecularHeight("Specular Height", Range(0, 1)) = 0.5
 	}
 
 	SubShader
@@ -57,25 +59,31 @@ Shader "Custom/GrassShader"
 			#pragma multi_compile _ _FORWARD_PLUS
 			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS
 			#pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
+
+			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+			#include "GrassBlendInput.hlsl"
+			#include "GrassTerrainBlend.hlsl"
 			#include "GrassBlendPass.hlsl"
 			ENDHLSL
 		}
 		// Shadow Caster Pass
-		//		Pass
-		//		{
-		//			Name "ShadowCaster"
-		//			Tags
-		//			{
-		//				"LightMode" = "ShadowCaster"
-		//			}
-		//
-		//			HLSLPROGRAM
-		//			#pragma vertex ShadowPassVertex
-		//			#pragma fragment ShadowPassFragment
-		//
-		//			#include "GrassShadowCasterPass.hlsl"
-		//			ENDHLSL
-		//		}
+//		Pass
+//		{
+//			Name "ShadowCaster"
+//			Tags
+//			{
+//				"LightMode" = "ShadowCaster"
+//			}
+//
+//			HLSLPROGRAM
+//			#pragma vertex ShadowPassVertex
+//			#pragma fragment ShadowPassFragment
+//
+//			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+//			#include "GrassBlendInput.hlsl"
+//			#include "GrassTerrainBlend.hlsl"
+//			#include "GrassBlendShadowPass.hlsl"
+//			ENDHLSL
+//		}
 	}
-	Fallback "Hidden/Universal Render Pipeline/FallbackError"
 }

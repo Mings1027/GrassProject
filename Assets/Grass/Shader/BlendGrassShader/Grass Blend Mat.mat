@@ -33,6 +33,7 @@ Material:
     - _BlendOff: 0.121
     - _BlendOffset: 0.2
     - _Glossiness: 4.5
+    - _MinShadowBrightness: 0.247
     - _ShadowDistance: 25
     - _ShadowFadeRange: 12.6
     - _SpecularHeight: 0.5
@@ -41,6 +42,7 @@ Material:
     - _AdditionalShadowColor: {r: 0, g: 0, b: 0, a: 1}
     - _AmbientAdjustmentColor: {r: 0, g: 0, b: 0, a: 1}
     - _BottomTint: {r: 0.9528302, g: 0.9303578, b: 0.9303578, a: 1}
+    - _ShadowColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
     - _TopTint: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

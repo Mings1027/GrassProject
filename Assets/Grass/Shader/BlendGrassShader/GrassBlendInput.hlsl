@@ -37,6 +37,8 @@ CBUFFER_START(UnityPerMaterial)
     // Shadow
     float _ShadowDistance;
     float _ShadowFadeRange;
+    half _MinShadowBrightness;
+    half4 _ShadowColor;
 
     //Specular
     float _Glossiness; // 반사광의 선명도 조절

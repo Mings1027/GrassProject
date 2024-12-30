@@ -19,12 +19,12 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
-  m_LockedProperties: 
+  m_LockedProperties: _SpecularPower
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseMap:
-        m_Texture: {fileID: 2057369963675073982, guid: 0000000000000000d000000000000000, type: 0}
+        m_Texture: {fileID: 2800000, guid: 1da3154f40a744d48b1e89e7e23ef8e3, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
@@ -46,20 +46,25 @@ Material:
     m_Ints: []
     m_Floats:
     - _FalloffRange: 2.19
-    - _FresnelPower: 6.55
+    - _FresnelMax: 1
+    - _FresnelMin: 0.6
+    - _FresnelPower: 6.21
     - _Glossiness: 41
     - _Metallic: 0
     - _NormalScale: 0.92
     - _OcclusionStrength: 1
     - _PhongRange: 10
-    - _Smoothness: 0.491
+    - _Smoothness: 1
+    - _SpecPower: 20
+    - _SpecRange: 0.3
     - _SpecularIntensity: 1
-    - _SpecularPower: 50
+    - _SpecularPower: 39
     - _SpecularScale: 0.5
     - _SpecularStrength: 1
     m_Colors:
     - _AmbientColor: {r: 0, g: 0, b: 0, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _SpecColor: {r: 0, g: 0, b: 0, a: 1}
+    - _FresnelColor: {r: 0.9245283, g: 0.9245283, b: 0.9245283, a: 1}
+    - _SpecColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

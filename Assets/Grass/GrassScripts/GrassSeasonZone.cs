@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Grass.GrassScripts;
 using UnityEngine;
 
@@ -7,11 +8,7 @@ public class GrassSeasonZone : MonoBehaviour
 {
     [SerializeField] private bool overrideGlobalSettings;
     [SerializeField] private float seasonValue;
-    [SerializeField] private SeasonRange seasonRange = new();
-    [SerializeField] private SeasonSettings winterSettings = new();
-    [SerializeField] private SeasonSettings springSettings = new();
-    [SerializeField] private SeasonSettings summerSettings = new();
-    [SerializeField] private SeasonSettings autumnSettings = new();
+    [SerializeField] private List<SeasonSettings> seasonSettings = new();
 
     private static GrassSettingSO _grassSetting;
     private ZoneData _zoneData;
@@ -19,12 +16,17 @@ public class GrassSeasonZone : MonoBehaviour
     private Vector3 _lastPosition;
     private Vector3 _lastScale;
 
-    public float MinRange => overrideGlobalSettings ? seasonRange.GetRange().min : 0f;
-    public float MaxRange => overrideGlobalSettings ? seasonRange.GetRange().max : 4f;
+    public float MinRange => 0;
+    public float MaxRange => overrideGlobalSettings ? seasonSettings.Count : _grassSetting.seasonSettings.Count;
 
 #if UNITY_EDITOR
     [SerializeField] private bool showGizmos = true;
-    public bool OverrideGlobalSettings => overrideGlobalSettings;
+    public bool OverrideGlobalSettings
+    {
+        get => overrideGlobalSettings;
+        set => overrideGlobalSettings = value;
+    }
+    public List<SeasonSettings> SeasonSettings => seasonSettings;
 #endif
     private void OnEnable()
     {
@@ -59,7 +61,7 @@ public class GrassSeasonZone : MonoBehaviour
         if (overrideGlobalSettings)
         {
             float t = Mathf.InverseLerp(globalMin, globalMax, globalValue);
-            seasonValue = Mathf.Lerp(seasonRange.GetRange().min, seasonRange.GetRange().max, t);
+            seasonValue = Mathf.Lerp(MinRange, MaxRange, t);
         }
         else
         {
@@ -89,31 +91,51 @@ public class GrassSeasonZone : MonoBehaviour
 
     private (Vector3 position, Vector3 scale, Color color, float width, float height) CalculateZoneState()
     {
-        if (!overrideGlobalSettings && _grassSetting == null)
-            return (transform.position, transform.localScale, Color.white, 1f, 1f);
+        if (!overrideGlobalSettings || seasonSettings.Count == 0)
+        {
+            if (_grassSetting == null)
+                return (transform.position, transform.localScale, Color.white, 1f, 1f);
 
-        float normalizedValue = seasonValue % 4f;
-        int seasonIndex = Mathf.FloorToInt(normalizedValue);
-        float t = normalizedValue - seasonIndex;
+            return CalculateGlobalSeasonState();
+        }
 
-        var settings = overrideGlobalSettings
-            ? new[] { winterSettings, springSettings, summerSettings, autumnSettings, winterSettings }
-            : new[]
-            {
-                _grassSetting.winterSettings, _grassSetting.springSettings,
-                _grassSetting.summerSettings, _grassSetting.autumnSettings,
-                _grassSetting.winterSettings
-            };
+        float normalizedValue = seasonValue % seasonSettings.Count;
+        int currentIndex = Mathf.FloorToInt(normalizedValue);
+        float t = normalizedValue - currentIndex;
+        int nextIndex = (currentIndex + 1) % seasonSettings.Count;
 
-        var from = settings[seasonIndex];
-        var to = settings[seasonIndex + 1];
+        var currentSeason = seasonSettings[currentIndex];
+        var nextSeason = seasonSettings[nextIndex];
 
         return (
             transform.position,
             transform.localScale,
-            Color.Lerp(from.seasonColor, to.seasonColor, t),
-            Mathf.Lerp(from.width, to.width, t),
-            Mathf.Lerp(from.height, to.height, t)
+            Color.Lerp(currentSeason.seasonColor, nextSeason.seasonColor, t),
+            Mathf.Lerp(currentSeason.width, nextSeason.width, t),
+            Mathf.Lerp(currentSeason.height, nextSeason.height, t)
+        );
+    }
+
+    private (Vector3 position, Vector3 scale, Color color, float width, float height) CalculateGlobalSeasonState()
+    {
+        var settings = _grassSetting.seasonSettings;
+        if (settings.Count == 0)
+            return (transform.position, transform.localScale, Color.white, 1f, 1f);
+
+        float normalizedValue = seasonValue % settings.Count;
+        int currentIndex = Mathf.FloorToInt(normalizedValue);
+        float t = normalizedValue - currentIndex;
+        int nextIndex = (currentIndex + 1) % settings.Count;
+
+        var currentSeason = settings[currentIndex];
+        var nextSeason = settings[nextIndex];
+
+        return (
+            transform.position,
+            transform.localScale,
+            Color.Lerp(currentSeason.seasonColor, nextSeason.seasonColor, t),
+            Mathf.Lerp(currentSeason.width, nextSeason.width, t),
+            Mathf.Lerp(currentSeason.height, nextSeason.height, t)
         );
     }
 
@@ -126,6 +148,28 @@ public class GrassSeasonZone : MonoBehaviour
         return worldBounds.Contains(position);
     }
 
+    public void SetSeasonValue(float value)
+    {
+        seasonValue = value;
+        UpdateZoneState();
+    }
+
+    public (SeasonType currentSeason, SeasonType nextSeason, float transition) GetCurrentSeasonTransition()
+    {
+        var settings = overrideGlobalSettings ? seasonSettings : _grassSetting?.seasonSettings;
+        if (settings == null || settings.Count == 0)
+        {
+            return (SeasonType.Winter, SeasonType.Winter, 0f);
+        }
+
+        // 순환하는 값 계산
+        float normalizedValue = seasonValue % settings.Count;
+        int currentIndex = Mathf.FloorToInt(normalizedValue);
+        float transitionValue = normalizedValue - currentIndex;
+        int nextIndex = (currentIndex + 1) % settings.Count;
+
+        return (settings[currentIndex].seasonType, settings[nextIndex].seasonType, transitionValue);
+    }
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {

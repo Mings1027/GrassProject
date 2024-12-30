@@ -42,15 +42,15 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AdditionalLightIntensity: 0.489
+    - _AdditionalLightIntensity: 0.5
     - _AdditionalLightShadowStrength: 1
     - _AlphaTestToggle: 0
-    - _AmbientStrength: 0.3
+    - _AmbientStrength: 0.15
     - _BlendFloor: 0
     - _BlendMult: 1
-    - _BlendMultiply: 1
+    - _BlendMultiply: 1.02
     - _BlendOff: 0.2
-    - _BlendOffset: 0.2
+    - _BlendOffset: 0.18
     - _DebugVisualization: 0
     - _Edge: 1
     - _Exposure: 1
@@ -61,6 +61,7 @@ Material:
     - _MainLightStrengthOverride: 0
     - _MainShadowInfluence: 1
     - _Metallic: 1
+    - _MinShadowBrightness: 0.1
     - _NightColorMultiplier: 1
     - _OverallIntensity: 1
     - _RimGradientEnd: 0.256
@@ -72,8 +73,8 @@ Material:
     - _SSSPower: 1.33
     - _SSSScale: 2
     - _Saturation: 1
-    - _ShadowDistance: 100
-    - _ShadowFadeRange: 30
+    - _ShadowDistance: 104
+    - _ShadowFadeRange: 20
     - _ShadowLightBlend: 0.874
     - _ShadowLightIntensity: 1
     - _ShadowLightInteraction: 1
@@ -86,17 +87,17 @@ Material:
     m_Colors:
     - _AdditionalLightColor: {r: 0, g: 0, b: 0, a: 0}
     - _AdditionalLightShadowColor: {r: 0, g: 0.009653568, b: 1, a: 1}
-    - _AdditionalShadowColor: {r: 0.082353115, g: 0, b: 1, a: 1}
+    - _AdditionalShadowColor: {r: 0, g: 0.00037145615, b: 1, a: 1}
     - _AmbientAdjustmentColor: {r: 0.6981132, g: 0.6981132, b: 0.6981132, a: 1}
-    - _BottomTint: {r: 0.754717, g: 0.18867925, b: 0.18867925, a: 1}
+    - _BottomTint: {r: 0.23584908, g: 0.23584908, b: 0.23584908, a: 1}
     - _MainLightColorOverride: {r: 0.49056602, g: 0.49056602, b: 0.49056602, a: 1}
     - _MainLightShadowColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
     - _RimColor: {r: 1, g: 0.44390854, b: 0.02352941, a: 1}
     - _SSSColor: {r: 1, g: 0, b: 0.08064842, a: 1}
-    - _ShadowColor: {r: 1, g: 0, b: 0, a: 1}
+    - _ShadowColor: {r: 0.16981131, g: 0.16981131, b: 0.16981131, a: 1}
     - _ShadowLightColor: {r: 0.5660378, g: 0.54200786, b: 0.54200786, a: 1}
     - _ShadowLightInteractionColor: {r: 0.6603774, g: 0.6261125, b: 0.6261125, a: 1}
     - _ShadowLightOverlapColor: {r: 0.5283019, g: 0.5283019, b: 0.5283019, a: 1}
-    - _TopTint: {r: 0.9150943, g: 0.8935119, b: 0.8935119, a: 1}
+    - _TopTint: {r: 0.9056604, g: 0.9056604, b: 0.9056604, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

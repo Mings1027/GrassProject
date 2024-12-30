@@ -1,4 +1,4 @@
-Shader "URP/Unlit/Forward"
+Shader "Custom/#NAME#"
 {
 	Properties
 	{

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Grass.GrassScripts;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
@@ -594,66 +596,135 @@ namespace Grass.Editor
             return _foldoutStates[title];
         }
 
-        public static void DrawSeasonSettingsTable(Rect position, GrassSettingSO grassSetting)
+        private static ReorderableList _seasonList;
+        private static DefaultAsset _targetFolder;
+
+        public static void DrawSeasonSettings(List<SeasonSettings> seasonSettings, string assetName)
         {
-            var labelWidth = 40f;
-            var cellWidth = (position.width - labelWidth) / 4;
-            var rowHeight = EditorGUIUtility.singleLineHeight;
-            var padding = 5f;
-            var fieldWidth = cellWidth - padding;
-            var valueFieldWidth = 35f; // 값 필드의 너비
-            var sliderWidth = fieldWidth - valueFieldWidth - 2f; // 슬라이더 너비
+            // 폴더 선택 필드
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.PrefixLabel("Season Settings Path");
 
-            // Headers (기존 코드와 동일)
-            var seasonLabels = new[] { "Winter", "Spring", "Summer", "Autumn" };
-            for (int i = 0; i < seasonLabels.Length; i++)
+            _targetFolder = (DefaultAsset)EditorGUILayout.ObjectField(_targetFolder, typeof(DefaultAsset), false);
+
+            EditorGUILayout.EndHorizontal();
+
+            if (_seasonList == null || _seasonList.list != seasonSettings)
             {
-                var rect = new Rect(position.x + labelWidth + (cellWidth * i), position.y, fieldWidth, rowHeight);
-                EditorGUI.LabelField(rect, seasonLabels[i], EditorStyles.boldLabel);
+                _seasonList = new ReorderableList(seasonSettings, typeof(SeasonSettings), true, true, true, true);
+
+                _seasonList.drawHeaderCallback = rect => { EditorGUI.LabelField(rect, "Season Settings"); };
+
+                _seasonList.drawElementCallback = (rect, index, isActive, isFocused) =>
+                {
+                    var settings = seasonSettings[index];
+
+                    var rowRect = rect;
+                    rowRect.y += 2;
+                    rowRect.height = EditorGUIUtility.singleLineHeight;
+
+                    if (settings == null)
+                    {
+                        // 설정이 없을 때는 ObjectField만 전체 너비로 표시
+                        settings = (SeasonSettings)EditorGUI.ObjectField(rowRect, settings, typeof(SeasonSettings),
+                            false);
+                        seasonSettings[index] = settings;
+                        return;
+                    }
+
+                    // 설정이 있을 때는 기존 레이아웃대로 표시
+                    var objectRect = rowRect;
+                    objectRect.width = 50;
+                    settings = (SeasonSettings)EditorGUI.ObjectField(objectRect, settings, typeof(SeasonSettings),
+                        false);
+                    seasonSettings[index] = settings;
+
+                    var so = new SerializedObject(settings);
+                    EditorGUI.BeginChangeCheck();
+
+                    // Season Type
+                    var typeRect = objectRect;
+                    typeRect.x += objectRect.width + 5;
+                    typeRect.width = 70;
+                    EditorGUI.PropertyField(typeRect, so.FindProperty("seasonType"), GUIContent.none);
+
+                    // Season Color
+                    var colorRect = typeRect;
+                    colorRect.x += typeRect.width + 5;
+                    colorRect.width = 60;
+                    EditorGUI.PropertyField(colorRect, so.FindProperty("seasonColor"), GUIContent.none);
+
+                    // Width/Height Sliders
+                    var sliderStartX = colorRect.x + colorRect.width + 5;
+                    var remainingWidth = rect.width - (sliderStartX - rect.x);
+                    var sliderWidth = remainingWidth / 2 - 25;
+
+                    // Width Slider
+                    var widthLabelRect = new Rect(sliderStartX, rowRect.y, 20, rowRect.height);
+                    EditorGUI.LabelField(widthLabelRect, "W");
+                    var widthSliderRect = new Rect(sliderStartX + 20, rowRect.y, sliderWidth, rowRect.height);
+                    var width = so.FindProperty("width");
+                    width.floatValue = EditorGUI.Slider(widthSliderRect, width.floatValue, 0.1f, 2f);
+
+                    // Height Slider
+                    var heightLabelRect = new Rect(widthSliderRect.x + widthSliderRect.width + 5, rowRect.y, 20,
+                        rowRect.height);
+                    EditorGUI.LabelField(heightLabelRect, "H");
+                    var heightSliderRect = new Rect(heightLabelRect.x + 20, rowRect.y, sliderWidth, rowRect.height);
+                    var height = so.FindProperty("height");
+                    height.floatValue = EditorGUI.Slider(heightSliderRect, height.floatValue, 0.1f, 2f);
+
+                    if (EditorGUI.EndChangeCheck())
+                        so.ApplyModifiedProperties();
+                };
+
+                // 요소가 삭제될 때
+                _seasonList.onRemoveCallback = list => { seasonSettings.RemoveAt(list.index); };
+
+                // 새 요소 추가할 때 - 빈 필드만 추가
+                _seasonList.onAddCallback = _ => { seasonSettings.Add(null); };
             }
 
-            var y = position.y + rowHeight + padding;
-            var settings = new[]
+            _seasonList.DoLayoutList();
+
+            // Create Asset 버튼
+            if (GUILayout.Button("Create New Season Asset", GUILayout.Height(25)))
             {
-                grassSetting.winterSettings, grassSetting.springSettings,
-                grassSetting.summerSettings, grassSetting.autumnSettings
-            };
+                if (_targetFolder == null)
+                {
+                    EditorUtility.DisplayDialog("Invalid Path", "Please select a folder first.", "OK");
+                    return;
+                }
 
-            EditorGUI.LabelField(new Rect(position.x, y, labelWidth, rowHeight), "Color", EditorStyles.boldLabel);
-            for (int i = 0; i < settings.Length; i++)
-            {
-                var rect = new Rect(position.x + labelWidth + (cellWidth * i) + padding, y, fieldWidth, rowHeight);
-                settings[i].seasonColor = EditorGUI.ColorField(rect, settings[i].seasonColor);
-            }
+                var folderPath = AssetDatabase.GetAssetPath(_targetFolder);
+                var asset = ScriptableObject.CreateInstance<SeasonSettings>();
+                asset.seasonType = (SeasonType)Random.Range(0, Enum.GetValues(typeof(SeasonType)).Length);
+                asset.seasonColor = Color.white;
+                asset.width = asset.height = 1f;
 
-            y += rowHeight + padding;
+                var fileName = $"{assetName}_{asset.seasonType}_{seasonSettings.Count + 1}.asset";
+                var fullPath = $"{folderPath}/{fileName}";
 
-            EditorGUI.LabelField(new Rect(position.x, y, labelWidth, rowHeight), "Width", EditorStyles.boldLabel);
-            for (int i = 0; i < settings.Length; i++)
-            {
-                var startX = position.x + labelWidth + (cellWidth * i) + padding;
-                var sliderRect = new Rect(startX, y, sliderWidth, rowHeight);
-                var fieldRect = new Rect(startX + sliderWidth + 2f, y, valueFieldWidth, rowHeight);
+                int counter = seasonSettings.Count + 1;
+                while (File.Exists(fullPath))
+                {
+                    fileName = $"{asset.seasonType}_{counter++}.asset";
+                    fullPath = $"{folderPath}/{fileName}";
+                }
 
-                settings[i].width = GUI.HorizontalSlider(sliderRect, settings[i].width, 0.1f, 2f);
-                var roundedValue = (float)Math.Round(settings[i].width, 2);
-                settings[i].width = EditorGUI.FloatField(fieldRect, roundedValue);
-                settings[i].width = Mathf.Clamp(settings[i].width, 0.1f, 2f);
-            }
+                AssetDatabase.CreateAsset(asset, fullPath);
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
 
-            y += rowHeight + padding;
-
-            EditorGUI.LabelField(new Rect(position.x, y, labelWidth, rowHeight), "Height", EditorStyles.boldLabel);
-            for (int i = 0; i < settings.Length; i++)
-            {
-                var startX = position.x + labelWidth + (cellWidth * i) + padding;
-                var sliderRect = new Rect(startX, y, sliderWidth, rowHeight);
-                var fieldRect = new Rect(startX + sliderWidth + 2f, y, valueFieldWidth, rowHeight);
-
-                settings[i].height = GUI.HorizontalSlider(sliderRect, settings[i].height, 0.1f, 2f);
-                var roundedValue = (float)Math.Round(settings[i].height, 2);
-                settings[i].height = EditorGUI.FloatField(fieldRect, roundedValue);
-                settings[i].height = Mathf.Clamp(settings[i].height, 0.1f, 2f);
+                var loadedAsset = AssetDatabase.LoadAssetAtPath<SeasonSettings>(fullPath);
+                if (loadedAsset != null)
+                {
+                    EditorUtility.SetDirty(loadedAsset);
+                }
+                else
+                {
+                    Debug.LogError($"Failed to create season settings asset at {fullPath}");
+                }
             }
         }
 

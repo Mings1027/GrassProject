@@ -1,9 +1,10 @@
+using System.Collections.Generic;
 using Grass.GrassScripts;
 using UnityEngine;
 using UnityEngine.Serialization;
 
 [System.Serializable]
-[CreateAssetMenu(fileName = "Grass Settings", menuName = "Utility/GrassSettings")]
+[CreateAssetMenu(fileName = "Grass Settings", menuName = "Grass/GrassSettings")]
 public class GrassSettingSO : ScriptableObject
 {
     public ComputeShader shaderToUse;
@@ -73,23 +74,26 @@ public class GrassSettingSO : ScriptableObject
     [Header("Tinting")] public Color topTint = new(1, 1, 1);
     public Color bottomTint = new(0, 0, 1);
 
-    [Header("Blend")] public float blendMultiply = 1;
+    [Header("Blend")] public float ambientStrength = 0.3f; 
+    public float blendMultiply = 1;
     public float blendOffset = 0.2f;
     public Color ambientAdjustmentColor;
 
     [Header("Shadow")] public float shadowDistance = 50;
     public float shadowFadeRange = 10;
+    public float shadowBrightness = 0.2f;
+    public Color shadowColor;
     
     [Header("Additional Light")] public float additionalLightIntensity = 1;
     public float additionalLightShadowStrength = 0.2f;
     public Color additionalLightShadowColor = Color.black;
 
+    [Header("Specular")] public float glossiness = 4.5f;
+    public float specularStrength = 1f;
+    public float specularHeight = 0.5f;
+
     [Header("Season Settings")] public int maxZoneCount = 1;
-    public SeasonRange seasonRange = new();
-    public SeasonSettings winterSettings = new();
-    public SeasonSettings springSettings = new();
-    public SeasonSettings summerSettings = new();
-    public SeasonSettings autumnSettings = new();
+    public List<SeasonSettings> seasonSettings;
 
 #if UNITY_EDITOR
     [Header("LOD")] public bool drawBounds;

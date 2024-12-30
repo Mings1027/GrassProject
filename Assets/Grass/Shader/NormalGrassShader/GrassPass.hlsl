@@ -18,11 +18,15 @@ half3 CalculateMainLight(half3 albedo, FragmentData input)
 
     float distanceFromCamera = length(_WorldSpaceCameraPos - input.worldPos);
     float shadowFade = saturate((distanceFromCamera - _ShadowDistance) / _ShadowFadeRange);
-    float shadowAtten = lerp(mainLight.shadowAttenuation, 1, shadowFade);
+    float rawShadowAtten = lerp(mainLight.shadowAttenuation, 1, shadowFade);
 
-    // Diffuse
+    // 그림자 영역의 최소 밝기 보장
+    float shadowAtten = lerp(_MinShadowBrightness, 1, rawShadowAtten);
+
+    // Diffuse with shadow color
     half NdotL = saturate(dot(input.normalWS, mainLight.direction));
-    half3 diffuse = albedo * (mainLight.color * shadowAtten * NdotL);
+    half3 shadowedAlbedo = lerp(albedo * _ShadowColor.rgb, albedo, shadowAtten);
+    half3 diffuse = shadowedAlbedo * (mainLight.color * NdotL);
 
     // Specular
     half3 viewDir = normalize(_WorldSpaceCameraPos - input.worldPos);
@@ -32,7 +36,10 @@ half3 CalculateMainLight(half3 albedo, FragmentData input)
     half heightFactor = saturate((input.uv.y - _SpecularHeight) / (1 - _SpecularHeight));
     half3 specular = mainLight.color * _SpecularStrength * pow(NdotH, specularPower) * shadowAtten * heightFactor;
 
-    return diffuse + specular + albedo * _AmbientStrength;
+    // Ambient
+    half3 ambient = albedo * _AmbientStrength;
+
+    return diffuse + specular + ambient;
 }
 
 half3 CalculateAdditionalLight(half3 worldPos, half3 worldNormal)
@@ -70,7 +77,7 @@ half3 CalculateAdditionalLight(half3 worldPos, half3 worldNormal)
     LIGHT_LOOP_END
     return diffuseColor;
 }
- 
+
 FragmentData Vertex(VertexData input)
 {
     FragmentData output;

@@ -1,14 +1,15 @@
 using System.Collections.Generic;
 using Grass.GrassScripts;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [ExecuteInEditMode]
 public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
 {
     private GrassComputeScript _grassComputeScript;
 
-    [SerializeField] private List<GrassSeasonZone> seasonZones = new();
     [SerializeField] private float globalSeasonValue;
+    [SerializeField] private List<GrassSeasonZone> seasonZones = new();
 
     private void OnEnable()
     {
@@ -42,20 +43,6 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
         }
     }
 
-    public float GlobalMinRange()
-    {
-        if (_grassComputeScript == null) return 0;
-        var grassSetting = _grassComputeScript.GrassSetting;
-        return grassSetting != null ? grassSetting.seasonRange.GetRange().min : 0f;
-    }
-
-    public float GlobalMaxRange()
-    {
-        if (_grassComputeScript == null) return 0;
-        var grassSetting = _grassComputeScript.GrassSetting;
-        return grassSetting != null ? grassSetting.seasonRange.GetRange().max : 4f;
-    }
-
     public void UpdateSeasonZones()
     {
         seasonZones.Clear();
@@ -68,22 +55,13 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
                 seasonZones.Add(foundZones[i]);
             }
         }
-
-        UpdateAllZones();
     }
 
-    public void UpdateAllZones()
+    public void UpdateAllSeasonZones()
     {
-        var grassSettings = _grassComputeScript.GrassSetting;
-        if (grassSettings == null) return;
-        var (min, max) = grassSettings.seasonRange.GetRange();
-
-        foreach (var zone in seasonZones)
+        foreach (var seasonZone in seasonZones)
         {
-            if (zone != null)
-            {
-                zone.UpdateSeasonValue(globalSeasonValue, min, max);
-            }
+            seasonZone.UpdateSeasonValue(globalSeasonValue, 0, _grassComputeScript.GrassSetting.seasonSettings.Count);
         }
     }
 
@@ -121,12 +99,6 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
         }
 
         return (Color.clear, false);
-    }
-
-    public void SetGlobalSeasonValue(float value)
-    {
-        globalSeasonValue = value;
-        UpdateAllZones();
     }
 
     private void OnTransformChildrenChanged()

@@ -20,9 +20,11 @@ Shader "Custom/GrassShader"
 		[Header(Shadow Settings)]
 		_ShadowDistance("Shadow Distance", Range(0, 300)) = 50
 		_ShadowFadeRange("Shadow Fade Range", Range(0.1, 30)) = 10
+		_MinShadowBrightness ("Min Shadow Brightness", Range(0, 1)) = 0.3
+		_ShadowColor ("Shadow Color", Color) = (0.5, 0.5, 0.5, 1)
 
 		[Header(Specular)]
-		_Glossiness("Smoothness", Range(0, 10)) = 0.5
+		_Glossiness("Glossiness", Range(0, 10)) = 0.5
 		_SpecularStrength("Specular Strength", Range(0, 1)) = 0.5
 		_SpecularHeight("Specular Height", Range(0, 1)) = 0.7
 	}
@@ -65,24 +67,23 @@ Shader "Custom/GrassShader"
 			ENDHLSL
 		}
 		// Shadow Caster Pass
-		//		Pass
-		//		{
-		//			Name "ShadowCaster"
-		//			Tags
-		//			{
-		//				"LightMode" = "ShadowCaster"
-		//			}
-		//
-		//			HLSLPROGRAM
-		//			#pragma vertex ShadowPassVertex
-		//			#pragma fragment ShadowPassFragment
-		//
-		//			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-		//			#include "GrassInput.hlsl"
-		//			#include "Grass.hlsl"
-		//			#include "GrassShadowPass.hlsl"
-		//			ENDHLSL
-		//		}
+//		Pass
+//		{
+//			Name "ShadowCaster"
+//			Tags
+//			{
+//				"LightMode" = "ShadowCaster"
+//			}
+//
+//			HLSLPROGRAM
+//			#pragma vertex ShadowPassVertex
+//			#pragma fragment ShadowPassFragment
+//
+//			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+//			#include "GrassInput.hlsl"
+//			#include "Grass.hlsl"
+//			#include "GrassShadowPass.hlsl"
+//			ENDHLSL
+//		}
 	}
-	Fallback "Hidden/Universal Render Pipeline/FallbackError"
 }
