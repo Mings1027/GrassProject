@@ -5,51 +5,36 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="84e81331-7910-473f-9ad1-7a03a025416d" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Assets/CustomShaderTemplate/Editor/CreateCustomShaderMenu.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/CustomShaderTemplate/Scripts/CreateCustomShaderMenu.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/CustomShaderTemplate/Scripts/CreateCustomShaderMenu.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/CustomShaderTemplate/Editor/CreateCustomShaderMenu.cs.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/CustomShaderTemplate/ShaderTemplates/BlinnPhong.shader.txt" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/CustomShaderTemplate/ShaderTemplates/BlinnPhong.shader.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/CustomShaderTemplate/ShaderTemplates/Forward.shader.txt" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/CustomShaderTemplate/ShaderTemplates/Forward.shader.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/CustomShaderTemplate/ShaderTemplates/ForwardPlus.shader.txt" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/CustomShaderTemplate/ShaderTemplates/ForwardPlus.shader.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/EditorIcons.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/EditorIcons.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassEditorHelper.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassEditorHelper.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterTool.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterTool.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassSeasonManagerEditor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassSeasonManagerEditor.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassSeasonZoneEditor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassSeasonZoneEditor.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/SeasonRangeDrawer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/SeasonRangeDrawer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/CullingTree.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/CullingTree.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassCutter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassCutter.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSeasonManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSeasonManager.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSeasonZone.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSeasonZone.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassShaderPropertyID.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassShaderPropertyID.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/SeasonRange.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/SeasonRange.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/SeasonSettings.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/SeasonSettings.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/MonoSingleton.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/MonoSingleton.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/Grass Blend Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/Grass Blend Mat.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/GrassBlendInput.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/GrassBlendInput.hlsl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/GrassBlendPass.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/GrassBlendPass.hlsl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/GrassBlendShader.shader" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/BlendGrassShader/GrassBlendShader.shader" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassBlades.compute" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassBlades.compute" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/Grass Mat.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/Grass Mat.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassInput.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassInput.hlsl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassPass.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassPass.hlsl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassShader.shader" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassShader.shader" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/TestScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/TestScene.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/SeasonTest.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/GrassTest.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/SeasonTest.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/GrassTest.cs.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Settings/Mobile_RPAsset.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Settings/Mobile_RPAsset.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Global_Autumn_4.asset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Global_Autumn_4.asset.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Global_Spring_2.asset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Global_Spring_2.asset.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Global_Summer_3.asset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Global_Summer_3.asset.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Global_Winter_1.asset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Global_Winter_1.asset.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Zone_Autumn_1.asset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Zone_Autumn_1.asset.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Zone_Autumn_2.asset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Zone_Autumn_2.asset.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Zone_Spring_3.asset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Zone_Spring_3.asset.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Zone_Spring_4.asset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Zone_Spring_4.asset.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/ObstacleCheck.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/ObstacleCheck.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Pool/PoolObjectManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Pool/PoolObjectManager.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Settings/UniversalRenderPipelineGlobalSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Settings/UniversalRenderPipelineGlobalSettings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/BlinnPhoneShader.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/BlinnPhoneShader.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/BlinnPhongMat.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/BlinnPhongMat.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/Custom_TerrainShader.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Shaders/Custom_TerrainShader.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/ForwardShader.shader" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Shaders/ForwardShader.shader" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/EditorBuildSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/EditorBuildSettings.asset" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -157,6 +142,7 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/78/e1df070c/EditorWindow.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/78/f020e3ed/Handles.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/7f/228b6880/EditorUtility.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/af/087e5c13/DefaultAsset.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/bb/bd129351/Undo.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/e8/78ede366/SceneView.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a52d1b5d4d1d413f96529cd33dbd184c9b6200/f8/a565d3d7/Undo.cs" root0="SKIP_HIGHLIGHTING" />
@@ -204,6 +190,7 @@
     <setting file="file://$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterTool.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/Grass/Editor/SpatialGrid.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSeasonZone.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassShadowPass.hlsl" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.cysharp.unitask/Runtime/Internal/ArrayPool.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.cysharp.unitask/Runtime/PlayerLoopHelper.cs" root0="SKIP_HIGHLIGHTING" />
@@ -240,6 +227,7 @@
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/Shaders/Shaders.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/Shaders/Terrain/TerrainLit.shader" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.render-pipelines.universal/Shaders/Utils/ScreenSpaceAmbientOcclusion.shader" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.shadergraph/Editor/Data/Util/PooledList.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.shadergraph/Editor/Generation/Targets/BuiltIn/ShaderLibrary/ShaderVariablesFunctions.hlsl" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.ugui/Runtime/UGUI/EventSystem/InputModules/BaseInput.cs" root0="SKIP_HIGHLIGHTING" />
@@ -593,6 +581,8 @@
       <workItem from="1735392634439" duration="9227000" />
       <workItem from="1735439819678" duration="8486000" />
       <workItem from="1735517520821" duration="45296000" />
+      <workItem from="1735604692526" duration="22656000" />
+      <workItem from="1735647871461" duration="6050000" />
     </task>
     <servers />
   </component>

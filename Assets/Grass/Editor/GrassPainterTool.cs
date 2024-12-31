@@ -1380,22 +1380,11 @@ namespace Grass.Editor
             grassSetting.maxZoneCount = GrassEditorHelper.IntSlider("Max Zone Count",
                 "Maximum number of Season Zones allowed in the scene.", grassSetting.maxZoneCount, 1, 20);
 
-            EditorGUI.BeginChangeCheck();
-            GrassEditorHelper.DrawSeasonSettings(grassSetting.seasonSettings, "Global");
+            GrassEditorHelper.DrawSeasonSettings(grassSetting.seasonSettings, grassSetting);
             if (EditorGUI.EndChangeCheck())
             {
-                _seasonManager.UpdateSeasonZones();
+                _seasonManager.Init();
                 EditorUtility.SetDirty(grassSetting);
-            }
-
-            if (GUI.changed)
-            {
-                _seasonManager.UpdateSeasonZones();
-                EditorUtility.SetDirty(grassSetting);
-                if (!Application.isPlaying)
-                {
-                    EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
-                }
             }
         }
 

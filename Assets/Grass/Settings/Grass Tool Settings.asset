@@ -34,10 +34,10 @@ MonoBehaviour:
   adjustHeight: -0.22
   adjustWidthMax: 0.3
   adjustHeightMax: 0.01
-  rangeR: 0
-  rangeG: 0
-  rangeB: 0
-  brushColor: {r: 0.19052877, g: 0.81960785, b: 0.18823527, a: 1}
+  rangeR: 0.3
+  rangeG: 0.3
+  rangeB: 0.3
+  brushColor: {r: 0.81960785, g: 0.18823527, b: 0.21245961, a: 1}
   paintMask:
     serializedVersion: 2
     m_Bits: 8

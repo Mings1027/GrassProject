@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Grass.GrassScripts;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -10,6 +11,8 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
 
     [SerializeField] private float globalSeasonValue;
     [SerializeField] private List<GrassSeasonZone> seasonZones = new();
+
+    public GrassComputeScript GrassComputeScript => _grassComputeScript;
 
     private void OnEnable()
     {
@@ -46,15 +49,30 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
     public void UpdateSeasonZones()
     {
         seasonZones.Clear();
-        var foundZones = GetComponentsInChildren<GrassSeasonZone>();
-        var seasonZoneCount = Mathf.Min(foundZones.Length, _grassComputeScript.GrassSetting.maxZoneCount);
-        for (int i = 0; i < seasonZoneCount; i++)
+        var foundZones = GetComponentsInChildren<GrassSeasonZone>(true); // includeInactive를 true로 설정하여 비활성화된 zone도 가져옴
+        var maxCount = _grassComputeScript.GrassSetting.maxZoneCount;
+
+        // maxZoneCount에 따라 활성/비활성 상태 업데이트
+        for (int i = 0; i < foundZones.Length; i++)
         {
             if (foundZones[i] != null)
             {
-                seasonZones.Add(foundZones[i]);
+                // maxZoneCount 이내의 zone은 활성화
+                if (i < maxCount)
+                {
+                    foundZones[i].gameObject.SetActive(true);
+                    seasonZones.Add(foundZones[i]);
+                }
+                // maxZoneCount를 초과하는 zone은 비활성화
+                else
+                {
+                    foundZones[i].gameObject.SetActive(false);
+                }
             }
         }
+
+        // Shader 데이터 업데이트
+        UpdateShaderData();
     }
 
     public void UpdateAllSeasonZones()
@@ -105,4 +123,21 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
     {
         UpdateSeasonZones();
     }
+
+#if UNITY_EDITOR
+    public void CreateSeasonZone()
+    {
+        var zoneObject = new GameObject("Grass Season Zone");
+        zoneObject.transform.SetParent(transform);
+        zoneObject.AddComponent<GrassSeasonZone>();
+        zoneObject.transform.localPosition = Vector3.zero;
+        zoneObject.transform.localScale = new Vector3(10f, 10f, 10f);
+        zoneObject.GetComponent<GrassSeasonZone>().Init(_grassComputeScript.GrassSetting);
+
+        Init();
+        UpdateSeasonZones();
+        GrassEventManager.TriggerEvent(GrassEvent.UpdateShaderData);
+        Undo.RegisterCreatedObjectUndo(zoneObject, "Create Season Zone");
+    }
+#endif
 }

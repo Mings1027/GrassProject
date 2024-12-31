@@ -1,16 +1,36 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Grass.GrassScripts;
 using UnityEngine;
 
 [ExecuteInEditMode]
 public class GrassSeasonZone : MonoBehaviour
 {
+    private struct SeasonState
+    {
+        public Vector3 position;
+        public Vector3 scale;
+        public Color color;
+        public float width;
+        public float height;
+
+        public static SeasonState Default(Transform transform) =>
+            new()
+            {
+                position = transform.position,
+                scale = transform.localScale,
+                color = Color.white,
+                width = 1f,
+                height = 1f
+            };
+    }
+
     [SerializeField] private bool overrideGlobalSettings;
     [SerializeField] private float seasonValue;
     [SerializeField] private List<SeasonSettings> seasonSettings = new();
 
-    private static GrassSettingSO _grassSetting;
+    private GrassSettingSO _grassSetting;
     private ZoneData _zoneData;
     private Color _zoneColor;
     private Vector3 _lastPosition;
@@ -27,6 +47,7 @@ public class GrassSeasonZone : MonoBehaviour
         set => overrideGlobalSettings = value;
     }
     public List<SeasonSettings> SeasonSettings => seasonSettings;
+    public GrassSettingSO GrassSetting => _grassSetting;
 #endif
     private void OnEnable()
     {
@@ -38,9 +59,9 @@ public class GrassSeasonZone : MonoBehaviour
         UpdateZoneState();
     }
 
-    public void Init(GrassSettingSO grassSetting)
+    public void Init(GrassSettingSO settings)
     {
-        _grassSetting = grassSetting;
+        _grassSetting = settings;
         _lastPosition = Vector3.zero;
         _lastScale = Vector3.zero;
         UpdateZoneState();
@@ -89,39 +110,18 @@ public class GrassSeasonZone : MonoBehaviour
         GrassEventManager.TriggerEvent(GrassEvent.UpdateShaderData);
     }
 
-    private (Vector3 position, Vector3 scale, Color color, float width, float height) CalculateZoneState()
+    private SeasonState CalculateZoneState()
     {
-        if (!overrideGlobalSettings || seasonSettings.Count == 0)
-        {
-            if (_grassSetting == null)
-                return (transform.position, transform.localScale, Color.white, 1f, 1f);
+        // 기본값 반환 조건 체크
+        if (!overrideGlobalSettings && _grassSetting == null)
+            return SeasonState.Default(transform);
 
-            return CalculateGlobalSeasonState();
-        }
+        // 사용할 시즌 설정 결정
+        var settings = overrideGlobalSettings ? seasonSettings : _grassSetting.seasonSettings;
+        if (settings == null || settings.Count == 0)
+            return SeasonState.Default(transform);
 
-        float normalizedValue = seasonValue % seasonSettings.Count;
-        int currentIndex = Mathf.FloorToInt(normalizedValue);
-        float t = normalizedValue - currentIndex;
-        int nextIndex = (currentIndex + 1) % seasonSettings.Count;
-
-        var currentSeason = seasonSettings[currentIndex];
-        var nextSeason = seasonSettings[nextIndex];
-
-        return (
-            transform.position,
-            transform.localScale,
-            Color.Lerp(currentSeason.seasonColor, nextSeason.seasonColor, t),
-            Mathf.Lerp(currentSeason.width, nextSeason.width, t),
-            Mathf.Lerp(currentSeason.height, nextSeason.height, t)
-        );
-    }
-
-    private (Vector3 position, Vector3 scale, Color color, float width, float height) CalculateGlobalSeasonState()
-    {
-        var settings = _grassSetting.seasonSettings;
-        if (settings.Count == 0)
-            return (transform.position, transform.localScale, Color.white, 1f, 1f);
-
+        // 현재 시즌과 다음 시즌 인덱스 계산
         float normalizedValue = seasonValue % settings.Count;
         int currentIndex = Mathf.FloorToInt(normalizedValue);
         float t = normalizedValue - currentIndex;
@@ -130,13 +130,15 @@ public class GrassSeasonZone : MonoBehaviour
         var currentSeason = settings[currentIndex];
         var nextSeason = settings[nextIndex];
 
-        return (
-            transform.position,
-            transform.localScale,
-            Color.Lerp(currentSeason.seasonColor, nextSeason.seasonColor, t),
-            Mathf.Lerp(currentSeason.width, nextSeason.width, t),
-            Mathf.Lerp(currentSeason.height, nextSeason.height, t)
-        );
+        // 보간된 상태 반환
+        return new SeasonState
+        {
+            position = transform.position,
+            scale = transform.localScale,
+            color = Color.Lerp(currentSeason.seasonColor, nextSeason.seasonColor, t),
+            width = Mathf.Lerp(currentSeason.width, nextSeason.width, t),
+            height = Mathf.Lerp(currentSeason.height, nextSeason.height, t)
+        };
     }
 
     public ZoneData GetZoneData() => _zoneData;
@@ -154,23 +156,41 @@ public class GrassSeasonZone : MonoBehaviour
         UpdateZoneState();
     }
 
-    public (SeasonType currentSeason, SeasonType nextSeason, float transition) GetCurrentSeasonTransition()
+#if UNITY_EDITOR
+
+    public (SeasonType currentSeason, float transition) GetCurrentSeasonTransition()
     {
         var settings = overrideGlobalSettings ? seasonSettings : _grassSetting?.seasonSettings;
         if (settings == null || settings.Count == 0)
         {
-            return (SeasonType.Winter, SeasonType.Winter, 0f);
+            return (SeasonType.Winter, 0f);
+        }
+
+        // settings[currentIndex]가 null인지 확인
+        var validSettings = new List<SeasonSettings>();
+        foreach (var s in settings)
+        {
+            if (s != null) validSettings.Add(s);
+        }
+
+        if (validSettings.Count == 0)
+        {
+            return (SeasonType.Winter, 0f);
         }
 
         // 순환하는 값 계산
         float normalizedValue = seasonValue % settings.Count;
         int currentIndex = Mathf.FloorToInt(normalizedValue);
         float transitionValue = normalizedValue - currentIndex;
-        int nextIndex = (currentIndex + 1) % settings.Count;
 
-        return (settings[currentIndex].seasonType, settings[nextIndex].seasonType, transitionValue);
+        return (settings[currentIndex].seasonType, transitionValue);
     }
-#if UNITY_EDITOR
+
+    public void UpdateZoneImmediate()
+    {
+        UpdateZoneState();
+    }
+
     private void OnDrawGizmosSelected()
     {
         if (!showGizmos) return;

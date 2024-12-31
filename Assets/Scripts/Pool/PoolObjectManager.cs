@@ -8,10 +8,9 @@ namespace Pool
     {
         [SerializeField] private PoolObjectData[] poolObjectData;
         [SerializeField] private bool autoPoolCleaner;
-        [SerializeField] private float autoCleanerDelay = 3f;
         [SerializeField] private byte poolMaxSize;
 
-        private PoolObjectFactory _poolObjectFactor = new();
+        private readonly PoolObjectFactory _poolObjectFactor = new();
         private static PoolObjectManager _inst;
         private Dictionary<PoolObjectKey, Stack<GameObject>> _poolStackTable;
 

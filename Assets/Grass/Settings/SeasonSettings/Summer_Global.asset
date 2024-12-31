@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 592c2e77a2da4904944df459fef0d0a2, type: 3}
-  m_Name: Global_Spring_2
+  m_Name: Summer_Global
   m_EditorClassIdentifier: 
-  seasonType: 1
-  seasonColor: {r: 0.8962264, g: 0.79847026, b: 0.20714669, a: 1}
-  width: 1
-  height: 1
+  seasonType: 2
+  seasonColor: {r: 0, g: 1, b: 0.016897917, a: 1}
+  width: 2
+  height: 2

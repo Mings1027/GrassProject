@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Grass.GrassScripts;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -98,6 +99,7 @@ public class GrassSettingSO : ScriptableObject
 #if UNITY_EDITOR
     [Header("LOD")] public bool drawBounds;
     public bool drawAllBounds;
+    public DefaultAsset seasonSettingFolder;
 #endif
     public int cullingTreeDepth = 1;
 

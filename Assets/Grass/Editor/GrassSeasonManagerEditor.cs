@@ -10,7 +10,6 @@ namespace Grass.Editor
         private bool _showAllGizmos;
         private GrassSeasonManager _manager;
         private SerializedProperty _seasonValue;
-        private GrassSettingSO _grassSetting;
 
         private void OnEnable()
         {
@@ -18,13 +17,6 @@ namespace Grass.Editor
             _manager = (GrassSeasonManager)target;
             var volumes = _manager.GetComponentsInChildren<GrassSeasonZone>();
             _showAllGizmos = AreAllGizmosEnabled(volumes);
-            
-            // GrassSettingSO 찾기
-            var grassCompute = FindAnyObjectByType<GrassComputeScript>();
-            if (grassCompute != null)
-            {
-                _grassSetting = grassCompute.GrassSetting;
-            }
         }
 
         public override void OnInspectorGUI()
@@ -33,6 +25,7 @@ namespace Grass.Editor
 
             DrawManualUpdateButton();
             DrawGizmosToggle();
+            DrawCreateSeasonZoneButton();
             DrawGlobalSeasonValueSlider();
             EditorGUILayout.Space(10);
 
@@ -41,7 +34,7 @@ namespace Grass.Editor
 
         private void DrawManualUpdateButton()
         {
-            if(GUILayout.Button("Manual Update", GUILayout.Height(25)))
+            if (GUILayout.Button("Manual Update", GUILayout.Height(25)))
             {
                 _manager.Init();
             }
@@ -60,6 +53,14 @@ namespace Grass.Editor
             if (EditorGUI.EndChangeCheck())
             {
                 serializedObject.ApplyModifiedProperties();
+            }
+        }
+
+        private void DrawCreateSeasonZoneButton()
+        {
+            if (GUILayout.Button("Create Season Zone", GUILayout.Height(25)))
+            {
+                _manager.CreateSeasonZone();
             }
         }
 
@@ -101,7 +102,7 @@ namespace Grass.Editor
             EditorGUILayout.LabelField("Global Season Value", EditorStyles.boldLabel);
 
             EditorGUI.BeginChangeCheck();
-            var newValue = EditorGUILayout.Slider(_seasonValue.floatValue, 0, _grassSetting.seasonSettings.Count);
+            var newValue = EditorGUILayout.Slider(_seasonValue.floatValue, 0, _manager.GrassComputeScript.GrassSetting.seasonSettings.Count);
             if (EditorGUI.EndChangeCheck())
             {
                 _seasonValue.floatValue = newValue;

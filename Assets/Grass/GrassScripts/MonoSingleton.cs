@@ -19,7 +19,6 @@ namespace Grass.GrassScripts
                 if (instance == null)
                 {
                     instance = FindAnyObjectByType<T>();
-
                     if (instance == null)
                     {
                         var go = new GameObject($"[Singleton] {typeof(T)}");
@@ -37,6 +36,25 @@ namespace Grass.GrassScripts
         protected virtual void OnApplicationQuit()
         {
             isQuitting = true;
+        }
+
+        protected virtual void Awake()
+        {
+            if (instance != null && instance != this)
+            {
+                Debug.LogWarning($"Multiple instances of {typeof(T)} found. Destroying duplicate.");
+                if (Application.isPlaying)
+                    Destroy(gameObject);
+                else
+                    DestroyImmediate(gameObject);
+                return;
+            }
+
+            if (instance == null)
+            {
+                instance = (T)this;
+                OnSingletonAwake();
+            }
         }
 
         protected virtual void OnDestroy()

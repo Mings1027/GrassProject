@@ -9,7 +9,6 @@ public class ObstacleCheck : MonoBehaviour
     [SerializeField] private float sphereRadius = 1.0f;
     [SerializeField] private float sphereDistance = 1.0f;
     [SerializeField] private LayerMask wallLayer;
-    [SerializeField] private int rayCount = 8;
     [SerializeField] private float wallSlideSpeedMultiplier = 0.7f; // 벽을 타고 이동할 때의 속도 계수
 #if UNITY_EDITOR
     [SerializeField] private bool drawGizmos;
