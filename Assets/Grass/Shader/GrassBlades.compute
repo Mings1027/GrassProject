@@ -169,9 +169,15 @@ half3 CalculationWind(half3 positionWS, half grassHeight)
 {
     half timeWind = _Time * _WindSpeed;
     half windValue = sin(timeWind + dot(positionWS.xz, _WindDirection));
-
-    return half3(_WindDirection.x * windValue, 0, _WindDirection.y * windValue)
-        * grassHeight * _WindStrength;
+    
+    // 높이에 따른 가중치 계산 (0~1 사이로 제한)
+    half heightFactor = saturate(grassHeight);
+    
+    // wind 방향 벡터 생성
+    half3 windDirection = half3(_WindDirection.x * windValue, 0, _WindDirection.y * windValue);
+    
+    // 최종 wind 힘 계산 (높이가 커져도 _WindStrength를 넘지 않음)
+    return windDirection * min(heightFactor * _WindStrength, _WindStrength);
 }
 
 struct InteractionResult

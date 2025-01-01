@@ -15,34 +15,34 @@ public class GrassToolSettingSo : ScriptableObject
         Green
     }
 
-    [Header("Terrain Layer Settings")] [SerializeField]
-    private List<bool> layerEnabled = new List<bool>();
+    [Header("Terrain Layer Settings")]
+    [SerializeField] private List<bool> layerEnabled = new List<bool>();
     [SerializeField] private List<float> heightFading = new List<float>();
 
-    [Header("Vertex Color Settings")] [SerializeField]
-    private VertexColorSetting vertexColorSettings;
+    [Header("Vertex Color Settings")]
+    [SerializeField] private VertexColorSetting vertexColorSettings;
     [SerializeField] private VertexColorSetting vertexFade;
 
-    [Header("Grass Size Settings")] [SerializeField]
-    private float grassWidth = 0.1f;
+    [Header("Grass Size Settings")]
+    [SerializeField] private float grassWidth = 0.1f;
     [SerializeField] private float grassHeight = 1f;
     [SerializeField] private float adjustWidth = 0f;
     [SerializeField] private float adjustHeight = 0f;
     [SerializeField] private float adjustWidthMax = 2f;
     [SerializeField] private float adjustHeightMax = 2f;
 
-    [Header("Color Settings")] [SerializeField]
-    private float rangeR;
+    [Header("Color Settings")]
+    [SerializeField] private float rangeR;
     [SerializeField] private float rangeG;
     [SerializeField] private float rangeB;
     [SerializeField] private Color brushColor = Color.white;
 
-    [Header("Paint Layer Settings")] [SerializeField]
-    private LayerMask paintMask = 1;
+    [Header("Paint Layer Settings")]
+    [SerializeField] private LayerMask paintMask = 1;
     [SerializeField] private LayerMask paintBlockMask = 0;
 
-    [Header("Brush Settings")] [SerializeField]
-    private float brushSize = 4f;
+    [Header("Brush Settings")]
+    [SerializeField] private float brushSize = 4f;
     [SerializeField] private float brushTransitionSpeed = 0.5f;
     [SerializeField] private float normalLimit = 1f;
     public bool allowUndersideGrass;
@@ -50,11 +50,12 @@ public class GrassToolSettingSo : ScriptableObject
     [SerializeField] private float grassSpacing = 1f;
     [SerializeField] private float brushHeight = 1f;
 
-    [Header("Generation Settings")] [SerializeField]
-    private int generateGrassCount = 100000;
+    [Header("Generation Settings")]
+    [SerializeField] private int generateGrassCount = 100000;
 
 #if UNITY_EDITOR
-    [Header("Input Settings")] public MouseButton grassMouseButton;
+    [Header("Input Settings")]
+    public MouseButton grassMouseButton;
     public KeyType brushSizeShortcut;
     public KeyType brushHeightShortcut;
 #endif

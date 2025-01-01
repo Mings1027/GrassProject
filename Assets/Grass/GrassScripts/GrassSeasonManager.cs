@@ -19,6 +19,12 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
         _grassComputeScript = FindAnyObjectByType<GrassComputeScript>();
         GrassEventManager.AddEvent(GrassEvent.UpdateShaderData, UpdateShaderData);
         GrassFuncManager.AddEvent<Vector3, (Color, bool)>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
+
+        foreach (var zone in seasonZones)
+        {
+            SubscribeToZone(zone);
+        }
+
         UpdateSeasonZones();
         Init();
     }
@@ -27,6 +33,12 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
     {
         GrassEventManager.RemoveEvent(GrassEvent.UpdateShaderData, UpdateShaderData);
         GrassFuncManager.RemoveEvent<Vector3, (Color, bool)>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
+
+        foreach (var zone in seasonZones)
+        {
+            UnsubscribeFromZone(zone);
+        }
+
         Init();
     }
 
@@ -35,6 +47,27 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
         for (int i = 0; i < seasonZones.Count; i++)
         {
             seasonZones[i].UpdateZone();
+        }
+    }
+
+    private void OnTransformChildrenChanged()
+    {
+        UpdateSeasonZones();
+    }
+
+    private void SubscribeToZone(GrassSeasonZone zone)
+    {
+        if (zone != null)
+        {
+            zone.OnZoneStateChanged += UpdateShaderData;
+        }
+    }
+
+    private void UnsubscribeFromZone(GrassSeasonZone zone)
+    {
+        if (zone != null)
+        {
+            zone.OnZoneStateChanged -= UpdateShaderData;
         }
     }
 
@@ -52,6 +85,11 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
         var foundZones = GetComponentsInChildren<GrassSeasonZone>(true); // includeInactive를 true로 설정하여 비활성화된 zone도 가져옴
         var maxCount = _grassComputeScript.GrassSetting.maxZoneCount;
 
+        foreach (var zone in foundZones)
+        {
+            UnsubscribeFromZone(zone);
+        }
+        
         // maxZoneCount에 따라 활성/비활성 상태 업데이트
         for (int i = 0; i < foundZones.Length; i++)
         {
@@ -62,6 +100,7 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
                 {
                     foundZones[i].gameObject.SetActive(true);
                     seasonZones.Add(foundZones[i]);
+                    SubscribeToZone(foundZones[i]);
                 }
                 // maxZoneCount를 초과하는 zone은 비활성화
                 else
@@ -119,21 +158,17 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
         return (Color.clear, false);
     }
 
-    private void OnTransformChildrenChanged()
-    {
-        UpdateSeasonZones();
-    }
-
 #if UNITY_EDITOR
     public void CreateSeasonZone()
     {
         var zoneObject = new GameObject("Grass Season Zone");
         zoneObject.transform.SetParent(transform);
-        zoneObject.AddComponent<GrassSeasonZone>();
+        var seasonZone = zoneObject.AddComponent<GrassSeasonZone>();
         zoneObject.transform.localPosition = Vector3.zero;
         zoneObject.transform.localScale = new Vector3(10f, 10f, 10f);
-        zoneObject.GetComponent<GrassSeasonZone>().Init(_grassComputeScript.GrassSetting);
+        seasonZone.Init(_grassComputeScript.GrassSetting);
 
+        SubscribeToZone(seasonZone);
         Init();
         UpdateSeasonZones();
         GrassEventManager.TriggerEvent(GrassEvent.UpdateShaderData);

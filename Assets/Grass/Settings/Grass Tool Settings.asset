@@ -29,7 +29,7 @@ MonoBehaviour:
   vertexColorSettings: 0
   vertexFade: 0
   grassWidth: 0.5
-  grassHeight: 0.5
+  grassHeight: 3
   adjustWidth: -0.23
   adjustHeight: -0.22
   adjustWidthMax: 0.3
@@ -44,13 +44,13 @@ MonoBehaviour:
   paintBlockMask:
     serializedVersion: 2
     m_Bits: 64
-  brushSize: 7.4
+  brushSize: 7.45
   brushTransitionSpeed: 1
-  normalLimit: 0.67
+  normalLimit: 1
   allowUndersideGrass: 1
-  density: 25
-  grassSpacing: 0.6
-  brushHeight: 33.200005
+  density: 175
+  grassSpacing: 1
+  brushHeight: 33.2
   generateGrassCount: 529183
   grassMouseButton: 0
   brushSizeShortcut: 2

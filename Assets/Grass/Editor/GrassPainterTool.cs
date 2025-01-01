@@ -1383,6 +1383,7 @@ namespace Grass.Editor
             GrassEditorHelper.DrawSeasonSettings(grassSetting.seasonSettings, grassSetting);
             if (EditorGUI.EndChangeCheck())
             {
+                _seasonManager.UpdateSeasonZones();
                 _seasonManager.Init();
                 EditorUtility.SetDirty(grassSetting);
             }

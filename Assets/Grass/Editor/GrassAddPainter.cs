@@ -21,8 +21,9 @@ namespace Grass.Editor
 
             if (Physics.Raycast(mousePointRay, out var hit, maxFadeDistance))
             {
-                if (GrassEditorHelper.IsLayerInMask(hit.collider.gameObject.layer, paintBlockMaskValue)) return;
-                if (GrassEditorHelper.IsNotLayerInMask(hit.collider.gameObject.layer, paintMaskValue)) return;
+                var hitLayer = hit.collider.gameObject.layer;
+                if (hitLayer.Matches(paintBlockMaskValue)) return;
+                if (hitLayer.NotMatches(paintMaskValue)) return;
 
                 var distanceMoved = Vector3.Distance(_lastPosition, hit.point);
                 if (distanceMoved >= brushSize * 0.5f)
@@ -51,16 +52,14 @@ namespace Grass.Editor
                         
                         if (Physics.Raycast(cameraToPointRay, out var cameraHit, maxFadeDistance))
                         {
-                            if (GrassEditorHelper.IsLayerInMask(cameraHit.collider.gameObject.layer,
-                                    paintBlockMaskValue))
+                            if (cameraHit.collider.gameObject.layer.Matches(paintBlockMaskValue))
                                 continue;
 
                             var newRay = new Ray(randomPoint - rayDirection * brushSize, rayDirection);
 
                             if (Physics.Raycast(newRay, out var hit2, maxFadeDistance))
                             {
-                                var hitLayer = hit2.collider.gameObject.layer;
-                                if (GrassEditorHelper.IsLayerInMask(hitLayer, paintMaskValue))
+                                if (hit2.collider.gameObject.layer.Matches(paintMaskValue))
                                 {
                                     var surfaceAngle = toolSettings.allowUndersideGrass
                                         ? Mathf.Acos(Mathf.Abs(hit2.normal.y)) * Mathf.Rad2Deg // 위아래 모두 허용

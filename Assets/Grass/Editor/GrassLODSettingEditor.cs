@@ -123,7 +123,7 @@ namespace Grass.Editor
             settings.minFadeDistance = EditorGUILayout.Slider("Min Fade Distance", settings.minFadeDistance,
                 0f, settings.maxFadeDistance - 1);
             settings.maxFadeDistance = EditorGUILayout.Slider("Max Fade Distance", settings.maxFadeDistance,
-                settings.minFadeDistance + 1, 300f);
+                settings.minFadeDistance + 1, 500f);
 
             // settings.lowQualityDistance = EditorGUILayout.Slider("Low Quality Distance", settings.lowQualityDistance,
             //     0.01f, settings.mediumQualityDistance - 0.01f);

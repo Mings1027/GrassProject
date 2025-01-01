@@ -6,35 +6,22 @@
   <component name="ChangeListManager">
     <list default="true" id="84e81331-7910-473f-9ad1-7a03a025416d" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassAddPainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassAddPainter.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassEditorHelper.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassEditorHelper.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassLODSettingEditor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassLODSettingEditor.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterTool.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterTool.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassSeasonManagerEditor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassSeasonManagerEditor.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassSeasonZoneEditor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassSeasonZoneEditor.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/SeasonRangeDrawer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/SeasonRangeDrawer.cs.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSeasonManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSeasonManager.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSeasonZone.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSeasonZone.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSettingSO.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/MonoSingleton.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/MonoSingleton.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassToolSettingSO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassToolSettingSO.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassToolSettingSO.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassToolSettingSO.cs.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/SeasonRange.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/SeasonRange.cs.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Global_Autumn_4.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Global_Autumn_4.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Global_Spring_2.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Global_Spring_2.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Global_Summer_3.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Global_Summer_3.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Global_Winter_1.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Global_Winter_1.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Zone_Autumn_1.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Zone_Autumn_1.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Zone_Autumn_2.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Zone_Autumn_2.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Zone_Spring_3.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Zone_Spring_3.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Zone_Spring_4.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/SeasonSettings/Zone_Spring_4.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/ObstacleCheck.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/ObstacleCheck.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Pool/PoolObjectManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Pool/PoolObjectManager.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Settings/UniversalRenderPipelineGlobalSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Settings/UniversalRenderPipelineGlobalSettings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassBlades.compute" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/GrassBlades.compute" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/GrassTest.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/GrassTest.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -117,6 +104,7 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/aa/7e4287d9/Shader.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/be/14d296d7/MeshFilter.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/bf/a066736f/ComputeBuffer.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/c1/653540df/Component.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/c3/1d6b62a9/Mesh.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/c6/a8d83199/Plane.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/87c38cf875804a0cbcc2bd5e75635dd41dda00/c9/5f9964a7/ComputeBufferMode.cs" root0="FORCE_HIGHLIGHTING" />
@@ -317,7 +305,7 @@
     &quot;com.codeium.enabled&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.sourceCode.C#&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
@@ -583,6 +571,8 @@
       <workItem from="1735517520821" duration="45296000" />
       <workItem from="1735604692526" duration="22656000" />
       <workItem from="1735647871461" duration="6050000" />
+      <workItem from="1735703932732" duration="7243000" />
+      <workItem from="1735738005206" duration="6615000" />
     </task>
     <servers />
   </component>

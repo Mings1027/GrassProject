@@ -44,10 +44,10 @@ MonoBehaviour:
   additionalLightIntensity: 0.38
   additionalLightShadowStrength: 1
   additionalLightShadowColor: {r: 0, g: 0, b: 0, a: 1}
-  glossiness: 4
+  glossiness: 4.5
   specularStrength: 1
   specularHeight: 0.5
-  maxZoneCount: 7
+  maxZoneCount: 9
   seasonSettings:
   - {fileID: 11400000, guid: 1e808a7ca6a4444a498ce34f86acbb5b, type: 2}
   - {fileID: 11400000, guid: afbb04eae13f742bb9aad8403d8a7d00, type: 2}
