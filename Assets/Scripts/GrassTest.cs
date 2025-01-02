@@ -18,24 +18,24 @@ public class GrassTest : MonoBehaviour
 
     private async void SeasonTest()
     {
-        await Task.Delay(3000);
+        await Task.Delay(3000, destroyCancellationToken);
         Debug.Log(seasonZone.CurrentSeason);
         
         await seasonZone.StartSeasonTransition();
         Debug.Log(seasonZone.CurrentSeason);
-        await Task.Delay(1000);
+        await Task.Delay(1000, destroyCancellationToken);
 
         await seasonZone.StartSeasonTransition(false, 4);
         Debug.Log(seasonZone.CurrentSeason);
-        await Task.Delay(1000);
+        await Task.Delay(1000, destroyCancellationToken);
 
         await seasonZone.StartSeasonTransition(true);
         Debug.Log(seasonZone.CurrentSeason);
-        await Task.Delay(1000);
+        await Task.Delay(1000, destroyCancellationToken);
 
         await seasonZone.StartSeasonTransition(true, 4);
         Debug.Log(seasonZone.CurrentSeason);
-        await Task.Delay(1000);
+        await Task.Delay(1000, destroyCancellationToken);
     }
 
     private void OnDrawGizmos()

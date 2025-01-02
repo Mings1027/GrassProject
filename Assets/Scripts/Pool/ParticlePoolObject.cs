@@ -1,4 +1,3 @@
-using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -17,8 +16,7 @@ namespace Pool
         {
             var main = _particleSystem.main;
             var particleTime = main.startLifetime.constant;
-            await UniTask.Delay(TimeSpan.FromSeconds(particleTime),
-                cancellationToken: this.GetCancellationTokenOnDestroy());
+            await UniTask.Delay((int)particleTime * 1000, cancellationToken: destroyCancellationToken);
 
             gameObject.SetActive(false);
         }

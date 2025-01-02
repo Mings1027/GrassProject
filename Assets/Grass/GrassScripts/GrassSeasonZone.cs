@@ -10,19 +10,19 @@ public class GrassSeasonZone : MonoBehaviour
 {
     private readonly struct SeasonState
     {
-        private readonly Vector3 Position;
-        private readonly Vector3 Scale;
-        public readonly Color Color;
-        private readonly float Width;
-        private readonly float Height;
+        private readonly Vector3 _position;
+        private readonly Vector3 _scale;
+        public readonly Color color;
+        private readonly float _width;
+        private readonly float _height;
 
         public SeasonState(Vector3 position, Vector3 scale, Color color, float width, float height)
         {
-            Position = position;
-            Scale = scale;
-            Color = color;
-            Width = width;
-            Height = height;
+            _position = position;
+            _scale = scale;
+            this.color = color;
+            _width = width;
+            _height = height;
         }
 
         public static SeasonState Default(Transform transform) => new(
@@ -35,11 +35,11 @@ public class GrassSeasonZone : MonoBehaviour
 
         public ZoneData ToZoneData(bool isActive) => new()
         {
-            position = Position,
-            scale = Scale,
-            color = Color,
-            width = Width,
-            height = Height,
+            position = _position,
+            scale = _scale,
+            color = color,
+            width = _width,
+            height = _height,
             isActive = isActive
         };
     }
@@ -129,7 +129,7 @@ public class GrassSeasonZone : MonoBehaviour
     {
         var state = CalculateZoneState();
         _zoneData = state.ToZoneData(gameObject.activeInHierarchy);
-        _zoneColor = gameObject.activeInHierarchy ? state.Color : Color.white;
+        _zoneColor = gameObject.activeInHierarchy ? state.color : Color.white;
         _zoneColor.a = 1;
 
         OnZoneStateChanged?.Invoke();

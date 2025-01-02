@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 using Grass.GrassScripts;
+using Grass.GrassScripts.EventBusSystem;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 [ExecuteInEditMode]
 public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
 {
     private GrassComputeScript _grassComputeScript;
+    private EventBinding<GrassColorEvent> _colorBinding;
 
     [SerializeField] private float globalSeasonValue;
     [SerializeField] private List<GrassSeasonZone> seasonZones = new();
@@ -17,9 +18,7 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
     private void OnEnable()
     {
         _grassComputeScript = FindAnyObjectByType<GrassComputeScript>();
-        GrassEventManager.AddEvent(GrassEvent.UpdateShaderData, UpdateShaderData);
-        GrassFuncManager.AddEvent<Vector3, (Color, bool)>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
-
+        RegisterEvents();
         foreach (var zone in seasonZones)
         {
             SubscribeToZone(zone);
@@ -31,8 +30,7 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
 
     private void OnDisable()
     {
-        GrassEventManager.RemoveEvent(GrassEvent.UpdateShaderData, UpdateShaderData);
-        GrassFuncManager.RemoveEvent<Vector3, (Color, bool)>(GrassEvent.TryGetGrassColor, TryGetGrassColor);
+        UnregisterEvents();
 
         foreach (var zone in seasonZones)
         {
@@ -71,6 +69,29 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
         }
     }
 
+    private void RegisterEvents()
+    {
+        _colorBinding = new EventBinding<GrassColorEvent>(GetSeasonGrassColor);
+        EventBus<GrassColorEvent>.Register(_colorBinding);
+    }
+
+    private void GetSeasonGrassColor(ref GrassColorEvent evt)
+    {
+        foreach (var zone in seasonZones)
+        {
+            if (zone.gameObject.activeInHierarchy && zone.ContainsPosition(evt.position))
+            {
+                evt.grassColor = zone.GetZoneColor();
+                break;
+            }
+        }
+    }
+
+    private void UnregisterEvents()
+    {
+        EventBus<GrassColorEvent>.Deregister(_colorBinding);
+    }
+
     public void Init()
     {
         for (int i = 0; i < seasonZones.Count; i++)
@@ -89,7 +110,7 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
         {
             UnsubscribeFromZone(zone);
         }
-        
+
         // maxZoneCount에 따라 활성/비활성 상태 업데이트
         for (int i = 0; i < foundZones.Length; i++)
         {
@@ -142,22 +163,6 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
         _grassComputeScript.UpdateSeasonData(positions, scales, colors, widthHeights, seasonZones.Count);
     }
 
-    private (Color, bool) TryGetGrassColor(Vector3 position)
-    {
-        for (int i = 0; i < seasonZones.Count; i++)
-        {
-            var zone = seasonZones[i];
-            if (!zone || !zone.gameObject.activeInHierarchy) continue;
-
-            if (zone.ContainsPosition(position))
-            {
-                return (zone.GetZoneColor(), true);
-            }
-        }
-
-        return (Color.clear, false);
-    }
-
 #if UNITY_EDITOR
     public void CreateSeasonZone()
     {
@@ -171,7 +176,7 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
         SubscribeToZone(seasonZone);
         Init();
         UpdateSeasonZones();
-        GrassEventManager.TriggerEvent(GrassEvent.UpdateShaderData);
+        UpdateShaderData();
         Undo.RegisterCreatedObjectUndo(zoneObject, "Create Season Zone");
     }
 #endif

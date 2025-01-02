@@ -20,11 +20,7 @@ namespace Grass.Editor
     public class GrassPainterTool : EditorWindow
     {
         private Vector2 _scrollPos;
-        public Vector2 ScrollPos
-        {
-            get => _scrollPos;
-            set => _scrollPos = value;
-        }
+    
         private bool _paintModeActive;
         private bool _enableGrass;
         private bool _autoUpdate;
@@ -191,7 +187,6 @@ namespace Grass.Editor
 
         private void OnDisable()
         {
-            Debug.Log("OnDisable");
             RemoveDelegates();
             _spatialGrid?.Clear();
             if (grassCompute != null)

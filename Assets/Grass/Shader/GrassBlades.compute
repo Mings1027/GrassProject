@@ -190,7 +190,7 @@ InteractionResult CalculateInteraction(float3 grassPosition, half grassHeight, h
 {
     InteractionResult result = (InteractionResult)0;
 
-    if (cut > -0.99) // 잘린 잔디는 모든 효과 무시
+    if (cut > -0.99) // 잘린 잔디는 효과 무시
     {
         return result;
     }

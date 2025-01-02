@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Grass.GrassScripts;
-using NUnit.Framework;
+using Grass.GrassScripts.EventBusSystem;
 using Pool;
 using UnityEngine;
 
@@ -17,14 +17,17 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
     private const int DrawStride = sizeof(float) * (3 + 3 + 4 + (3 + 2) * 3);
     private const int MaxBufferSize = 2500000;
 
-    [SerializeField, HideInInspector] private List<GrassData> grassData = new(); // base data lists
+    [SerializeField, HideInInspector]
+    private List<GrassData> grassData = new(); // base data lists
     [SerializeField] private Material instantiatedMaterial;
     [SerializeField] private GrassSettingSO grassSetting;
 
     private readonly List<int> _nearbyGrassIds = new();
 
-    [SerializeField, HideInInspector] private List<int> _grassVisibleIDList = new();
-    [SerializeField, HideInInspector] private float[] _cutIDs;
+    [SerializeField, HideInInspector]
+    private List<int> _grassVisibleIDList = new();
+    [SerializeField, HideInInspector]
+    private float[] _cutIDs;
 
     private Bounds _bounds; // bounds of the total grass 
 
@@ -46,7 +49,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
     // culling tree data ----------------------------------------------------------------------
     private readonly Plane[] _cameraFrustumPlanes = new Plane[6];
 
-    // speeding up the editor a bit
     private Vector3 _cachedCamPos;
     private Quaternion _cachedCamRot;
     private int _interactorDataID;
@@ -71,6 +73,12 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         get => grassSetting;
         set => grassSetting = value;
     }
+
+    // Event Bus==============================================================================================================================
+    private EventBinding<InteractorAddedEvent> _addBinding;
+    private EventBinding<InteractorRemovedEvent> _removeBinding;
+    //==============================================================================================================================
+
 #if UNITY_EDITOR
 
     private SceneView _view;
@@ -222,14 +230,19 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
     private void RegisterEvents()
     {
-        GrassEventManager.AddEvent<GrassInteractor>(GrassEvent.AddInteractor, AddInteractor);
-        GrassEventManager.AddEvent<GrassInteractor>(GrassEvent.RemoveInteractor, RemoveInteractor);
+#if UNITY_EDITOR
+        EventBusDebug.EnableGlobalDebugMode(true);
+#endif
+        _addBinding = new EventBinding<InteractorAddedEvent>(InteractorAddEvent);
+        _removeBinding = new EventBinding<InteractorRemovedEvent>(InteractorRemoveEvent);
+        EventBus<InteractorAddedEvent>.Register(_addBinding);
+        EventBus<InteractorRemovedEvent>.Register(_removeBinding);
     }
 
     private void UnregisterEvents()
     {
-        GrassEventManager.RemoveEvent<GrassInteractor>(GrassEvent.AddInteractor, AddInteractor);
-        GrassEventManager.RemoveEvent<GrassInteractor>(GrassEvent.RemoveInteractor, RemoveInteractor);
+        EventBus<InteractorAddedEvent>.Deregister(_addBinding);
+        EventBus<InteractorRemovedEvent>.Deregister(_removeBinding);
     }
 
     private void ReleaseBuffer()
@@ -396,7 +409,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
     {
         _instComputeShader.SetFloat(GrassShaderPropertyID.Time, Time.time);
 
-        if (_interactors.Count > 0)
+        if (_interactors.Count >= 0)
         {
             UpdateInteractors();
         }
@@ -468,19 +481,17 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
                 {
                     if (_cutIDs[currentIndex] - 0.1f > hitPointY || Mathf.Approximately(_cutIDs[currentIndex], -1))
                     {
-                        var (seasonZoneColor, foundSeasonZone) =
-                            GrassFuncManager.TriggerEvent<Vector3, (Color, bool)>(GrassEvent.TryGetGrassColor,
-                                grassPosition);
-
-                        var particleColor = foundSeasonZone
-                            ? seasonZoneColor
-                            : new Color(
+                        var colorEvent = new GrassColorEvent
+                        {
+                            position = grassPosition,
+                            grassColor = new Color(
                                 grassData[currentIndex].color.x,
                                 grassData[currentIndex].color.y,
-                                grassData[currentIndex].color.z
-                            );
-
-                        SpawnCuttingParticle(grassPosition, particleColor);
+                                grassData[currentIndex].color.z)
+                        };
+                        EventBus<GrassColorEvent>.Raise(ref colorEvent);
+                        // 이벤트 처리 후의 결과 색상으로 파티클을 생성합니다
+                        SpawnCuttingParticle(grassPosition, colorEvent.grassColor);
                     }
 
                     _cutIDs[currentIndex] = hitPointY;
@@ -497,15 +508,15 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         leafParticle.startColor = new ParticleSystem.MinMaxGradient(col);
     }
 
-    private void AddInteractor(GrassInteractor interactor)
+    private void InteractorAddEvent(InteractorAddedEvent evt)
     {
-        if (!_interactors.Contains(interactor))
-            _interactors.Add(interactor);
+        if (!_interactors.Contains(evt.Interactor))
+            _interactors.Add(evt.Interactor);
     }
 
-    private void RemoveInteractor(GrassInteractor interactor)
+    private void InteractorRemoveEvent(InteractorRemovedEvent evt)
     {
-        _interactors.Remove(interactor);
+        _interactors.Remove(evt.Interactor);
     }
 
     private void InitCullingTree()

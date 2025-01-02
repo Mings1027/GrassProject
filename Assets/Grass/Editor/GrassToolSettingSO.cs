@@ -16,8 +16,8 @@ public class GrassToolSettingSo : ScriptableObject
     }
 
     [Header("Terrain Layer Settings")]
-    [SerializeField] private List<bool> layerEnabled = new List<bool>();
-    [SerializeField] private List<float> heightFading = new List<float>();
+    [SerializeField] private List<bool> layerEnabled = new();
+    [SerializeField] private List<float> heightFading = new();
 
     [Header("Vertex Color Settings")]
     [SerializeField] private VertexColorSetting vertexColorSettings;

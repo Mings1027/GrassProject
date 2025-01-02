@@ -39,7 +39,8 @@ public class GrassSettingSO : ScriptableObject
     public float randomHeightMax = 3f;
 
     // Wind
-    [Header("Wind")] public float windSpeed = 0.05f;
+    [Header("Wind")]
+    public float windSpeed = 0.05f;
     public float MinWindSpeed => -10f;
     public float MaxWindSpeed => 10f;
 
@@ -47,7 +48,8 @@ public class GrassSettingSO : ScriptableObject
     public float MinWindStrength => 0f;
     public float MaxWindStrength => 2f;
 
-    [Range(0, 360)] [SerializeField] private float windDirection = 0f;
+    [Range(0, 360)] [SerializeField]
+    private float windDirection = 0f;
     public Vector2 windDirectionVector;
     public float WindDirection
     {
@@ -60,7 +62,8 @@ public class GrassSettingSO : ScriptableObject
         }
     }
 
-    [Header("Grass")] public int bladesPerVertex = 4;
+    [Header("Grass")]
+    public int bladesPerVertex = 4;
     public int MinBladesPerVertex => 1;
     public int MaxBladesPerVertex => 30;
 
@@ -69,44 +72,55 @@ public class GrassSettingSO : ScriptableObject
     public int MaxSegmentsPerBlade => 3;
 
     // Interactor
-    [Header("Interactor Strength")] public float interactorStrength = 1;
+    [Header("Interactor Strength")]
+    public float interactorStrength = 1;
 
     // Material
-    [Header("Tinting")] public Color topTint = new(1, 1, 1);
+    [Header("Tinting")]
+    public Color topTint = new(1, 1, 1);
     public Color bottomTint = new(0, 0, 1);
 
-    [Header("Blend")] public float ambientStrength = 0.3f; 
+    [Header("Blend")]
+    public float ambientStrength = 0.3f;
     public float blendMultiply = 1;
     public float blendOffset = 0.2f;
     public Color ambientAdjustmentColor;
 
-    [Header("Shadow")] public float shadowDistance = 50;
+    [Header("Shadow")]
+    public float shadowDistance = 50;
     public float shadowFadeRange = 10;
     public float shadowBrightness = 0.2f;
     public Color shadowColor;
-    
-    [Header("Additional Light")] public float additionalLightIntensity = 1;
+
+    [Header("Additional Light")]
+    public float additionalLightIntensity = 1;
     public float additionalLightShadowStrength = 0.2f;
     public Color additionalLightShadowColor = Color.black;
 
-    [Header("Specular")] public float glossiness = 4.5f;
+    [Header("Specular")]
+    public float glossiness = 4.5f;
     public float specularStrength = 1f;
     public float specularHeight = 0.5f;
 
-    [Header("Season Settings")] public int maxZoneCount = 1;
+    [Header("Season Settings")]
+    public int maxZoneCount = 1;
     public List<SeasonSettings> seasonSettings;
 
 #if UNITY_EDITOR
-    [Header("LOD")] public bool drawBounds;
+    [Header("LOD")]
+    public bool drawBounds;
     public bool drawAllBounds;
     public DefaultAsset seasonSettingFolder;
 #endif
     public int cullingTreeDepth = 1;
 
-    [Header("LOD Quality Settings")] public float minFadeDistance = 40;
+    [Header("LOD Quality Settings")]
+    public float minFadeDistance = 40;
     public float maxFadeDistance = 125;
 
-    [Header("Particles")] public GameObject cuttingParticles;
+    [Header("Particles")]
+    public GameObject cuttingParticles;
 
-    [Header("Other")] public UnityEngine.Rendering.ShadowCastingMode castShadow;
+    [Header("Other")]
+    public UnityEngine.Rendering.ShadowCastingMode castShadow;
 }

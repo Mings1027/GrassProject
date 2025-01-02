@@ -26,6 +26,6 @@ namespace Pool
             var obj = Object.Instantiate(prefab);
             obj.SetActive(false);
             return obj;
-        } 
+        }
     }
 }
