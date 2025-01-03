@@ -1,18 +1,24 @@
-using Grass.GrassScripts.EventBusSystem;
 using UnityEngine;
 
-public class GrassInteractor : MonoBehaviour
+[ExecuteInEditMode]
+public class GrassInteractor : MonoBehaviour, InteractorData
 {
+    public Vector3 Position => transform.position;
+    public float Radius => radius;
+    public int ID => GetInstanceID();
+    
     [Range(0, 100)] public float radius = 1f;
 
     private void OnEnable()
     {
-        EventBus<InteractorAddedEvent>.Raise(new InteractorAddedEvent { Interactor = this });
+        var addedEvent = new InteractorAddedEvent { data = this };
+        EventBus<InteractorAddedEvent>.Raise(addedEvent);
     }
 
     private void OnDisable()
     {
-        EventBus<InteractorRemovedEvent>.Raise(new InteractorRemovedEvent { Interactor = this });
+        var removeEvent = new InteractorRemovedEvent { data = this };
+        EventBus<InteractorRemovedEvent>.Raise(removeEvent);
     }
 
 #if UNITY_EDITOR

@@ -33,7 +33,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
     private CullingTree _cullingTree;
     private Camera _mainCamera; // main camera
-    private List<GrassInteractor> _interactors = new();
+    private List<InteractorData> _interactors = new();
 
     private ComputeBuffer _sourceVertBuffer; // A compute buffer to hold vertex data of the source mesh
     private ComputeBuffer _drawBuffer; // A compute buffer to hold vertex data of the generated mesh
@@ -74,7 +74,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         set => grassSetting = value;
     }
 
-    // Event Bus==============================================================================================================================
+    // ======================================= Event Bus ==============================================================================================================================
     private EventBinding<InteractorAddedEvent> _addBinding;
     private EventBinding<InteractorRemovedEvent> _removeBinding;
     //==============================================================================================================================
@@ -230,9 +230,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
     private void RegisterEvents()
     {
-#if UNITY_EDITOR
-        EventBusDebug.EnableGlobalDebugMode(true);
-#endif
         _addBinding = new EventBinding<InteractorAddedEvent>(InteractorAddEvent);
         _removeBinding = new EventBinding<InteractorRemovedEvent>(InteractorRemoveEvent);
         EventBus<InteractorAddedEvent>.Register(_addBinding);
@@ -271,7 +268,8 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         SetupQuadTree(full);
         GetFrustumData();
 #if UNITY_EDITOR
-        _interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
+        var interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
+        _interactors = new List<InteractorData>(interactors);
 #endif
     }
 
@@ -425,8 +423,9 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         var positions = new Vector4[_interactors.Count];
         for (var i = _interactors.Count - 1; i >= 0; i--)
         {
-            var pos = _interactors[i].transform.position;
-            positions[i] = new Vector4(pos.x, pos.y, pos.z, _interactors[i].radius);
+            var interactor = _interactors[i];
+            var pos = interactor.Position;
+            positions[i] = new Vector4(pos.x, pos.y, pos.z, interactor.Radius);
         }
 
         _instComputeShader.SetVectorArray(_interactorDataID, positions);
@@ -510,13 +509,12 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
     private void InteractorAddEvent(InteractorAddedEvent evt)
     {
-        if (!_interactors.Contains(evt.Interactor))
-            _interactors.Add(evt.Interactor);
+        _interactors.Add(evt.data);
     }
 
     private void InteractorRemoveEvent(InteractorRemovedEvent evt)
     {
-        _interactors.Remove(evt.Interactor);
+        _interactors.Remove(evt.data);
     }
 
     private void InitCullingTree()

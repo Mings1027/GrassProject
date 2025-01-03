@@ -17,7 +17,8 @@ public static class PredefinedAssemblyUtil
         AssemblyCSharp,
         AssemblyCSharpEditor,
         AssemblyCSharpEditorFirstPass,
-        AssemblyCSharpFirstPass
+        AssemblyCSharpFirstPass,
+        EventBusSystem,
     }
 
     /// <summary>
@@ -33,6 +34,7 @@ public static class PredefinedAssemblyUtil
             "Assembly-CSharp-Editor" => AssemblyType.AssemblyCSharpEditor,
             "Assembly-CSharp-Editor-firstpass" => AssemblyType.AssemblyCSharpEditorFirstPass,
             "Assembly-CSharp-firstpass" => AssemblyType.AssemblyCSharpFirstPass,
+            "EventBusSystem" => AssemblyType.EventBusSystem,
             _ => null
         };
     }
@@ -76,12 +78,14 @@ public static class PredefinedAssemblyUtil
             }
         }
 
-        assemblyTypes.TryGetValue(AssemblyType.AssemblyCSharp, out var assemblyCSharpTypes);
-        AddTypesFromAssembly(assemblyCSharpTypes, interfaceType, types);
+        if (assemblyTypes.TryGetValue(AssemblyType.AssemblyCSharp, out var assemblyCSharpTypes))
+            AddTypesFromAssembly(assemblyCSharpTypes, interfaceType, types);
 
-        assemblyTypes.TryGetValue(AssemblyType.AssemblyCSharpFirstPass, out var assemblyCSharpFirstPassTypes);
-        AddTypesFromAssembly(assemblyCSharpFirstPassTypes, interfaceType, types);
+        if (assemblyTypes.TryGetValue(AssemblyType.AssemblyCSharpFirstPass, out var assemblyCSharpFirstPassTypes))
+            AddTypesFromAssembly(assemblyCSharpFirstPassTypes, interfaceType, types);
 
+        if (assemblyTypes.TryGetValue(AssemblyType.EventBusSystem, out var assemblyEventBusSystemTypes))
+            AddTypesFromAssembly(assemblyEventBusSystemTypes, interfaceType, types);
         return types;
     }
 }
