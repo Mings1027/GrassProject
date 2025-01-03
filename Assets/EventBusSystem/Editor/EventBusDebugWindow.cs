@@ -3,14 +3,15 @@ using UnityEngine;
 using System.Linq;
 using System.Collections.Generic;
 using System;
+using System.IO;
 using System.Reflection;
+using EventBusSystem.Scripts;
 using Grass.Editor;
 
 #if UNITY_EDITOR
 public class EventBusDebugWindow : EditorWindow
 {
     private Vector2 _scrollPosition;
-    private bool _showEditorBindings;
     private List<Type> _cachedEventTypes;
 
     [MenuItem("Tools/Event Bus Debug")]
@@ -23,6 +24,7 @@ public class EventBusDebugWindow : EditorWindow
     private void OnEnable()
     {
         UpdateEventTypesCache();
+        
     }
 
     private void UpdateEventTypesCache()
@@ -33,23 +35,12 @@ public class EventBusDebugWindow : EditorWindow
     private void OnGUI()
     {
         // Global debug toggle
-        if (EventBusEditorHelper.DrawToggleButton("Debug Mode", EventBusDebug.IsGlobalDebugEnabled,
-                out var enableDebugMode))
+        if (EventBusEditorHelper.DrawToggleButton("Enable All Event Bus Log", EventBusDebug.EnableLog,
+                out var enableLog))
         {
-            EventBusDebug.EnableGlobalDebugMode(enableDebugMode);
-        }
-
-        if (!Application.isPlaying)
-        {
-            // Show editor bindings toggle only in edit mode
-            if (EventBusEditorHelper.DrawToggleButton(
-                    "Show Editor-time Bindings",
-                    "Display event bindings registered during edit mode (e.g. from [ExecuteInEditMode] scripts)",
-                    _showEditorBindings,
-                    out var showEditorBindings))
-            {
-                _showEditorBindings = showEditorBindings;
-            }
+            EventBusDebug.SetLogEnabled(enableLog);
+            SetAllEventBusLogs(enableLog);
+            EditorPrefs.SetBool(EventBusDebug.EventBusDebugEnableLog, enableLog);
         }
 
         EditorGUILayout.Space(10);
@@ -75,30 +66,46 @@ public class EventBusDebugWindow : EditorWindow
 
         EditorGUILayout.Space(10);
 
-        // Clear all buses button (only in play mode)
-        if (Application.isPlaying)
+        // Clear all buses button
+        var prevColor = GUI.backgroundColor;
+        GUI.backgroundColor = new Color(1f, 0.4f, 0.4f);
+
+        if (GUILayout.Button("Clear ALL Event Buses", GUILayout.Height(30)))
         {
-            var prevColor = GUI.backgroundColor;
-            GUI.backgroundColor = new Color(1f, 0.4f, 0.4f);
-
-            if (GUILayout.Button("Clear ALL Event Buses", GUILayout.Height(30)))
+            string message = Application.isPlaying 
+                ? "Are you sure you want to clear ALL event buses?\nThis will remove all registered listeners from every event bus."
+                : "Are you sure you want to clear ALL event buses?\nThis will remove all registered listeners including those registered in Edit Mode.";
+        
+            if (EditorUtility.DisplayDialog("Clear All Event Buses",
+                    message,
+                    "Yes, Clear All", "Cancel"))
             {
-                if (EditorUtility.DisplayDialog("Clear All Event Buses",
-                        "Are you sure you want to clear ALL event buses?\nThis will remove all registered listeners from every event bus.",
-                        "Yes, Clear All", "Cancel"))
+                EventBusUtil.ClearAllBuses();
+        
+                // Force repaint all inspector windows to reflect the changes
+                foreach (var editor in ActiveEditorTracker.sharedTracker.activeEditors)
                 {
-                    EventBusUtil.ClearAllBuses();
-                    Debug.Log("Cleared all event buses");
+                    editor.Repaint();
                 }
+        
+                Debug.Log($"Cleared all event buses in {(Application.isPlaying ? "Play" : "Edit")} mode");
             }
-
-            GUI.backgroundColor = prevColor;
         }
 
-        // Auto-repaint in play mode to update statistics
-        if (Application.isPlaying)
+        GUI.backgroundColor = prevColor;
+    }
+
+    private void SetAllEventBusLogs(bool enabled)
+    {
+        if (_cachedEventTypes == null) return;
+        foreach (var eventType in _cachedEventTypes)
         {
-            Repaint();
+            var busType = typeof(EventBus<>).MakeGenericType(eventType);
+            var setLogEnabled = busType.GetMethod("SetLogEnabled");
+            if (setLogEnabled != null)
+            {
+                setLogEnabled.Invoke(null, new object[] { enabled });
+            }
         }
     }
 
@@ -125,14 +132,14 @@ public class EventBusDebugWindow : EditorWindow
                 {
                     DisplayRuntimeStats(eventType);
                 }
-                else if (_showEditorBindings)
+                else
                 {
                     DisplayEditorTimeStats(eventType);
                 }
             });
         }
 
-        if (!Application.isPlaying && !_showEditorBindings)
+        if (!Application.isPlaying)
         {
             EditorGUILayout.HelpBox(
                 "Enable 'Show Editor-time Bindings' to see event bindings registered during edit mode, or enter play mode to see runtime statistics.",
@@ -158,9 +165,35 @@ public class EventBusDebugWindow : EditorWindow
                 if (registeredMethods != null && registeredMethods.Count > 0)
                 {
                     EditorGUI.indentLevel++;
+
+                    var linkStyle = new GUIStyle(EditorStyles.label)
+                    {
+                        normal = { textColor = new Color(0.3f, 0.7f, 1f) },
+                        hover = { textColor = new Color(1f, 1f, 1f) }
+                    };
+                    linkStyle.padding.left = 15; // 들여쓰기를 위한 패딩
+
                     foreach (var method in registeredMethods)
                     {
-                        EditorGUILayout.LabelField($"• {method}");
+                        var rect = EditorGUILayout.GetControlRect();
+                        var bulletRect = new Rect(rect.x, rect.y, 15, rect.height);
+                        var linkRect = new Rect(rect.x + 15, rect.y, rect.width - 15, rect.height);
+
+                        // 불릿 포인트 그리기
+                        EditorGUI.LabelField(bulletRect, "•");
+
+                        // 링크처럼 보이는 메서드 이름
+                        if (GUI.Button(linkRect, method, linkStyle))
+                        {
+                            OpenScriptWithMethod(method);
+                        }
+
+                        // 마우스가 링크 위에 있을 때 커서 변경
+                        GUIUtility.GetControlID(FocusType.Passive);
+                        if (linkRect.Contains(Event.current.mousePosition))
+                        {
+                            EditorGUIUtility.AddCursorRect(linkRect, MouseCursor.Link);
+                        }
                     }
 
                     EditorGUI.indentLevel--;
@@ -181,6 +214,22 @@ public class EventBusDebugWindow : EditorWindow
         var totalRaised = (int)busType.GetMethod("GetTotalEventsRaised")?.Invoke(null, null);
 
         EditorGUILayout.Space(5);
+
+        var setLogEnabled = busType.GetMethod("SetLogEnabled");
+        if (setLogEnabled != null)
+        {
+            var getLogEnabled = busType.GetField("localLogEnabled", BindingFlags.NonPublic | BindingFlags.Static);
+            if (getLogEnabled != null)
+            {
+                var currentLogEnabled = (bool)getLogEnabled.GetValue(null);
+                var newLogEnabled = EditorGUILayout.Toggle("Enable Log", currentLogEnabled);
+                if (newLogEnabled != currentLogEnabled)
+                {
+                    setLogEnabled.Invoke(null, new object[] { newLogEnabled });
+                }
+            }
+        }
+
         EditorGUILayout.LabelField($"Active Bindings: {activeBindings}");
         EditorGUILayout.LabelField($"Total Events Raised: {totalRaised}");
 
@@ -193,9 +242,35 @@ public class EventBusDebugWindow : EditorWindow
                 EditorGUILayout.Space(5);
                 EditorGUILayout.LabelField("Registered Methods:", EditorStyles.boldLabel);
                 EditorGUI.indentLevel++;
+
+                var linkStyle = new GUIStyle(EditorStyles.label)
+                {
+                    normal = { textColor = new Color(0.3f, 0.7f, 1f) },
+                    hover = { textColor = new Color(1f, 1f, 1f) }
+                };
+                linkStyle.padding.left = 15; // 들여쓰기를 위한 패딩
+
                 foreach (var method in registeredMethods)
                 {
-                    EditorGUILayout.LabelField($"• {method}");
+                    var rect = EditorGUILayout.GetControlRect();
+                    var bulletRect = new Rect(rect.x, rect.y, 15, rect.height);
+                    var linkRect = new Rect(rect.x + 15, rect.y, rect.width - 15, rect.height);
+
+                    // 불릿 포인트 그리기
+                    EditorGUI.LabelField(bulletRect, "•");
+
+                    // 링크처럼 보이는 메서드 이름
+                    if (GUI.Button(linkRect, method, linkStyle))
+                    {
+                        OpenScriptWithMethod(method);
+                    }
+
+                    // 마우스가 링크 위에 있을 때 커서 변경
+                    GUIUtility.GetControlID(FocusType.Passive);
+                    if (linkRect.Contains(Event.current.mousePosition))
+                    {
+                        EditorGUIUtility.AddCursorRect(linkRect, MouseCursor.Link);
+                    }
                 }
 
                 EditorGUI.indentLevel--;
@@ -221,6 +296,62 @@ public class EventBusDebugWindow : EditorWindow
                 }
             }
         }
+    }
+
+    private void OpenScriptWithMethod(string methodInfo)
+    {
+        var parts = methodInfo.Split('.');
+        if (parts.Length != 2) return;
+
+        string className = parts[0];
+        string methodName = parts[1];
+
+        var guids = AssetDatabase.FindAssets("t:Script");
+        foreach (var guid in guids)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            var script = AssetDatabase.LoadAssetAtPath<MonoScript>(path);
+
+            if (script != null)
+            {
+                var scriptClass = script.GetClass();
+                if (scriptClass != null && scriptClass.Name == className)
+                {
+                    var method = scriptClass.GetMethod(methodName,
+                        BindingFlags.Public | BindingFlags.NonPublic |
+                        BindingFlags.Static | BindingFlags.Instance);
+
+                    if (method != null)
+                    {
+                        int lineNumber = GetMethodLineNumber(script.text, method.Name);
+                        if (lineNumber > 0)
+                        {
+                            AssetDatabase.OpenAsset(script, lineNumber);
+                            return;
+                        }
+                    }
+
+                    AssetDatabase.OpenAsset(script);
+                    return;
+                }
+            }
+        }
+    }
+
+    private int GetMethodLineNumber(string scriptText, string methodName)
+    {
+        string[] lines = scriptText.Split('\n');
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (lines[i].Contains(methodName) &&
+                lines[i].Contains("(") &&
+                !lines[i].Contains(";")) // 메서드 호출이 아닌 선언을 찾기 위함
+            {
+                return i + 1;
+            }
+        }
+
+        return -1;
     }
 }
 #endif

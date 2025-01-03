@@ -1,7 +1,6 @@
 using System;
-using UnityEngine;
 
-namespace Grass.GrassScripts.EventBusSystem
+namespace EventBusSystem.Scripts
 {
     public interface IEventBinding<T> where T : IEvent
     {

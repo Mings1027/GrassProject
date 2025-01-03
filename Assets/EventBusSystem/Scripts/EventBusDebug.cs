@@ -1,11 +1,15 @@
 #if UNITY_EDITOR
-public static class EventBusDebug
+namespace EventBusSystem.Scripts
 {
-    public static bool IsGlobalDebugEnabled { get; private set; }
-
-    public static void EnableGlobalDebugMode(bool enable)
+    public static class EventBusDebug
     {
-        IsGlobalDebugEnabled = enable;
+        public static string EventBusDebugEnableLog = "EventBusDebug_EnableLog";
+        public static bool EnableLog { get; private set; }
+
+        public static void SetLogEnabled(bool enable)
+        {
+            EnableLog = enable;
+        }
     }
 }
 #endif

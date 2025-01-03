@@ -1,6 +1,6 @@
 using System.Collections.Generic;
+using EventBusSystem.Scripts;
 using Grass.GrassScripts;
-using Grass.GrassScripts.EventBusSystem;
 using UnityEditor;
 using UnityEngine;
 

@@ -1,3 +1,4 @@
+using EventBusSystem.Scripts;
 using UnityEngine;
 
 [ExecuteInEditMode]

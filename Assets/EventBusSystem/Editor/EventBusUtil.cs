@@ -1,7 +1,7 @@
 using System;
 using System.Reflection;
 using System.Collections.Generic;
-using Grass.GrassScripts.EventBusSystem;
+using EventBusSystem.Scripts;
 using UnityEditor;
 using UnityEngine;
 
@@ -54,6 +54,20 @@ public static class EventBusUtil
     {
         EventTypes = PredefinedAssemblyUtil.GetTypes(typeof(IEvent));
         EventBusTypes = InitializeAllBuses();
+
+// #if UNITY_EDITOR
+//         var savedLogState = EditorPrefs.GetBool(EventBusDebug.EventBusDebugEnableLog);
+//         foreach (var eventType in EventTypes)
+//         {
+//             var busType = typeof(EventBus<>).MakeGenericType(eventType);
+//             var setLogEnabled = busType.GetMethod("SetLogEnabled");
+//             if (setLogEnabled != null)
+//             {
+//                 setLogEnabled.Invoke(null, new object[] { savedLogState });
+//             }
+//         }
+//
+// #endif
     }
 
     static List<Type> InitializeAllBuses()
@@ -78,9 +92,26 @@ public static class EventBusUtil
     /// </summary>
     public static void ClearAllBuses()
     {
+        // If EventTypes is null, we need to initialize them first
+        if (EventTypes == null || EventBusTypes == null)
+        {
+            EventTypes = PredefinedAssemblyUtil.GetTypes(typeof(IEvent));
+            var typedef = typeof(EventBus<>);
+            var tempBusTypes = new List<Type>();
+
+            foreach (var eventType in EventTypes)
+            {
+                var busType = typedef.MakeGenericType(eventType);
+                tempBusTypes.Add(busType);
+            }
+
+            EventBusTypes = tempBusTypes;
+        }
+
 #if UNITY_EDITOR
-        Debug.Log("Clearing all buses...");
+        Debug.Log($"Clearing all buses in {(Application.isPlaying ? "Play" : "Edit")} mode...");
 #endif
+
         for (var i = 0; i < EventBusTypes.Count; i++)
         {
             var busType = EventBusTypes[i];
