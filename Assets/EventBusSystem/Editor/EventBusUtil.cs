@@ -55,21 +55,25 @@ public static class EventBusUtil
         EventTypes = PredefinedAssemblyUtil.GetTypes(typeof(IEvent));
         EventBusTypes = InitializeAllBuses();
 
-// #if UNITY_EDITOR
-//         var savedLogState = EditorPrefs.GetBool(EventBusDebug.EventBusDebugEnableLog);
-//         foreach (var eventType in EventTypes)
-//         {
-//             var busType = typeof(EventBus<>).MakeGenericType(eventType);
-//             var setLogEnabled = busType.GetMethod("SetLogEnabled");
-//             if (setLogEnabled != null)
-//             {
-//                 setLogEnabled.Invoke(null, new object[] { savedLogState });
-//             }
-//         }
-//
-// #endif
+#if UNITY_EDITOR
+        var savedGlobalLogState = EditorPrefs.GetBool(EventBusDebug.EventBusDebugEnableLog);
+        
+        foreach (var eventType in EventTypes)
+        {
+            var busType = typeof(EventBus<>).MakeGenericType(eventType);
+            var setLogEnabled = busType.GetMethod("SetLogEnabled");
+            if (setLogEnabled != null)
+            {
+                // Check individual event bus log state
+                bool eventSpecificLogState = EventBusDebug.GetEventSpecificLogEnabled(eventType.Name);
+                // If global log is enabled or this specific event's log is enabled
+                bool shouldEnableLog = savedGlobalLogState || eventSpecificLogState;
+                setLogEnabled.Invoke(null, new object[] { shouldEnableLog });
+            }
+        }
+#endif
     }
-
+    
     static List<Type> InitializeAllBuses()
     {
         var eventBusTypes = new List<Type>();

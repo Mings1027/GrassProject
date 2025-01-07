@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Grass.Editor
+namespace EditorHelper
 {
     public static class EditorIcons
     {

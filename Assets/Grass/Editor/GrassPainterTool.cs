@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using EditorHelper;
 using Grass.GrassScripts;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -152,10 +153,10 @@ namespace Grass.Editor
 
             DrawBasicControls();
 
-            GrassEditorHelper.DrawHorizontalLine(Color.gray);
+            CustomEditorHelper.DrawHorizontalLine(Color.gray);
             DrawKeyBindingsUI();
             DrawToggles();
-            GrassEditorHelper.DrawHorizontalLine(Color.gray);
+            CustomEditorHelper.DrawHorizontalLine(Color.gray);
             DrawMainToolbar();
             DrawControlPanels();
 
@@ -301,18 +302,18 @@ namespace Grass.Editor
         {
             EditorGUILayout.BeginHorizontal();
 
-            if (GrassEditorHelper.DrawToggleButton("Enable Grass", _enableGrass, out var newEnableGrass))
+            if (CustomEditorHelper.DrawToggleButton("Enable Grass", _enableGrass, out var newEnableGrass))
             {
                 _enableGrass = newEnableGrass;
                 grassCompute.enabled = newEnableGrass;
             }
 
-            if (GrassEditorHelper.DrawToggleButton("Paint Mode", _paintModeActive, out var newPaintMode))
+            if (CustomEditorHelper.DrawToggleButton("Paint Mode", _paintModeActive, out var newPaintMode))
             {
                 _paintModeActive = newPaintMode;
             }
 
-            if (GrassEditorHelper.DrawToggleButton("Auto Update", "Slow but always update",
+            if (CustomEditorHelper.DrawToggleButton("Auto Update", "Slow but always update",
                     _autoUpdate, out var newAutoUpdate))
             {
                 _autoUpdate = newAutoUpdate;
@@ -503,7 +504,7 @@ namespace Grass.Editor
                 DrawGenerateToolbar();
                 DrawGenerateContent();
 
-                GrassEditorHelper.DrawHorizontalLine(Color.gray);
+                CustomEditorHelper.DrawHorizontalLine(Color.gray);
                 DrawObjectOperations();
             }
         }
@@ -664,7 +665,7 @@ namespace Grass.Editor
             EditorGUILayout.Separator();
             EditorGUILayout.LabelField("Brush Settings", EditorStyles.boldLabel);
 
-            toolSettings.BrushSize = GrassEditorHelper.FloatSlider(
+            toolSettings.BrushSize = CustomEditorHelper.FloatSlider(
                 "Brush Size",
                 "Adjust Brush Size",
                 toolSettings.BrushSize,
@@ -686,7 +687,7 @@ namespace Grass.Editor
             EditorGUILayout.LabelField("Surface Settings", EditorStyles.boldLabel);
 
             EditorGUILayout.BeginHorizontal();
-            toolSettings.NormalLimit = GrassEditorHelper.FloatSlider(
+            toolSettings.NormalLimit = CustomEditorHelper.FloatSlider(
                 "Normal Limit",
                 "Maximum slope angle where grass can be placed. 0 = flat ground only, 1 = all slopes",
                 toolSettings.NormalLimit,
@@ -706,7 +707,7 @@ namespace Grass.Editor
             EditorGUILayout.Separator();
 
             EditorGUILayout.LabelField("Brush Placement", EditorStyles.boldLabel);
-            toolSettings.Density = GrassEditorHelper.IntSlider(
+            toolSettings.Density = CustomEditorHelper.IntSlider(
                 "Density",
                 "Amount of grass placed in one brush stroke",
                 toolSettings.Density,
@@ -738,9 +739,9 @@ namespace Grass.Editor
 
             EditorGUILayout.LabelField("Random Color Variation", EditorStyles.boldLabel);
 
-            toolSettings.RangeR = GrassEditorHelper.FloatSlider("Red", "", toolSettings.RangeR, 0f, 1f);
-            toolSettings.RangeG = GrassEditorHelper.FloatSlider("Green", "", toolSettings.RangeG, 0f, 1f);
-            toolSettings.RangeB = GrassEditorHelper.FloatSlider("Blue", "", toolSettings.RangeB, 0f, 1f);
+            toolSettings.RangeR = CustomEditorHelper.FloatSlider("Red", "", toolSettings.RangeR, 0f, 1f);
+            toolSettings.RangeG = CustomEditorHelper.FloatSlider("Green", "", toolSettings.RangeG, 0f, 1f);
+            toolSettings.RangeB = CustomEditorHelper.FloatSlider("Blue", "", toolSettings.RangeB, 0f, 1f);
         }
 
         private void DrawWidthHeightSliders()
@@ -775,7 +776,7 @@ namespace Grass.Editor
                 (EditOption)GUILayout.Toolbar((int)_selectedEditOption, _editOptionStrings, GUILayout.Height(25));
             EditorGUILayout.Separator();
 
-            toolSettings.BrushTransitionSpeed = GrassEditorHelper.FloatSlider(
+            toolSettings.BrushTransitionSpeed = CustomEditorHelper.FloatSlider(
                 "Brush Transition Speed",
                 "Speed of grass modifications",
                 toolSettings.BrushTransitionSpeed,
@@ -803,7 +804,7 @@ namespace Grass.Editor
 
             EditorGUILayout.LabelField("Adjust Width and Height Gradually", EditorStyles.boldLabel);
 
-            toolSettings.AdjustWidth = GrassEditorHelper.FloatSlider(
+            toolSettings.AdjustWidth = CustomEditorHelper.FloatSlider(
                 "Grass Width Adjustment",
                 "Grass Width Adjustment",
                 toolSettings.AdjustWidth,
@@ -811,7 +812,7 @@ namespace Grass.Editor
                 toolSettings.MaxAdjust
             );
 
-            toolSettings.AdjustHeight = GrassEditorHelper.FloatSlider(
+            toolSettings.AdjustHeight = CustomEditorHelper.FloatSlider(
                 "Grass Height Adjustment",
                 "Grass Height Adjustment",
                 toolSettings.AdjustHeight,
@@ -819,7 +820,7 @@ namespace Grass.Editor
                 toolSettings.MaxAdjust
             );
 
-            toolSettings.AdjustWidthMax = GrassEditorHelper.FloatSlider(
+            toolSettings.AdjustWidthMax = CustomEditorHelper.FloatSlider(
                 "Max Width Adjustment",
                 "Max Width Adjustment",
                 toolSettings.AdjustWidthMax,
@@ -827,7 +828,7 @@ namespace Grass.Editor
                 3f
             );
 
-            toolSettings.AdjustHeightMax = GrassEditorHelper.FloatSlider(
+            toolSettings.AdjustHeightMax = CustomEditorHelper.FloatSlider(
                 "Max Height Adjustment",
                 "Max Height Adjustment",
                 toolSettings.AdjustHeightMax,
@@ -842,7 +843,7 @@ namespace Grass.Editor
 
             EditorGUILayout.LabelField("Brush Height", EditorStyles.boldLabel);
 
-            toolSettings.BrushHeight = GrassEditorHelper.FloatSlider(
+            toolSettings.BrushHeight = CustomEditorHelper.FloatSlider(
                 "Brush Height",
                 "Height limit for repositioning grass",
                 toolSettings.BrushHeight,
@@ -870,7 +871,7 @@ namespace Grass.Editor
 
         private void DrawGrassSpacingSlider()
         {
-            toolSettings.GrassSpacing = GrassEditorHelper.FloatSlider(
+            toolSettings.GrassSpacing = CustomEditorHelper.FloatSlider(
                 "Grass Spacing",
                 "Minimum distance between grass placements",
                 toolSettings.GrassSpacing,
@@ -895,7 +896,7 @@ namespace Grass.Editor
         private void DrawTerrainLayerSettings()
         {
             // Foldout을 DrawToggleButton으로 교체
-            GrassEditorHelper.DrawFoldoutSection("Layer Settings Guide", () =>
+            CustomEditorHelper.DrawFoldoutSection("Layer Settings Guide", () =>
             {
                 EditorGUILayout.LabelField("• If Active is unchecked, this layer is ignored.");
                 EditorGUILayout.Space(5);
@@ -977,7 +978,7 @@ namespace Grass.Editor
 
             EditorGUILayout.EndHorizontal();
 
-            GrassEditorHelper.DrawHorizontalLine(Color.gray, 1, 2);
+            CustomEditorHelper.DrawHorizontalLine(Color.gray, 1, 2);
 
             for (var i = 0; i < terrainLayers.Length; i++)
             {
@@ -1119,20 +1120,20 @@ namespace Grass.Editor
         {
             var grassSetting = grassCompute.GrassSetting;
 
-            GrassEditorHelper.DrawFoldoutSection("Global Season Settings", () => { DrawSeasonSettings(grassSetting); });
+            CustomEditorHelper.DrawFoldoutSection("Global Season Settings", () => { DrawSeasonSettings(grassSetting); });
 
-            GrassEditorHelper.DrawFoldoutSection("Blade Min/Max Settings", () =>
+            CustomEditorHelper.DrawFoldoutSection("Blade Min/Max Settings", () =>
             {
                 EditorGUI.BeginChangeCheck();
                 Undo.RecordObject(grassSetting, "Blade Min/Max Settings");
 
-                GrassEditorHelper.DrawMinMaxSection("Blade Width", ref grassSetting.minWidth,
+                CustomEditorHelper.DrawMinMaxSection("Blade Width", ref grassSetting.minWidth,
                     ref grassSetting.maxWidth,
                     toolSettings.MinSizeWidth, toolSettings.MaxSizeWidth);
-                GrassEditorHelper.DrawMinMaxSection("Blade Height", ref grassSetting.minHeight,
+                CustomEditorHelper.DrawMinMaxSection("Blade Height", ref grassSetting.minHeight,
                     ref grassSetting.maxHeight,
                     toolSettings.MinSizeHeight, toolSettings.MaxSizeHeight);
-                GrassEditorHelper.DrawMinMaxSection("Random Height", ref grassSetting.randomHeightMin,
+                CustomEditorHelper.DrawMinMaxSection("Random Height", ref grassSetting.randomHeightMin,
                     ref grassSetting.randomHeightMax, 0, 1);
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -1140,18 +1141,18 @@ namespace Grass.Editor
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
-            GrassEditorHelper.DrawFoldoutSection("Blade Shape Settings", () =>
+            CustomEditorHelper.DrawFoldoutSection("Blade Shape Settings", () =>
             {
                 EditorGUI.BeginChangeCheck();
                 Undo.RecordObject(grassSetting, "Blade Shape Settings");
 
-                GrassEditorHelper.FloatSlider(ref grassSetting.bladeRadius, "Blade Radius", "",
+                CustomEditorHelper.FloatSlider(ref grassSetting.bladeRadius, "Blade Radius", "",
                     grassSetting.MinBladeRadius, grassSetting.MaxBladeRadius);
-                GrassEditorHelper.FloatSlider(ref grassSetting.bladeForward, "Blade Forward", "",
+                CustomEditorHelper.FloatSlider(ref grassSetting.bladeForward, "Blade Forward", "",
                     grassSetting.MinBladeForward, grassSetting.MaxBladeForward);
-                GrassEditorHelper.FloatSlider(ref grassSetting.bladeCurve, "Blade Curve", "",
+                CustomEditorHelper.FloatSlider(ref grassSetting.bladeCurve, "Blade Curve", "",
                     grassSetting.MinBladeCurve, grassSetting.MaxBladeCurve);
-                GrassEditorHelper.FloatSlider(ref grassSetting.bottomWidth, "Bottom Width", "",
+                CustomEditorHelper.FloatSlider(ref grassSetting.bottomWidth, "Bottom Width", "",
                     grassSetting.MinBottomWidth, grassSetting.MaxBottomWidth);
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -1159,7 +1160,7 @@ namespace Grass.Editor
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
-            GrassEditorHelper.DrawFoldoutSection("Wind Settings", () =>
+            CustomEditorHelper.DrawFoldoutSection("Wind Settings", () =>
             {
                 EditorGUI.BeginChangeCheck();
                 Undo.RecordObject(grassSetting, "Wind Settings");
@@ -1176,7 +1177,7 @@ namespace Grass.Editor
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
-            GrassEditorHelper.DrawFoldoutSection("Tint Settings", () =>
+            CustomEditorHelper.DrawFoldoutSection("Tint Settings", () =>
             {
                 EditorGUI.BeginChangeCheck();
                 Undo.RecordObject(grassSetting, "Tint Settings");
@@ -1189,17 +1190,17 @@ namespace Grass.Editor
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
-            GrassEditorHelper.DrawFoldoutSection("Blend Settings", () =>
+            CustomEditorHelper.DrawFoldoutSection("Blend Settings", () =>
             {
                 EditorGUI.BeginChangeCheck();
                 Undo.RecordObject(grassSetting, "Blend Settings");
 
                 grassSetting.ambientStrength =
-                    GrassEditorHelper.FloatSlider("Ambient Strength", "", grassSetting.ambientStrength, 0f, 1f);
+                    CustomEditorHelper.FloatSlider("Ambient Strength", "", grassSetting.ambientStrength, 0f, 1f);
                 grassSetting.blendMultiply =
-                    GrassEditorHelper.FloatSlider("Blend Multiply", "", grassSetting.blendMultiply, 0f, 5f);
+                    CustomEditorHelper.FloatSlider("Blend Multiply", "", grassSetting.blendMultiply, 0f, 5f);
                 grassSetting.blendOffset =
-                    GrassEditorHelper.FloatSlider("Blend Offset", "", grassSetting.blendOffset, 0f, 1f);
+                    CustomEditorHelper.FloatSlider("Blend Offset", "", grassSetting.blendOffset, 0f, 1f);
                 if (grassSetting.materialToUse.HasProperty(GrassShaderPropertyID.AmbientAdjustmentColor))
                 {
                     grassSetting.ambientAdjustmentColor = EditorGUILayout.ColorField("Ambient Adjustment Color",
@@ -1212,17 +1213,17 @@ namespace Grass.Editor
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
-            GrassEditorHelper.DrawFoldoutSection("Shadow Settings", () =>
+            CustomEditorHelper.DrawFoldoutSection("Shadow Settings", () =>
             {
                 EditorGUI.BeginChangeCheck();
                 Undo.RecordObject(grassSetting, "Shadow Settings");
 
                 grassSetting.shadowDistance =
-                    GrassEditorHelper.FloatSlider("Shadow Distance", "", grassSetting.shadowDistance, 0f, 300f);
+                    CustomEditorHelper.FloatSlider("Shadow Distance", "", grassSetting.shadowDistance, 0f, 300f);
                 grassSetting.shadowFadeRange =
-                    GrassEditorHelper.FloatSlider("Shadow Fade Range", "", grassSetting.shadowFadeRange, 0.1f, 30f);
+                    CustomEditorHelper.FloatSlider("Shadow Fade Range", "", grassSetting.shadowFadeRange, 0.1f, 30f);
                 grassSetting.shadowBrightness =
-                    GrassEditorHelper.FloatSlider("Shadow Brightness", "", grassSetting.shadowBrightness, 0f, 1f);
+                    CustomEditorHelper.FloatSlider("Shadow Brightness", "", grassSetting.shadowBrightness, 0f, 1f);
                 grassSetting.shadowColor = EditorGUILayout.ColorField("Shadow Color", grassSetting.shadowColor);
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -1230,15 +1231,15 @@ namespace Grass.Editor
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
-            GrassEditorHelper.DrawFoldoutSection("Additional Light Settings", () =>
+            CustomEditorHelper.DrawFoldoutSection("Additional Light Settings", () =>
             {
                 EditorGUI.BeginChangeCheck();
                 Undo.RecordObject(grassSetting, "Additional Light Settings");
 
                 grassSetting.additionalLightIntensity =
-                    GrassEditorHelper.FloatSlider("Light Intensity", "", grassSetting.additionalLightIntensity, 0f, 1f);
+                    CustomEditorHelper.FloatSlider("Light Intensity", "", grassSetting.additionalLightIntensity, 0f, 1f);
                 grassSetting.additionalLightShadowStrength =
-                    GrassEditorHelper.FloatSlider("Shadow Strength", "", grassSetting.additionalLightShadowStrength, 0f,
+                    CustomEditorHelper.FloatSlider("Shadow Strength", "", grassSetting.additionalLightShadowStrength, 0f,
                         1f);
                 grassSetting.additionalLightShadowColor =
                     EditorGUILayout.ColorField("Shadow Color", grassSetting.additionalLightShadowColor);
@@ -1248,17 +1249,17 @@ namespace Grass.Editor
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
-            GrassEditorHelper.DrawFoldoutSection("Specular Settings", () =>
+            CustomEditorHelper.DrawFoldoutSection("Specular Settings", () =>
             {
                 EditorGUI.BeginChangeCheck();
                 Undo.RecordObject(grassSetting, "Specular Settings");
 
                 grassSetting.glossiness =
-                    GrassEditorHelper.FloatSlider("Glossiness", "", grassSetting.glossiness, 0f, 10f);
+                    CustomEditorHelper.FloatSlider("Glossiness", "", grassSetting.glossiness, 0f, 10f);
                 grassSetting.specularStrength =
-                    GrassEditorHelper.FloatSlider("Specular Strength", "", grassSetting.specularStrength, 0f, 1f);
+                    CustomEditorHelper.FloatSlider("Specular Strength", "", grassSetting.specularStrength, 0f, 1f);
                 grassSetting.specularHeight =
-                    GrassEditorHelper.FloatSlider("Specular Height", "", grassSetting.specularHeight, 0f, 1f);
+                    CustomEditorHelper.FloatSlider("Specular Height", "", grassSetting.specularHeight, 0f, 1f);
 
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -1266,7 +1267,7 @@ namespace Grass.Editor
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
-            GrassEditorHelper.DrawFoldoutSection(new GUIContent(EditorIcons.Cube) { text = "Blade Amount Settings" },
+            CustomEditorHelper.DrawFoldoutSection(new GUIContent(EditorIcons.Cube) { text = "Blade Amount Settings" },
                 () =>
                 {
                     EditorGUI.BeginChangeCheck();
@@ -1283,19 +1284,23 @@ namespace Grass.Editor
                         EditorUtility.SetDirty(grassSetting);
                     }
                 });
-            GrassEditorHelper.DrawFoldoutSection(new GUIContent(EditorIcons.Cube) { text = "LOD Settings" }, () =>
+            CustomEditorHelper.DrawFoldoutSection(new GUIContent(EditorIcons.Cube) { text = "LOD Settings" }, () =>
             {
                 EditorGUI.BeginChangeCheck();
                 Undo.RecordObject(grassSetting, "LOD Settings");
 
-                GrassLODSettingEditor.DrawLODSettingsPanel(grassSetting);
+                grassSetting.minFadeDistance = EditorGUILayout.Slider("Min Fade Distance", grassSetting.minFadeDistance,
+                    0f, grassSetting.maxFadeDistance - 1);
+                grassSetting.maxFadeDistance = EditorGUILayout.Slider("Max Fade Distance", grassSetting.maxFadeDistance,
+                    grassSetting.minFadeDistance + 1, 500f);
+
                 if (EditorGUI.EndChangeCheck())
                 {
                     grassCompute.LODSetting();
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
-            GrassEditorHelper.DrawFoldoutSection(new GUIContent(EditorIcons.Cube) { text = "Culling Settings" },
+            CustomEditorHelper.DrawFoldoutSection(new GUIContent(EditorIcons.Cube) { text = "Culling Settings" },
                 () =>
                 {
                     EditorGUILayout.LabelField(
@@ -1312,7 +1317,7 @@ namespace Grass.Editor
                     {
                         text = "Show Culling Bounds",
                     };
-                    if (GrassEditorHelper.DrawToggleButton(showCullingBounds, grassSetting.drawBounds,
+                    if (CustomEditorHelper.DrawToggleButton(showCullingBounds, grassSetting.drawBounds,
                             out var showDrawBounds))
                     {
                         grassSetting.drawBounds = showDrawBounds;
@@ -1322,7 +1327,7 @@ namespace Grass.Editor
                     {
                         text = "Show All Bounds",
                     };
-                    if (GrassEditorHelper.DrawToggleButton(showAllCullingBoundsText, grassSetting.drawAllBounds,
+                    if (CustomEditorHelper.DrawToggleButton(showAllCullingBoundsText, grassSetting.drawAllBounds,
                             out var showAllCullingBounds))
                     {
                         grassSetting.drawAllBounds = showAllCullingBounds;
@@ -1333,12 +1338,12 @@ namespace Grass.Editor
                     grassSetting.cullingTreeDepth =
                         EditorGUILayout.IntSlider("Depth", grassSetting.cullingTreeDepth, 1, 10);
                 });
-            GrassEditorHelper.DrawFoldoutSection("Other Settings", () =>
+            CustomEditorHelper.DrawFoldoutSection("Other Settings", () =>
             {
                 EditorGUI.BeginChangeCheck();
                 Undo.RecordObject(grassSetting, "Interactor Strength");
 
-                grassSetting.interactorStrength = GrassEditorHelper.FloatSlider("Interactor Strength", "",
+                grassSetting.interactorStrength = CustomEditorHelper.FloatSlider("Interactor Strength", "",
                     grassSetting.interactorStrength, 0f, 1f);
 
                 grassSetting.castShadow = (UnityEngine.Rendering.ShadowCastingMode)EditorGUILayout.EnumPopup(
@@ -1372,7 +1377,7 @@ namespace Grass.Editor
 
             // Note: This max value (20) must match the MAX_ZONES define in the grass compute shader.
             // Search #define MAX_ZONES 20
-            grassSetting.maxZoneCount = GrassEditorHelper.IntSlider("Max Zone Count",
+            grassSetting.maxZoneCount = CustomEditorHelper.IntSlider("Max Zone Count",
                 "Maximum number of Season Zones allowed in the scene.", grassSetting.maxZoneCount, 1, 20);
 
             GrassEditorHelper.DrawSeasonSettings(grassSetting.seasonSettings, grassSetting);

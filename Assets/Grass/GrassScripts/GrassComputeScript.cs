@@ -53,6 +53,8 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
     private Quaternion _cachedCamRot;
     private int _interactorDataID;
 
+    private IGrassColorProvider _colorProvider;
+
     private readonly uint[] _argsBufferReset =
     {
         0, // Number of vertices to render (Calculated in the compute shader with "InterlockedAdd(_IndirectArgsBuffer[0].numVertices);")
@@ -230,9 +232,9 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
     private void RegisterEvents()
     {
-        _addBinding = new EventBinding<InteractorAddedEvent>(InteractorAddEvent);
-        _removeBinding = new EventBinding<InteractorRemovedEvent>(InteractorRemoveEvent);
+        _addBinding = new EventBinding<InteractorAddedEvent>(AddInteractorEvent);
         EventBus<InteractorAddedEvent>.Register(_addBinding);
+        _removeBinding = new EventBinding<InteractorRemovedEvent>(RemoveInteractorEvent);
         EventBus<InteractorRemovedEvent>.Register(_removeBinding);
     }
 
@@ -480,17 +482,15 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
                 {
                     if (_cutIDs[currentIndex] - 0.1f > hitPointY || Mathf.Approximately(_cutIDs[currentIndex], -1))
                     {
-                        var colorEvent = new GrassColorEvent
-                        {
-                            position = grassPosition,
-                            grassColor = new Color(
-                                grassData[currentIndex].color.x,
-                                grassData[currentIndex].color.y,
-                                grassData[currentIndex].color.z)
-                        };
-                        EventBus<GrassColorEvent>.Raise(ref colorEvent);
+                        var baseColor = new Color(
+                            grassData[currentIndex].color.x,
+                            grassData[currentIndex].color.y,
+                            grassData[currentIndex].color.z);
+
+                        var finalColor = _colorProvider?.GetGrassColor(grassPosition, baseColor) ?? baseColor;
+
                         // 이벤트 처리 후의 결과 색상으로 파티클을 생성합니다
-                        SpawnCuttingParticle(grassPosition, colorEvent.grassColor);
+                        SpawnCuttingParticle(grassPosition, finalColor);
                     }
 
                     _cutIDs[currentIndex] = hitPointY;
@@ -501,18 +501,23 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         _cutBuffer.SetData(_cutIDs);
     }
 
+    public void SetColorProvider(IGrassColorProvider provider)
+    {
+        _colorProvider = provider;
+    }
+
     private void SpawnCuttingParticle(Vector3 position, Color col)
     {
         var leafParticle = PoolObjectManager.Get<ParticleSystem>(PoolObjectKey.Leaf, position).main;
         leafParticle.startColor = new ParticleSystem.MinMaxGradient(col);
     }
 
-    private void InteractorAddEvent(InteractorAddedEvent evt)
+    private void AddInteractorEvent(InteractorAddedEvent evt)
     {
         _interactors.Add(evt.data);
     }
 
-    private void InteractorRemoveEvent(InteractorRemovedEvent evt)
+    private void RemoveInteractorEvent(InteractorRemovedEvent evt)
     {
         _interactors.Remove(evt.data);
     }

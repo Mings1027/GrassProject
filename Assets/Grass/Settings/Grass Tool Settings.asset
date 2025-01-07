@@ -12,24 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e75937a28f6b4052a5569264b304e07, type: 3}
   m_Name: Grass Tool Settings
   m_EditorClassIdentifier: 
-  layerEnabled: 010101010101000101000101
+  layerEnabled: 010001
   heightFading:
+  - 0.7
   - 0.2
-  - 0.4
-  - 0.6
-  - 0.8
   - 1
-  - 1.2
-  - 1.4
-  - 1
-  - 1.7
-  - 1.8
-  - 1
-  - 2
   vertexColorSettings: 0
   vertexFade: 0
   grassWidth: 0.5
-  grassHeight: 3
+  grassHeight: 0.5
   adjustWidth: -0.23
   adjustHeight: -0.22
   adjustWidthMax: 0.3
@@ -44,13 +35,13 @@ MonoBehaviour:
   paintBlockMask:
     serializedVersion: 2
     m_Bits: 64
-  brushSize: 7.45
+  brushSize: 14.15
   brushTransitionSpeed: 1
   normalLimit: 1
   allowUndersideGrass: 1
   density: 175
-  grassSpacing: 1
-  brushHeight: 33.2
+  grassSpacing: 0.75
+  brushHeight: 24.60002
   generateGrassCount: 529183
   grassMouseButton: 0
   brushSizeShortcut: 2

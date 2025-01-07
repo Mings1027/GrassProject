@@ -1,8 +1,8 @@
 {
-    "name": "EventBusSystem",
+    "name": "Pool",
     "rootNamespace": "",
     "references": [
-        "GUID:3f5837b5263e84596a6f3c027a9deb1f"
+        "GUID:f51ebe6a0ceec4240a699833d6309b23"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

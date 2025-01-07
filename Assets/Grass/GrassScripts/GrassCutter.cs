@@ -8,7 +8,8 @@ public class GrassCutter : MonoBehaviour
     private GrassComputeScript _grassCompute;
     [SerializeField] private InputActionReference cutAction;
     [SerializeField] private float radius = 1f;
-    [SerializeField, Range(0, 1)] private float minMoveDistance = 0.5f;
+    [SerializeField, Range(0, 1)]
+    private float minMoveDistance = 0.5f;
 
     public bool updateCuts;
 
@@ -38,7 +39,7 @@ public class GrassCutter : MonoBehaviour
 
     private void Update()
     {
-        if (updateCuts)
+        if (updateCuts && _grassCompute.isActiveAndEnabled)
         {
             var distance = Vector3.Distance(transform.position, _cachedPos);
 

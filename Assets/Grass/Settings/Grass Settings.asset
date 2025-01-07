@@ -23,8 +23,8 @@ MonoBehaviour:
   minHeight: 0.01
   maxHeight: 3
   randomHeightMin: 0
-  randomHeightMax: 0.2999999
-  windSpeed: 6.04
+  randomHeightMax: 0.3
+  windSpeed: 6
   windStrength: 0.3
   windDirection: 45
   windDirectionVector: {x: 0.70710677, y: 0.70710677}

@@ -1,3 +1,4 @@
+using EditorHelper;
 using UnityEditor;
 using UnityEngine;
 using Grass.GrassScripts;
@@ -44,7 +45,7 @@ namespace Grass.Editor
         {
             var gizmosContent = new GUIContent(EditorIcons.Gizmos) { text = "Toggle All Gizmos" };
             EditorGUI.BeginChangeCheck();
-            if (GrassEditorHelper.DrawToggleButton(gizmosContent, _showAllGizmos, out var newState))
+            if (CustomEditorHelper.DrawToggleButton(gizmosContent, _showAllGizmos, out var newState))
             {
                 _showAllGizmos = newState;
                 SetAllGizmos(_showAllGizmos);

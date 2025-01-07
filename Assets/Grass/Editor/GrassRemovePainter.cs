@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using EditorHelper;
 using Grass.Editor;
 using UnityEngine;
 
@@ -26,7 +27,7 @@ public sealed class GrassRemovePainter : BasePainter
         _currentBrushRadiusSqr = radius * radius;
         var minMoveSqr = _currentBrushRadiusSqr * MinRemoveDistanceFactor;
 
-        if (GrassEditorHelper.SqrDistance(hitPoint, _lastBrushPosition) < minMoveSqr)
+        if (CustomEditorHelper.SqrDistance(hitPoint, _lastBrushPosition) < minMoveSqr)
             return;
 
         _lastBrushPosition = hitPoint;
@@ -41,7 +42,7 @@ public sealed class GrassRemovePainter : BasePainter
             if (index >= 0 && index < grassList.Count)
             {
                 var grassPosition = grassList[index].position;
-                if (GrassEditorHelper.SqrDistance(grassPosition, hitPoint) <= _currentBrushRadiusSqr)
+                if (CustomEditorHelper.SqrDistance(grassPosition, hitPoint) <= _currentBrushRadiusSqr)
                 {
                     // 해당 잔디를 완전히 잘린 상태로 표시 (높이를 0으로 설정)
                     cutIDs[index] = 0f;

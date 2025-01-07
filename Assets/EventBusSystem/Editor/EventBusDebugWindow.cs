@@ -1,12 +1,11 @@
 using UnityEditor;
 using UnityEngine;
-using System.Linq;
 using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Reflection;
+using EditorHelper;
 using EventBusSystem.Scripts;
-using Grass.Editor;
 
 #if UNITY_EDITOR
 public class EventBusDebugWindow : EditorWindow
@@ -14,18 +13,14 @@ public class EventBusDebugWindow : EditorWindow
     private Vector2 _scrollPosition;
     private List<Type> _cachedEventTypes;
 
-    [MenuItem("Tools/Event Bus Debug")]
+    [MenuItem("Tools/Event Bus/Event Bus Debug")]
     public static void ShowWindow()
     {
         var window = GetWindow<EventBusDebugWindow>("Event Bus Debug");
         window.Show();
     }
 
-    private void OnEnable()
-    {
-        UpdateEventTypesCache();
-        
-    }
+    private void OnEnable() => UpdateEventTypesCache();
 
     private void UpdateEventTypesCache()
     {
@@ -34,8 +29,14 @@ public class EventBusDebugWindow : EditorWindow
 
     private void OnGUI()
     {
-        // Global debug toggle
-        if (EventBusEditorHelper.DrawToggleButton("Enable All Event Bus Log", EventBusDebug.EnableLog,
+        DrawGlobalControls();
+        DrawEventTypeList();
+        DrawClearAllButton();
+    }
+
+    private void DrawGlobalControls()
+    {
+        if (CustomEditorHelper.DrawToggleButton("Enable All Event Bus Log", EventBusDebug.EnableLog,
                 out var enableLog))
         {
             EventBusDebug.SetLogEnabled(enableLog);
@@ -45,54 +46,182 @@ public class EventBusDebugWindow : EditorWindow
 
         EditorGUILayout.Space(10);
 
-        // Button to refresh event types
         if (GUILayout.Button("Refresh Event Types"))
         {
             UpdateEventTypesCache();
         }
+    }
 
+    private void DrawEventTypeList()
+    {
         _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
 
-        if (_cachedEventTypes == null || _cachedEventTypes.Count == 0)
+        if (_cachedEventTypes?.Count > 0)
         {
-            EditorGUILayout.HelpBox("No event types found. Try refreshing event types.", MessageType.Info);
+            if (Application.isPlaying)
+            {
+                DisplayEventList(DisplayRuntimeEventInfo);
+                Repaint();
+            }
+            else
+            {
+                DisplayEventList(DisplayEditorTimeEventInfo);
+            }
         }
         else
         {
-            DisplayEventTypes();
+            EditorGUILayout.HelpBox("No event types found. Try refreshing event types.", MessageType.Info);
         }
 
         EditorGUILayout.EndScrollView();
-
         EditorGUILayout.Space(10);
+    }
 
-        // Clear all buses button
-        var prevColor = GUI.backgroundColor;
-        GUI.backgroundColor = new Color(1f, 0.4f, 0.4f);
-
-        if (GUILayout.Button("Clear ALL Event Buses", GUILayout.Height(30)))
+    private void DisplayEventList(Action<Type> displayFunc)
+    {
+        foreach (var eventType in _cachedEventTypes)
         {
-            string message = Application.isPlaying 
-                ? "Are you sure you want to clear ALL event buses?\nThis will remove all registered listeners from every event bus."
-                : "Are you sure you want to clear ALL event buses?\nThis will remove all registered listeners including those registered in Edit Mode.";
-        
-            if (EditorUtility.DisplayDialog("Clear All Event Buses",
-                    message,
-                    "Yes, Clear All", "Cancel"))
+            CustomEditorHelper.DrawFoldoutSection($"Event: {eventType.Name}", () =>
             {
-                EventBusUtil.ClearAllBuses();
-        
-                // Force repaint all inspector windows to reflect the changes
-                foreach (var editor in ActiveEditorTracker.sharedTracker.activeEditors)
-                {
-                    editor.Repaint();
-                }
-        
-                Debug.Log($"Cleared all event buses in {(Application.isPlaying ? "Play" : "Edit")} mode");
+                DisplayEventProperties(eventType);
+                EditorGUILayout.Space(5);
+                displayFunc(eventType);
+            });
+        }
+    }
+
+    private void DisplayEditorTimeEventInfo(Type eventType)
+    {
+        var busType = typeof(EventBus<>).MakeGenericType(eventType);
+        var activeBindings = (int)busType.GetMethod("GetActiveBindingsCount")?.Invoke(null, null);
+
+        DisplayLogToggle(eventType.Name, busType);
+        if (activeBindings > 0)
+        {
+            EditorGUILayout.Space(5);
+            EditorGUILayout.LabelField($"Editor-time Active Bindings: {activeBindings}", EditorStyles.boldLabel);
+            DisplayRegisteredMethodsList(busType);
+        }
+        else
+        {
+            EditorGUILayout.LabelField("No editor-time bindings registered");
+        }
+    }
+
+    private void DisplayRuntimeEventInfo(Type eventType)
+    {
+        var busType = typeof(EventBus<>).MakeGenericType(eventType);
+
+        DisplayLogToggle(eventType.Name, busType);
+        DisplayEventStats(busType);
+        DisplayRegisteredMethodsList(busType);
+        DisplayClearButton(eventType, busType);
+    }
+
+    private void DisplayEventStats(Type busType)
+    {
+        var activeBindings = (int)busType.GetMethod("GetActiveBindingsCount")?.Invoke(null, null);
+        var totalRaised = (int)busType.GetMethod("GetTotalEventsRaised")?.Invoke(null, null);
+
+        EditorGUILayout.LabelField($"Active Bindings: {activeBindings}");
+        EditorGUILayout.LabelField($"Total Events Raised: {totalRaised}");
+    }
+
+    private void DisplayRegisteredMethodsList(Type busType)
+    {
+        var getRegisteredList = busType.GetMethod("GetRegisteredList");
+        if (getRegisteredList != null)
+        {
+            EditorGUILayout.Space(5);
+            EditorGUILayout.LabelField("Registered Methods:", EditorStyles.boldLabel);
+            var registeredMethods = (List<string>)getRegisteredList.Invoke(null, null);
+            DisplayRegisteredMethods(registeredMethods);
+        }
+    }
+
+    private void DisplayRegisteredMethods(List<string> registeredMethods)
+    {
+        if (registeredMethods?.Count > 0)
+        {
+            EditorGUI.indentLevel++;
+            var linkStyle = CreateLinkStyle();
+
+            foreach (var method in registeredMethods)
+            {
+                DrawMethodLink(method, linkStyle);
+            }
+
+            EditorGUI.indentLevel--;
+        }
+    }
+
+    private GUIStyle CreateLinkStyle()
+    {
+        return new GUIStyle(EditorStyles.label)
+        {
+            normal = { textColor = new Color(0.3f, 0.7f, 1f) },
+            hover = { textColor = new Color(1f, 1f, 1f) },
+            padding = new RectOffset(15, 0, 0, 0)
+        };
+    }
+
+    private void DrawMethodLink(string method, GUIStyle linkStyle)
+    {
+        var rect = EditorGUILayout.GetControlRect();
+        var bulletRect = new Rect(rect.x, rect.y, 15, rect.height);
+        var linkRect = new Rect(rect.x + 15, rect.y, rect.width - 15, rect.height);
+
+        EditorGUI.LabelField(bulletRect, "•");
+
+        if (GUI.Button(linkRect, method, linkStyle))
+        {
+            OpenScriptWithMethod(method);
+        }
+
+        if (linkRect.Contains(Event.current.mousePosition))
+        {
+            EditorGUIUtility.AddCursorRect(linkRect, MouseCursor.Link);
+        }
+    }
+
+    private void DrawClearAllButton()
+    {
+        bool hasAnyBindings = false;
+        foreach (var eventType in _cachedEventTypes)
+        {
+            var busType = typeof(EventBus<>).MakeGenericType(eventType);
+            var activeBindings = (int)busType.GetMethod("GetActiveBindingsCount")?.Invoke(null, null);
+            if (activeBindings > 0)
+            {
+                hasAnyBindings = true;
+                break;
             }
         }
 
-        GUI.backgroundColor = prevColor;
+        if (hasAnyBindings)
+        {
+            var prevColor = GUI.backgroundColor;
+            GUI.backgroundColor = new Color(1f, 0.4f, 0.4f);
+
+            var buttonText = Application.isPlaying
+                ? "Clear ALL Runtime Event Buses"
+                : "Clear ALL Editor Event Buses";
+
+            if (GUILayout.Button(buttonText, GUILayout.Height(30)))
+            {
+                string message = Application.isPlaying
+                    ? "Are you sure you want to clear ALL event buses?\nThis will remove all registered listeners from every event bus."
+                    : "Are you sure you want to clear ALL event buses?\nThis will remove all registered listeners including those registered in Edit Mode.";
+
+                if (EditorUtility.DisplayDialog("Clear All Event Buses", message, "Yes, Clear All", "Cancel"))
+                {
+                    EventBusUtil.ClearAllBuses();
+                    Debug.Log($"Cleared all event buses in {(Application.isPlaying ? "Play" : "Edit")} mode");
+                }
+            }
+
+            GUI.backgroundColor = prevColor;
+        }
     }
 
     private void SetAllEventBusLogs(bool enabled)
@@ -109,182 +238,31 @@ public class EventBusDebugWindow : EditorWindow
         }
     }
 
-    private void DisplayEventTypes()
+    private void DisplayLogToggle(string eventTypeName, Type busType)
     {
-        foreach (var eventType in _cachedEventTypes)
+        bool currentState = EventBusDebug.GetEventSpecificLogEnabled(eventTypeName);
+        if (CustomEditorHelper.DrawToggleButton("Enable Log", currentState, out var newState))
         {
-            EventBusEditorHelper.DrawFoldoutSection($"Event: {eventType.Name}", () =>
+            EventBusDebug.SetEventSpecificLogEnabled(eventTypeName, newState);
+            var setLogEnabled = busType.GetMethod("SetLogEnabled");
+            if (setLogEnabled != null)
             {
-                var properties = eventType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-                if (properties.Length > 0)
-                {
-                    EditorGUI.indentLevel++;
-                    EditorGUILayout.LabelField("Properties:", EditorStyles.boldLabel);
-                    foreach (var prop in properties)
-                    {
-                        EditorGUILayout.LabelField($"• {prop.PropertyType.Name} {prop.Name}");
-                    }
-
-                    EditorGUI.indentLevel--;
-                }
-
-                if (Application.isPlaying)
-                {
-                    DisplayRuntimeStats(eventType);
-                }
-                else
-                {
-                    DisplayEditorTimeStats(eventType);
-                }
-            });
-        }
-
-        if (!Application.isPlaying)
-        {
-            EditorGUILayout.HelpBox(
-                "Enable 'Show Editor-time Bindings' to see event bindings registered during edit mode, or enter play mode to see runtime statistics.",
-                MessageType.Info
-            );
+                setLogEnabled.Invoke(null, new object[] { newState });
+            }
         }
     }
 
-    private void DisplayEditorTimeStats(Type eventType)
+    private void DisplayClearButton(Type eventType, Type busType)
     {
-        var busType = typeof(EventBus<>).MakeGenericType(eventType);
         var activeBindings = (int)busType.GetMethod("GetActiveBindingsCount")?.Invoke(null, null);
 
-        if (activeBindings > 0)
-        {
-            EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField($"Editor-time Active Bindings: {activeBindings}", EditorStyles.boldLabel);
-
-            var getRegisteredList = busType.GetMethod("GetRegisteredList");
-            if (getRegisteredList != null)
-            {
-                var registeredMethods = (List<string>)getRegisteredList.Invoke(null, null);
-                if (registeredMethods != null && registeredMethods.Count > 0)
-                {
-                    EditorGUI.indentLevel++;
-
-                    var linkStyle = new GUIStyle(EditorStyles.label)
-                    {
-                        normal = { textColor = new Color(0.3f, 0.7f, 1f) },
-                        hover = { textColor = new Color(1f, 1f, 1f) }
-                    };
-                    linkStyle.padding.left = 15; // 들여쓰기를 위한 패딩
-
-                    foreach (var method in registeredMethods)
-                    {
-                        var rect = EditorGUILayout.GetControlRect();
-                        var bulletRect = new Rect(rect.x, rect.y, 15, rect.height);
-                        var linkRect = new Rect(rect.x + 15, rect.y, rect.width - 15, rect.height);
-
-                        // 불릿 포인트 그리기
-                        EditorGUI.LabelField(bulletRect, "•");
-
-                        // 링크처럼 보이는 메서드 이름
-                        if (GUI.Button(linkRect, method, linkStyle))
-                        {
-                            OpenScriptWithMethod(method);
-                        }
-
-                        // 마우스가 링크 위에 있을 때 커서 변경
-                        GUIUtility.GetControlID(FocusType.Passive);
-                        if (linkRect.Contains(Event.current.mousePosition))
-                        {
-                            EditorGUIUtility.AddCursorRect(linkRect, MouseCursor.Link);
-                        }
-                    }
-
-                    EditorGUI.indentLevel--;
-                }
-            }
-        }
-        else
-        {
-            EditorGUILayout.LabelField("No editor-time bindings registered");
-        }
-    }
-
-    private void DisplayRuntimeStats(Type eventType)
-    {
-        var busType = typeof(EventBus<>).MakeGenericType(eventType);
-
-        var activeBindings = (int)busType.GetMethod("GetActiveBindingsCount")?.Invoke(null, null);
-        var totalRaised = (int)busType.GetMethod("GetTotalEventsRaised")?.Invoke(null, null);
-
-        EditorGUILayout.Space(5);
-
-        var setLogEnabled = busType.GetMethod("SetLogEnabled");
-        if (setLogEnabled != null)
-        {
-            var getLogEnabled = busType.GetField("localLogEnabled", BindingFlags.NonPublic | BindingFlags.Static);
-            if (getLogEnabled != null)
-            {
-                var currentLogEnabled = (bool)getLogEnabled.GetValue(null);
-                var newLogEnabled = EditorGUILayout.Toggle("Enable Log", currentLogEnabled);
-                if (newLogEnabled != currentLogEnabled)
-                {
-                    setLogEnabled.Invoke(null, new object[] { newLogEnabled });
-                }
-            }
-        }
-
-        EditorGUILayout.LabelField($"Active Bindings: {activeBindings}");
-        EditorGUILayout.LabelField($"Total Events Raised: {totalRaised}");
-
-        var getRegisteredList = busType.GetMethod("GetRegisteredList");
-        if (getRegisteredList != null)
-        {
-            var registeredMethods = (List<string>)getRegisteredList.Invoke(null, null);
-            if (registeredMethods != null && registeredMethods.Count > 0)
-            {
-                EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("Registered Methods:", EditorStyles.boldLabel);
-                EditorGUI.indentLevel++;
-
-                var linkStyle = new GUIStyle(EditorStyles.label)
-                {
-                    normal = { textColor = new Color(0.3f, 0.7f, 1f) },
-                    hover = { textColor = new Color(1f, 1f, 1f) }
-                };
-                linkStyle.padding.left = 15; // 들여쓰기를 위한 패딩
-
-                foreach (var method in registeredMethods)
-                {
-                    var rect = EditorGUILayout.GetControlRect();
-                    var bulletRect = new Rect(rect.x, rect.y, 15, rect.height);
-                    var linkRect = new Rect(rect.x + 15, rect.y, rect.width - 15, rect.height);
-
-                    // 불릿 포인트 그리기
-                    EditorGUI.LabelField(bulletRect, "•");
-
-                    // 링크처럼 보이는 메서드 이름
-                    if (GUI.Button(linkRect, method, linkStyle))
-                    {
-                        OpenScriptWithMethod(method);
-                    }
-
-                    // 마우스가 링크 위에 있을 때 커서 변경
-                    GUIUtility.GetControlID(FocusType.Passive);
-                    if (linkRect.Contains(Event.current.mousePosition))
-                    {
-                        EditorGUIUtility.AddCursorRect(linkRect, MouseCursor.Link);
-                    }
-                }
-
-                EditorGUI.indentLevel--;
-            }
-        }
-
-        if (GUILayout.Button($"Clear {eventType.Name} Event Bus"))
+        if (activeBindings > 0 && GUILayout.Button($"Clear {eventType.Name} Event Bus"))
         {
             if (EditorUtility.DisplayDialog($"Clear {eventType.Name} Event Bus",
                     $"Are you sure you want to clear {eventType.Name} event bus? This will remove all registered listeners.",
                     "Yes", "No"))
             {
-                var clearMethod = busType.GetMethod("Clear",
-                    BindingFlags.NonPublic | BindingFlags.Static);
+                var clearMethod = busType.GetMethod("Clear", BindingFlags.NonPublic | BindingFlags.Static);
                 if (clearMethod != null)
                 {
                     clearMethod.Invoke(null, null);
@@ -352,6 +330,22 @@ public class EventBusDebugWindow : EditorWindow
         }
 
         return -1;
+    }
+
+    private static void DisplayEventProperties(Type eventType)
+    {
+        var properties = eventType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+        if (properties.Length > 0)
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.LabelField("Properties:", EditorStyles.boldLabel);
+            foreach (var prop in properties)
+            {
+                EditorGUILayout.LabelField($"• {prop.PropertyType.Name} {prop.Name}");
+            }
+
+            EditorGUI.indentLevel--;
+        }
     }
 }
 #endif

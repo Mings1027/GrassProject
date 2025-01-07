@@ -5,10 +5,9 @@ using UnityEditor;
 using UnityEngine;
 
 [ExecuteInEditMode]
-public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
+public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>, IGrassColorProvider
 {
     private GrassComputeScript _grassComputeScript;
-    private EventBinding<GrassColorEvent> _colorBinding;
 
     [SerializeField] private float globalSeasonValue;
     [SerializeField] private List<GrassSeasonZone> seasonZones = new();
@@ -18,7 +17,7 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
     private void OnEnable()
     {
         _grassComputeScript = FindAnyObjectByType<GrassComputeScript>();
-        RegisterEvents();
+        _grassComputeScript.SetColorProvider(this);
         foreach (var zone in seasonZones)
         {
             SubscribeToZone(zone);
@@ -30,7 +29,10 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
 
     private void OnDisable()
     {
-        UnregisterEvents();
+        if (_grassComputeScript != null)
+        {
+            _grassComputeScript.SetColorProvider(null);
+        }
 
         foreach (var zone in seasonZones)
         {
@@ -69,27 +71,17 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>
         }
     }
 
-    private void RegisterEvents()
-    {
-        _colorBinding = new EventBinding<GrassColorEvent>(GetSeasonGrassColor);
-        EventBus<GrassColorEvent>.Register(_colorBinding);
-    }
-
-    private void GetSeasonGrassColor(ref GrassColorEvent evt)
+    public Color GetGrassColor(Vector3 position, Color defaultColor)
     {
         foreach (var zone in seasonZones)
         {
-            if (zone.gameObject.activeInHierarchy && zone.ContainsPosition(evt.position))
+            if (zone.gameObject.activeInHierarchy && zone.ContainsPosition(position))
             {
-                evt.grassColor = zone.GetZoneColor();
-                break;
+                return zone.GetZoneColor();
             }
         }
-    }
 
-    private void UnregisterEvents()
-    {
-        EventBus<GrassColorEvent>.Deregister(_colorBinding);
+        return defaultColor;
     }
 
     public void Init()

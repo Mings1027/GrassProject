@@ -1,21 +1,25 @@
+using System;
 using System.Collections.Generic;
+
+#if UNITY_EDITOR
 using System.Diagnostics;
 using Debug = UnityEngine.Debug;
+#endif
 
 namespace EventBusSystem.Scripts
 {
     public static class EventBus<T> where T : IEvent
     {
         private static readonly HashSet<IEventBinding<T>> Bindings = new();
-        private static readonly HashSet<IEventBinding<T>> snapshots = new();
+        private static readonly HashSet<IEventBinding<T>> Snapshots = new();
 
 #if UNITY_EDITOR
-        private static bool localLogEnabled = false;
-        private static int eventRaiseCount = 0;
+        private static bool _localLogEnabled;
+        private static int _eventRaiseCount;
 
-        public static void SetLogEnabled(bool enable) => localLogEnabled = enable;
+        public static void SetLogEnabled(bool enable) => _localLogEnabled = enable;
 
-        private static bool IsEnableLog => localLogEnabled || EventBusDebug.EnableLog;
+        private static bool IsEnableLog => _localLogEnabled || EventBusDebug.EnableLog;
 #endif
 
         public static void Register(EventBinding<T> binding)
@@ -51,13 +55,13 @@ namespace EventBusSystem.Scripts
         public static void Raise(T @event)
         {
 #if UNITY_EDITOR
-            eventRaiseCount++;
+            _eventRaiseCount++;
             var timer = IsEnableLog ? Stopwatch.StartNew() : null;
 #endif
-            snapshots.Clear();
-            snapshots.UnionWith(Bindings);
+            Snapshots.Clear();
+            Snapshots.UnionWith(Bindings);
 
-            foreach (var binding in snapshots)
+            foreach (var binding in Snapshots)
             {
                 binding.OnEvent?.Invoke(@event);
                 binding.OnEventNoArgs?.Invoke();
@@ -68,31 +72,7 @@ namespace EventBusSystem.Scripts
             {
                 timer.Stop();
                 Debug.Log($"[EventBus:{typeof(T).Name}] Event completed in {timer.ElapsedMilliseconds}ms " +
-                          $"(Total raised: {eventRaiseCount}, Active listeners: {Bindings.Count})");
-            }
-#endif
-        }
-
-        public static void Raise(ref T @event)
-        {
-#if UNITY_EDITOR
-            eventRaiseCount++;
-            var timer = IsEnableLog ? Stopwatch.StartNew() : null;
-#endif
-            snapshots.Clear();
-            snapshots.UnionWith(Bindings);
-
-            foreach (var binding in snapshots)
-            {
-                binding.OnRefEvent?.Invoke(ref @event);
-            }
-
-#if UNITY_EDITOR
-            if (IsEnableLog && timer != null)
-            {
-                timer.Stop();
-                Debug.Log($"[EventBus:{typeof(T).Name}] Ref event completed in {timer.ElapsedMilliseconds}ms " +
-                          $"(Total raised: {eventRaiseCount}, Active listeners: {Bindings.Count})");
+                          $"(Total raised: {_eventRaiseCount}, Active listeners: {Bindings.Count})");
             }
 #endif
         }
@@ -104,12 +84,12 @@ namespace EventBusSystem.Scripts
                 Debug.Log($"[EventBus:{typeof(T).Name}] Cleared {Bindings.Count} bindings");
 #endif
             Bindings.Clear();
-            snapshots.Clear();
+            Snapshots.Clear();
         }
 
 #if UNITY_EDITOR
         public static int GetActiveBindingsCount() => Bindings.Count;
-        public static int GetTotalEventsRaised() => eventRaiseCount;
+        public static int GetTotalEventsRaised() => _eventRaiseCount;
 
         public static List<string> GetRegisteredList()
         {
@@ -117,21 +97,35 @@ namespace EventBusSystem.Scripts
 
             foreach (var binding in Bindings)
             {
+                // Delegate 처리를 위한 헬퍼 함수
+                void ProcessDelegate(Delegate d)
+                {
+                    var method = d.Method;
+                    var declaringType = method.DeclaringType?.Name ?? "Unknown";
+                    var methodName = method.Name;
+
+                    // 컴파일러 생성 메서드 필터링
+                    bool isCompilerGenerated =
+                        methodName.Contains("<") || // 람다, 로컬 함수 등
+                        methodName.Contains("__") || // 컴파일러 생성 백업 필드
+                        methodName.StartsWith("get_") || // 자동 구현 프로퍼티 getter
+                        methodName.StartsWith("set_") || // 자동 구현 프로퍼티 setter
+                        methodName == ".ctor" || // 생성자
+                        methodName == ".cctor" || // 정적 생성자
+                        method.DeclaringType?.Name.Contains("<>") == true; // 컴파일러 생성 타입
+
+                    if (!isCompilerGenerated)
+                    {
+                        methodNames.Add($"{declaringType}.{methodName}");
+                    }
+                }
+
                 // Action<T> 델리게이트 체크
                 if (binding.OnEvent != null)
                 {
                     foreach (var d in binding.OnEvent.GetInvocationList())
                     {
-                        var declaringType = d.Method.DeclaringType?.Name ?? "Unknown";
-                        var methodName = d.Method.Name;
-                
-                        // 컴파일러 생성 메서드가 아닌 경우에만 추가
-                        if (!methodName.Contains("<"))
-                        {
-                            methodNames.Add($"{declaringType}.{methodName}");
-                        }
-                        // methodNames.Add($"{d.Method.DeclaringType?.Name}.{d.Method.Name}");
-
+                        ProcessDelegate(d);
                     }
                 }
 
@@ -140,32 +134,7 @@ namespace EventBusSystem.Scripts
                 {
                     foreach (var d in binding.OnEventNoArgs.GetInvocationList())
                     {
-                        var declaringType = d.Method.DeclaringType?.Name ?? "Unknown";
-                        var methodName = d.Method.Name;
-                
-                        // 컴파일러 생성 메서드가 아닌 경우에만 추가
-                        if (!methodName.Contains("<"))
-                        {
-                            methodNames.Add($"{declaringType}.{methodName}");
-                        }
-                        // methodNames.Add($"{d.Method.DeclaringType?.Name}.{d.Method.Name}");
-                    }
-                }
-
-                // RefEventHandler<T> 델리게이트 체크
-                if (binding.OnRefEvent != null)
-                {
-                    foreach (var d in binding.OnRefEvent.GetInvocationList())
-                    {
-                        var declaringType = d.Method.DeclaringType?.Name ?? "Unknown";
-                        var methodName = d.Method.Name;
-                
-                        // 컴파일러 생성 메서드가 아닌 경우에만 추가
-                        if (!methodName.Contains("<"))
-                        {
-                            methodNames.Add($"{declaringType}.{methodName}");
-                        }
-                        // methodNames.Add($"{d.Method.DeclaringType?.Name}.{d.Method.Name}");
+                        ProcessDelegate(d);
                     }
                 }
             }
@@ -182,8 +151,6 @@ namespace EventBusSystem.Scripts
                     count += binding.OnEvent.GetInvocationList().Length;
                 if (binding.OnEventNoArgs != null)
                     count += binding.OnEventNoArgs.GetInvocationList().Length;
-                if (binding.OnRefEvent != null)
-                    count += binding.OnRefEvent.GetInvocationList().Length;
             }
 
             return count;

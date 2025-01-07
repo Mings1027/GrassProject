@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System.Linq;
+using EditorHelper;
 using Grass.GrassScripts;
 
 namespace Grass.Editor
@@ -31,7 +32,7 @@ namespace Grass.Editor
 
             DrawGizmosToggle();
 
-            if (GrassEditorHelper.DrawToggleButton("Override Global Season Setting", _seasonZone.OverrideGlobalSettings,
+            if (CustomEditorHelper.DrawToggleButton("Override Global Season Setting", _seasonZone.OverrideGlobalSettings,
                     out var newState))
             {
                 _seasonZone.OverrideGlobalSettings = newState;
@@ -62,7 +63,7 @@ namespace Grass.Editor
         {
             var gizmosContent = new GUIContent(EditorIcons.Gizmos) { text = "Show Gizmos" };
             EditorGUI.BeginChangeCheck();
-            if (GrassEditorHelper.DrawToggleButton(gizmosContent, _showGizmos.boolValue, out var newState))
+            if (CustomEditorHelper.DrawToggleButton(gizmosContent, _showGizmos.boolValue, out var newState))
             {
                 _showGizmos.boolValue = newState;
                 SceneView.RepaintAll();
