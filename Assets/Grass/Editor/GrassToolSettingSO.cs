@@ -17,6 +17,7 @@ public class GrassToolSettingSo : ScriptableObject
 
     [Header("Terrain Layer Settings")]
     [SerializeField] private List<bool> layerEnabled = new();
+    [SerializeField] private List<float> widthFading = new();
     [SerializeField] private List<float> heightFading = new();
 
     [Header("Vertex Color Settings")]
@@ -80,6 +81,11 @@ public class GrassToolSettingSo : ScriptableObject
     {
         get => layerEnabled;
         set => layerEnabled = value;
+    }
+    public List<float> WidthFading
+    {
+        get => widthFading;
+        set => widthFading = value;
     }
     public List<float> HeightFading
     {
@@ -230,11 +236,13 @@ public class GrassToolSettingSo : ScriptableObject
     {
         Debug.Log($"Setting up initial tool settings for {layerCount} layers");
         layerEnabled = new List<bool>();
+        widthFading = new List<float>();
         heightFading = new List<float>();
 
         for (int i = 0; i < layerCount; i++)
         {
             layerEnabled.Add(true);
+            widthFading.Add(1f);
             heightFading.Add(1f);
         }
     }
@@ -245,6 +253,7 @@ public class GrassToolSettingSo : ScriptableObject
         while (layerEnabled.Count < newLayerCount)
         {
             layerEnabled.Add(true);
+            widthFading.Add(1f);
             heightFading.Add(1f);
         }
 
@@ -252,6 +261,7 @@ public class GrassToolSettingSo : ScriptableObject
         if (layerEnabled.Count > newLayerCount)
         {
             layerEnabled.RemoveRange(newLayerCount, layerEnabled.Count - newLayerCount);
+            widthFading.RemoveRange(newLayerCount, widthFading.Count - newLayerCount);
             heightFading.RemoveRange(newLayerCount, heightFading.Count - newLayerCount);
         }
     }

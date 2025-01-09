@@ -94,13 +94,17 @@ namespace EditorHelper
 
         public static bool DrawFoldoutSection(string title, Action drawContent)
         {
-            return DrawFoldoutSection(new GUIContent(title), drawContent);
+            return DrawFoldoutSection(title, null, drawContent);
         }
 
         public static bool DrawFoldoutSection(GUIContent titleContent, Action drawContent)
         {
-            var title = titleContent.text;
-            var prefKey = $"GrassTool_Foldout_{title}";
+            return DrawFoldoutSection(titleContent.text, null, drawContent);
+        }
+
+        public static bool DrawFoldoutSection(string title, string subtitle, Action drawContent)
+        {
+            var prefKey = $"Foldout_{title}";
             FoldoutStates.TryAdd(title, EditorPrefs.GetBool(prefKey, true));
 
             var headerStyle = new GUIStyle(GUI.skin.button)
@@ -112,20 +116,33 @@ namespace EditorHelper
                 margin = new RectOffset(0, 0, 5, 0)
             };
 
-            var contentStyle = new GUIStyle(EditorStyles.helpBox)
-            {
-                padding = new RectOffset(15, 15, 10, 10),
-                margin = new RectOffset(0, 0, 0, 0)
-            };
-
-            var rect = GUILayoutUtility.GetRect(titleContent, headerStyle, GUILayout.Height(25));
+            var fullTitle = new GUIContent($"{title}{(string.IsNullOrEmpty(subtitle) ? "" : " " + subtitle)}");
+            var rect = GUILayoutUtility.GetRect(fullTitle, headerStyle, GUILayout.Height(25));
             var arrowRect = new Rect(rect.x + 10, rect.y + 5, 20, 20);
 
-            if (GUI.Button(rect, titleContent, headerStyle))
+            if (GUI.Button(rect, title, headerStyle))
             {
                 FoldoutStates[title] = !FoldoutStates[title];
                 EditorPrefs.SetBool(prefKey, FoldoutStates[title]);
                 GUI.changed = true;
+            }
+
+            if (!string.IsNullOrEmpty(subtitle))
+            {
+                var subtitleStyle = new GUIStyle(headerStyle)
+                {
+                    fontSize = 11,
+                    fontStyle = FontStyle.Normal,
+                    normal = { textColor = new Color(0.7f, 0.7f, 0.7f) }
+                };
+
+                var subtitleRect = new Rect(
+                    rect.x + headerStyle.CalcSize(new GUIContent(title)).x + 5,
+                    rect.y,
+                    rect.width - headerStyle.CalcSize(new GUIContent(title)).x - 5,
+                    rect.height
+                );
+                GUI.Label(subtitleRect, subtitle, subtitleStyle);
             }
 
             var arrowContent = EditorGUIUtility.IconContent(FoldoutStates[title] ? "d_dropdown" : "d_forward");
@@ -133,6 +150,12 @@ namespace EditorHelper
 
             if (FoldoutStates[title])
             {
+                var contentStyle = new GUIStyle(EditorStyles.helpBox)
+                {
+                    padding = new RectOffset(15, 15, 10, 10),
+                    margin = new RectOffset(0, 0, 0, 0)
+                };
+
                 EditorGUILayout.BeginVertical(contentStyle);
                 drawContent?.Invoke();
                 EditorGUILayout.EndVertical();

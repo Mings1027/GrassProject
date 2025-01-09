@@ -1,3 +1,22 @@
+// This describes a vertex on the generated mesh
+struct DrawVertex
+{
+    float3 positionWS; // The position in world space
+    float2 uv;
+};
+
+// A triangle on the generated mesh
+struct DrawTriangle
+{
+    float3 normalOS;
+    float3 diffuseColor;
+    float4 extraBuffer;
+    DrawVertex vertices[3]; // The three points on the triangle
+};
+
+// A buffer containing the generated mesh
+StructuredBuffer<DrawTriangle> _DrawTriangles; // 읽는 역할
+
 half CalculateVerticalFade(half2 uv)
 {
     half blendMul = uv.y * _BlendMultiply;
@@ -82,8 +101,21 @@ FragmentData Vertex(VertexData input)
 {
     FragmentData output;
 
-    GetComputeData_float(input.vertexID, output.worldPos, output.normalWS, output.uv, output.diffuseColor,
-                         output.extraBuffer);
+    DrawTriangle tri = _DrawTriangles[input.vertexID / 3];
+    DrawVertex vert = tri.vertices[input.vertexID % 3];
+    output.worldPos = vert.positionWS;
+    output.normalWS = tri.normalOS;
+    output.uv = vert.uv;
+    output.diffuseColor = tri.diffuseColor;
+
+    if (tri.extraBuffer.x == -1)
+    {
+        output.extraBuffer = float4(99999, tri.extraBuffer.y, tri.extraBuffer.z, tri.extraBuffer.w);
+    }
+    else
+    {
+        output.extraBuffer = tri.extraBuffer;
+    }
     output.positionCS = TransformObjectToHClip(output.worldPos);
 
     return output;

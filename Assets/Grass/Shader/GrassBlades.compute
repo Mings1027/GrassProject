@@ -169,13 +169,13 @@ half3 CalculationWind(half3 positionWS, half grassHeight)
 {
     half timeWind = _Time * _WindSpeed;
     half windValue = sin(timeWind + dot(positionWS.xz, _WindDirection));
-    
+
     // 높이에 따른 가중치 계산 (0~1 사이로 제한)
     half heightFactor = saturate(grassHeight);
-    
+
     // wind 방향 벡터 생성
     half3 windDirection = half3(_WindDirection.x * windValue, 0, _WindDirection.y * windValue);
-    
+
     // 최종 wind 힘 계산 (높이가 커져도 _WindStrength를 넘지 않음)
     return windDirection * min(heightFactor * _WindStrength, _WindStrength);
 }
@@ -319,5 +319,11 @@ void Main(uint id : SV_DispatchThreadID)
         }
     }
 
+    // uint finalLocalVertexCount = (_MaxBladesPerVertex * distanceFade) * numTrianglesPerBlade * 3;
+    // 위와 같이 한번에 계산하지 않고 for문에서 += 3 을 한 이유는
+    // 1. 나중에 조건부로 삼각형 생성을 건너뛰는 경우가 생길 수 있고
+    // 2. 실제로 생성된 삼각형의 수를 추적하기 편할 수 있으며
+    // 3. 각 삼각형이 생성될 때마다 버텍스 수를 증가시키는 것이 논리적 흐름에 맞기 때문
+    // 1,2,3을 다 무시해도 되는 경우 한번에 계산하는 것이 편리해보임.
     InterlockedAdd(_IndirectArgsBuffer[0].numVerticesPerInstance, localVertexCount);
 }

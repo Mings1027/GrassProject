@@ -21,7 +21,7 @@ namespace Grass.Editor
     public class GrassPainterTool : EditorWindow
     {
         private Vector2 _scrollPos;
-    
+
         private bool _paintModeActive;
         private bool _enableGrass;
         private bool _autoUpdate;
@@ -523,6 +523,7 @@ namespace Grass.Editor
         {
             DrawGeneralSettings();
             DrawSurfaceAngleSettings();
+            DrawWidthHeightSliders();
 
             switch (_selectedGenerateOption)
             {
@@ -539,7 +540,6 @@ namespace Grass.Editor
         {
             DrawHitSettings();
             DrawVertexSettings();
-            DrawWidthHeightSliders();
             DrawBrushColorField();
             DrawColorVariationSliders();
         }
@@ -895,15 +895,6 @@ namespace Grass.Editor
 
         private void DrawTerrainLayerSettings()
         {
-            // Foldout을 DrawToggleButton으로 교체
-            CustomEditorHelper.DrawFoldoutSection("Layer Settings Guide", () =>
-            {
-                EditorGUILayout.LabelField("• If Active is unchecked, this layer is ignored.");
-                EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("• Height = 1: No change to GrassHeight, < 1: Scales down, > 1: Scales up",
-                    EditorStyles.wordWrappedLabel);
-            });
-
             var terrain = FindAnyObjectByType<Terrain>();
             if (terrain == null)
             {
@@ -942,48 +933,62 @@ namespace Grass.Editor
 
             EditorGUILayout.Space(10);
 
-            // 최소 너비 설정
-            const float statusWidth = 40f;
-            const float toggleWidth = 30f;
-            const float minLayerNameWidth = 100f;
-            const float minSliderWidth = 100f;
-
-            // Column headers
-            // Column headers
-            EditorGUILayout.BeginHorizontal();
-
-            // Status header
-            EditorGUILayout.LabelField(
-                new GUIContent("Status", "Layer will be skipped or painted with grass"),
-                GUILayout.Width(statusWidth + 10)
-            );
-
-            // Layer Enable header
-            EditorGUILayout.LabelField(
-                new GUIContent("Active", "When enabled, grass will be generated on this layer"),
-                GUILayout.Width(toggleWidth + 20)
-            );
-
-            // Terrain Layer header
-            EditorGUILayout.LabelField(
-                new GUIContent("Layer Name", "Terrain layer name"),
-                GUILayout.MinWidth(minLayerNameWidth)
-            );
-
-            // Height header
-            EditorGUILayout.LabelField(
-                new GUIContent("Height", "0-100% of grass height"),
-                GUILayout.Width(minSliderWidth)
-            );
-
-            EditorGUILayout.EndHorizontal();
-
-            CustomEditorHelper.DrawHorizontalLine(Color.gray, 1, 2);
-
-            for (var i = 0; i < terrainLayers.Length; i++)
+            CustomEditorHelper.DrawFoldoutSection("Terrain Layers", () =>
             {
-                DrawTerrainLayerRow(i, terrainLayers[i], statusWidth, toggleWidth, minLayerNameWidth, minSliderWidth);
-            }
+                for (int i = 0; i < terrainLayers.Length; i++)
+                {
+                    var index = i;
+                    var layer = terrainLayers[i];
+                    CustomEditorHelper.DrawFoldoutSection(layer.name, () =>
+                    {
+                        EditorGUILayout.BeginHorizontal();
+
+                        bool wasDisabledByZero = toolSettings.HeightFading[index] <= 0f || toolSettings.WidthFading[index] <= 0f;
+
+                        EditorGUILayout.LabelField(new GUIContent("Width", "Multiplier for grass width (Grass Width × Width)"),GUILayout.Width(45));
+                        float newWidth = EditorGUILayout.Slider(toolSettings.WidthFading[index], 0f, 2f);
+                        toolSettings.WidthFading[index] = newWidth;
+                        
+                        EditorGUILayout.LabelField(new GUIContent("Height", "Multiplier for grass height (Grass Height × Height)"), GUILayout.Width(45));
+                        float newHeight = EditorGUILayout.Slider(toolSettings.HeightFading[index], 0f, 2f);
+                        toolSettings.HeightFading[index] = newHeight;
+                        
+                        // 현재 0인지 체크
+                        bool isDisabledByZero = newHeight <= 0f || newWidth <= 0f;
+
+                        // 이전에 0이었다가 이제 0이 아니면 true로
+                        if (wasDisabledByZero && !isDisabledByZero)
+                        {
+                            toolSettings.LayerEnabled[index] = true;
+                        }
+                        // 현재 0이면 false로
+                        else if (isDisabledByZero)
+                        {
+                            toolSettings.LayerEnabled[index] = false;
+                        }
+
+                        var isEnabled = toolSettings.LayerEnabled[index];
+
+                        var statusStyle = new GUIStyle(EditorStyles.label)
+                        {
+                            alignment = TextAnchor.MiddleCenter,
+                            fontStyle = FontStyle.Bold,
+                            normal =
+                            {
+                                textColor = isEnabled ? new Color(0.2f, 0.8f, 0.2f) : new Color(0.9f, 0.2f, 0.2f)
+                            }
+                        };
+                        EditorGUILayout.LabelField(isEnabled ? "Paint" : "Skip", statusStyle, GUILayout.Width(40));
+
+                        EditorGUI.BeginDisabledGroup(isDisabledByZero);
+                        toolSettings.LayerEnabled[index] =
+                            EditorGUILayout.Toggle(toolSettings.LayerEnabled[index], GUILayout.Width(20));
+                        EditorGUI.EndDisabledGroup();
+
+                        EditorGUILayout.EndHorizontal();
+                    });
+                }
+            });
         }
 
         private static void CreateDefaultTerrainLayer(Terrain terrain)
@@ -1025,48 +1030,6 @@ namespace Grass.Editor
 
             // 상세한 로그 메시지 출력
             Debug.Log($"Default terrain layer created at {assetPath}");
-        }
-
-        private void DrawTerrainLayerRow(int index, TerrainLayer layer, float statusWidth, float toggleWidth,
-                                         float minNameWidth, float minSliderWidth)
-        {
-            EditorGUILayout.BeginHorizontal();
-
-            EditorGUILayout.BeginHorizontal(GUILayout.MinWidth(statusWidth + 10), GUILayout.ExpandWidth(true));
-            var isSkipped = toolSettings.LayerEnabled[index] == false || toolSettings.HeightFading[index] <= 0f;
-            var statusStyle = new GUIStyle(EditorStyles.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontStyle = FontStyle.Bold,
-                fontSize = 12,
-                normal = new GUIStyleState
-                {
-                    textColor = isSkipped ? new Color(0.9f, 0.2f, 0.3f) : new Color(0.1f, 0.7f, 0.1f)
-                }
-            };
-
-            GUILayout.FlexibleSpace();
-            EditorGUILayout.LabelField("●", statusStyle, GUILayout.MinWidth(10), GUILayout.ExpandWidth(true));
-            EditorGUILayout.LabelField(isSkipped ? "Skip" : "Paint", statusStyle, GUILayout.Width(30),
-                GUILayout.ExpandWidth(true));
-            GUILayout.FlexibleSpace();
-            EditorGUILayout.EndHorizontal();
-
-            toolSettings.LayerEnabled[index] = EditorGUILayout.Toggle(
-                toolSettings.LayerEnabled[index], GUILayout.MinWidth(toggleWidth), GUILayout.ExpandWidth(true));
-
-            var layerName = layer != null ? layer.name : $"Layer {index}";
-            EditorGUILayout.LabelField(layerName, GUILayout.MinWidth(minNameWidth), GUILayout.ExpandWidth(true));
-
-            toolSettings.HeightFading[index] = EditorGUILayout.Slider(
-                toolSettings.HeightFading[index],
-                0f,
-                2f,
-                GUILayout.MinWidth(minSliderWidth),
-                GUILayout.ExpandWidth(true)
-            );
-
-            EditorGUILayout.EndHorizontal();
         }
 
         private void DrawObjectOperations()
@@ -1120,7 +1083,8 @@ namespace Grass.Editor
         {
             var grassSetting = grassCompute.GrassSetting;
 
-            CustomEditorHelper.DrawFoldoutSection("Global Season Settings", () => { DrawSeasonSettings(grassSetting); });
+            CustomEditorHelper.DrawFoldoutSection("Global Season Settings",
+                () => { DrawSeasonSettings(grassSetting); });
 
             CustomEditorHelper.DrawFoldoutSection("Blade Min/Max Settings", () =>
             {
@@ -1237,9 +1201,11 @@ namespace Grass.Editor
                 Undo.RecordObject(grassSetting, "Additional Light Settings");
 
                 grassSetting.additionalLightIntensity =
-                    CustomEditorHelper.FloatSlider("Light Intensity", "", grassSetting.additionalLightIntensity, 0f, 1f);
+                    CustomEditorHelper.FloatSlider("Light Intensity", "", grassSetting.additionalLightIntensity, 0f,
+                        1f);
                 grassSetting.additionalLightShadowStrength =
-                    CustomEditorHelper.FloatSlider("Shadow Strength", "", grassSetting.additionalLightShadowStrength, 0f,
+                    CustomEditorHelper.FloatSlider("Shadow Strength", "", grassSetting.additionalLightShadowStrength,
+                        0f,
                         1f);
                 grassSetting.additionalLightShadowColor =
                     EditorGUILayout.ColorField("Shadow Color", grassSetting.additionalLightShadowColor);

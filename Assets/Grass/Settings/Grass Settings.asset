@@ -19,7 +19,7 @@ MonoBehaviour:
   bladeCurve: 2
   bottomWidth: 0.3
   minWidth: 0.01
-  maxWidth: 1
+  maxWidth: 2
   minHeight: 0.01
   maxHeight: 3
   randomHeightMin: 0
@@ -37,16 +37,16 @@ MonoBehaviour:
   blendMultiply: 0.9
   blendOffset: 0.13
   ambientAdjustmentColor: {r: 0, g: 0, b: 0, a: 1}
-  shadowDistance: 102
-  shadowFadeRange: 22.2
+  shadowDistance: 100
+  shadowFadeRange: 20
   shadowBrightness: 0
   shadowColor: {r: 0, g: 0, b: 0, a: 1}
   additionalLightIntensity: 0.38
   additionalLightShadowStrength: 1
   additionalLightShadowColor: {r: 0, g: 0, b: 0, a: 1}
-  glossiness: 4.5
+  glossiness: 5
   specularStrength: 1
-  specularHeight: 0.5
+  specularHeight: 0.6
   maxZoneCount: 20
   seasonSettings:
   - {fileID: 11400000, guid: 1e808a7ca6a4444a498ce34f86acbb5b, type: 2}

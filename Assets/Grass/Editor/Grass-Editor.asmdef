@@ -1,0 +1,20 @@
+{
+    "name": "Grass-Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:41812adfb23634b3cb68511d867d9d5d",
+        "GUID:3f5837b5263e84596a6f3c027a9deb1f",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:fbecd7a1e43ba4c0c9c783c1a80d24f4",
+        "GUID:b2089e73b30a4481da441d9549477ccf"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

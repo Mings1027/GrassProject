@@ -22,10 +22,10 @@ void GetComputeData_float(uint vertexID, out float3 worldPos, out float3 normal,
                           out float4 extraBuffer)
 {
     DrawTriangle tri = _DrawTriangles[vertexID / 3];
-    DrawVertex input = tri.vertices[vertexID % 3];
-    worldPos = input.positionWS;
+    DrawVertex vert = tri.vertices[vertexID % 3];
+    worldPos = vert.positionWS;
     normal = tri.normalOS;
-    uv = input.uv;
+    uv = vert.uv;
     col = tri.diffuseColor;
 
     // for some reason doing this with a comparison node results in a glitchy alpha, so we're doing it here, if your grass is at a point higher than 99999 Y position then you should make this even higher or find a different solution

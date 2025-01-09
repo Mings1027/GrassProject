@@ -15,6 +15,7 @@ namespace Grass.Editor
         {
             public Vector3 position;
             public Vector3 normal;
+            public float widthScale;
             public float heightScale;
         }
 
@@ -102,7 +103,7 @@ namespace Grass.Editor
                         normal = placement.normal,
                         color = GrassEditorHelper.GetRandomColor(_toolSettings),
                         widthHeight = new Vector2(
-                            _toolSettings.GrassWidth,
+                            _toolSettings.GrassWidth*placement.widthScale,
                             _toolSettings.GrassHeight * placement.heightScale
                         )
                     };
@@ -166,6 +167,7 @@ namespace Grass.Editor
                 var mapX = Mathf.FloorToInt(normX * (terrainData.alphamapWidth - 1));
                 var mapZ = Mathf.FloorToInt(normZ * (terrainData.alphamapHeight - 1));
 
+                var finalWidthScale = 1f;
                 var finalHeightScale = 1f;
                 var isLayerEnabled = true;
 
@@ -191,6 +193,7 @@ namespace Grass.Editor
                     if (dominantLayer >= 0)
                     {
                         isLayerEnabled = _toolSettings.LayerEnabled[dominantLayer];
+                        finalWidthScale = _toolSettings.WidthFading[dominantLayer];
                         finalHeightScale = _toolSettings.HeightFading[dominantLayer];
                     }
                 }
@@ -225,6 +228,7 @@ namespace Grass.Editor
                 {
                     position = worldPos,
                     normal = normal,
+                    widthScale = finalWidthScale,
                     heightScale = finalHeightScale
                 };
 
