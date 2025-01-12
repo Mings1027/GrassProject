@@ -33,17 +33,17 @@ MonoBehaviour:
   interactorStrength: 1
   topTint: {r: 1, g: 1, b: 1, a: 1}
   bottomTint: {r: 0.103773594, g: 0.103773594, b: 0.103773594, a: 1}
-  ambientStrength: 0.18
-  blendMultiply: 0.9
-  blendOffset: 0.13
+  ambientStrength: 0.2
+  blendMultiply: 1
+  blendOffset: 0.2
   ambientAdjustmentColor: {r: 0, g: 0, b: 0, a: 1}
   shadowDistance: 100
   shadowFadeRange: 20
   shadowBrightness: 0
   shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  additionalLightIntensity: 0.38
+  additionalLightIntensity: 0.5
   additionalLightShadowStrength: 1
-  additionalLightShadowColor: {r: 0, g: 0, b: 0, a: 1}
+  additionalLightShadowColor: {r: 0, g: 0.07363987, b: 1, a: 1}
   glossiness: 5
   specularStrength: 1
   specularHeight: 0.6
