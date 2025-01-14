@@ -1678,29 +1678,9 @@ namespace Grass.Editor
                 }
             }
 
-            // 병렬로 실행할 Task 생성
-            var removalTasks = new List<UniTask>();
-
-            // MeshFilter 오브젝트가 있을 때만 removal operation 생성
-            if (meshObjects.Count > 0)
-            {
-                var meshRemoval =
-                    new GrassRemovalOperation(this, grassCompute, _spatialGrid);
-                removalTasks.Add(meshRemoval.RemoveGrass(meshObjects));
-            }
-
-            // Terrain 오브젝트가 있을 때만 removal operation 생성
-            if (terrainObjects.Count > 0)
-            {
-                var terrainRemoval = new TerrainGrassRemovalOperation(this, grassCompute, _spatialGrid);
-                removalTasks.Add(terrainRemoval.RemoveGrass(terrainObjects));
-            }
-
-            // 제거할 작업이 있을 때만 WhenAll 실행
-            if (removalTasks.Count > 0)
-            {
-                await UniTask.WhenAll(removalTasks);
-            }
+           
+            var unifiedRemoval = new GrassRemovalOperation(this, grassCompute, _spatialGrid);
+            await unifiedRemoval.RemoveGrass(meshObjects, terrainObjects);
         }
 
         private void HandleBrushSize(Event e)

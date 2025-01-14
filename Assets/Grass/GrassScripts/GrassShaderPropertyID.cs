@@ -23,8 +23,10 @@ namespace Grass.GrassScripts
         public static readonly int MinFadeDist = Shader.PropertyToID("_MinFadeDist");
         public static readonly int MaxFadeDist = Shader.PropertyToID("_MaxFadeDist");
         
+        public static readonly int InteractorData = Shader.PropertyToID("_InteractorData");
         public static readonly int InteractorStrength = Shader.PropertyToID("_InteractorStrength");
         public static readonly int InteractorsLength = Shader.PropertyToID("_InteractorsLength");
+        
         public static readonly int BladeRadius = Shader.PropertyToID("_BladeRadius");
         public static readonly int BladeForward = Shader.PropertyToID("_BladeForward");
         public static readonly int BladeCurve = Shader.PropertyToID("_BladeCurve");

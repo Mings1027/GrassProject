@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 namespace Grass.Editor
 {
@@ -10,98 +10,113 @@ namespace Grass.Editor
         private readonly GrassComputeScript _grassCompute;
         private readonly SpatialGrid _spatialGrid;
         private readonly List<int> _tempList = new();
+        private readonly HashSet<int> _grassToRemove = new();
 
-        public GrassRemovalOperation(GrassPainterTool tool, GrassComputeScript grassCompute, SpatialGrid spatialGrid)
+        public GrassRemovalOperation(GrassPainterTool tool, GrassComputeScript grassCompute,
+                                            SpatialGrid spatialGrid)
         {
             _tool = tool;
             _grassCompute = grassCompute;
             _spatialGrid = spatialGrid;
         }
 
-        public async UniTask RemoveGrass(List<MeshFilter> meshFilters)
+        public async UniTask RemoveGrass(List<MeshFilter> meshFilters, List<Terrain> terrains)
         {
-            var grassToRemove = new HashSet<int>();
+            _grassToRemove.Clear();
             var totalGrassToCheck = 0;
             var originalLayers = new Dictionary<MeshFilter, int>();
 
-            try
+            // First pass - Calculate total grass to check and setup temporary layers
+            const int tempLayer = 31;
+            foreach (var meshFilter in meshFilters)
             {
-                // First pass - setup temporary layer and calculate total grass
-                const int tempLayer = 31; // 임시로 사용할 레이어
-                foreach (var meshFilter in meshFilters)
+                if (!meshFilter.TryGetComponent<MeshRenderer>(out var renderer)) continue;
+
+                var bounds = renderer.bounds;
+                bounds.Expand(0.1f);
+
+                _tempList.Clear();
+                _spatialGrid.GetObjectsInBounds(bounds, _tempList);
+                totalGrassToCheck += _tempList.Count;
+
+                originalLayers[meshFilter] = meshFilter.gameObject.layer;
+                meshFilter.gameObject.layer = tempLayer;
+            }
+
+            foreach (var terrain in terrains)
+            {
+                var bounds = GetTerrainBounds(terrain);
+                _tempList.Clear();
+                _spatialGrid.GetObjectsInBounds(bounds, _tempList);
+                _grassToRemove.UnionWith(_tempList);
+                totalGrassToCheck += _tempList.Count;
+            }
+
+            // Process mesh filters
+            var currentProgress = 0;
+            var checkMask = 1 << tempLayer;
+
+            foreach (var meshFilter in meshFilters)
+            {
+                if (!meshFilter.TryGetComponent<MeshRenderer>(out var renderer)) continue;
+
+                var bounds = renderer.bounds;
+                bounds.Expand(0.1f);
+
+                _tempList.Clear();
+                _spatialGrid.GetObjectsInBounds(bounds, _tempList);
+
+                foreach (var grassIndex in _tempList)
                 {
-                    if (!meshFilter.TryGetComponent<MeshRenderer>(out var renderer)) continue;
-                
-                    var bounds = renderer.bounds;
-                    bounds.Expand(0.1f);
-                
-                    _tempList.Clear();
-                    _spatialGrid.GetObjectsInBounds(bounds, _tempList);
-                    totalGrassToCheck += _tempList.Count;
-
-                    // 원래 레이어 저장하고 임시 레이어로 변경
-                    originalLayers[meshFilter] = meshFilter.gameObject.layer;
-                    meshFilter.gameObject.layer = tempLayer;
-                }
-
-                // Second pass - check grass positions
-                var currentProgress = 0;
-                var checkMask = 1 << tempLayer;
-
-                foreach (var meshFilter in meshFilters)
-                {
-                    if (!meshFilter.TryGetComponent<MeshRenderer>(out var renderer)) continue;
-
-                    var bounds = renderer.bounds;
-                    bounds.Expand(0.1f);
-
-                    _tempList.Clear();
-                    _spatialGrid.GetObjectsInBounds(bounds, _tempList);
-
-                    foreach (var grassIndex in _tempList)
+                    if (_grassToRemove.Contains(grassIndex))
                     {
-                        if (grassToRemove.Contains(grassIndex))
-                        {
-                            currentProgress++;
-                            continue;
-                        }
-
-                        var grassPosition = _grassCompute.GrassDataList[grassIndex].position;
-                        if (Physics.CheckSphere(grassPosition, 0.05f, checkMask))
-                        {
-                            grassToRemove.Add(grassIndex);
-                        }
-
                         currentProgress++;
-                        await _tool.UpdateProgress(currentProgress, totalGrassToCheck, "Removing grass from meshes");
+                        continue;
                     }
-                }
 
-                if (grassToRemove.Count > 0)
-                {
-                    var updatedList = new List<GrassData>();
-                    for (var index = 0; index < _grassCompute.GrassDataList.Count; index++)
+                    var grassPosition = _grassCompute.GrassDataList[grassIndex].position;
+                    if (Physics.CheckSphere(grassPosition, 0.05f, checkMask))
                     {
-                        if (!grassToRemove.Contains(index))
-                        {
-                            updatedList.Add(_grassCompute.GrassDataList[index]);
-                        }
+                        _grassToRemove.Add(grassIndex);
                     }
 
-                    _grassCompute.GrassDataList = updatedList;
+                    currentProgress++;
+                    await _tool.UpdateProgress(currentProgress, totalGrassToCheck, "Removing grass from objects");
                 }
             }
-            finally
+
+            // Update grass data
+            if (_grassToRemove.Count > 0)
             {
-                // 원래 레이어로 복원
-                foreach (var (meshFilter, originalLayer) in originalLayers)
+                var updatedList = new List<GrassData>();
+                for (var index = 0; index < _grassCompute.GrassDataList.Count; index++)
                 {
-                    if (meshFilter != null)
+                    if (!_grassToRemove.Contains(index))
                     {
-                        meshFilter.gameObject.layer = originalLayer;
+                        updatedList.Add(_grassCompute.GrassDataList[index]);
                     }
                 }
+
+                _grassCompute.GrassDataList = updatedList;
             }
+
+            // Restore original layers
+            foreach (var (meshFilter, originalLayer) in originalLayers)
+            {
+                if (meshFilter != null)
+                {
+                    meshFilter.gameObject.layer = originalLayer;
+                }
+            }
+        }
+
+        private static Bounds GetTerrainBounds(Terrain terrain)
+        {
+            var size = terrain.terrainData.size;
+            return new Bounds(
+                terrain.transform.position + size / 2f,
+                size
+            );
         }
     }
 }

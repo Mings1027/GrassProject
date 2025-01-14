@@ -34,21 +34,21 @@ MonoBehaviour:
   rangeR: 0.3
   rangeG: 0.3
   rangeB: 0.3
-  brushColor: {r: 0.35008526, g: 0.8962264, b: 0.30860624, a: 1}
+  brushColor: {r: 0.8980392, g: 0.44211504, b: 0.30980396, a: 1}
   paintMask:
     serializedVersion: 2
     m_Bits: 8
   paintBlockMask:
     serializedVersion: 2
     m_Bits: 64
-  brushSize: 5.5
+  brushSize: 28.9
   brushTransitionSpeed: 1
   normalLimit: 1
   allowUndersideGrass: 1
-  density: 11
+  density: 542
   grassSpacing: 0.5
-  brushHeight: 60.5
-  generateGrassCount: 1000000
+  brushHeight: 74.450005
+  generateGrassCount: 541502
   grassMouseButton: 0
   brushSizeShortcut: 2
   brushHeightShortcut: 1

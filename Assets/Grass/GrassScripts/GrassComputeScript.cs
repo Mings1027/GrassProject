@@ -17,7 +17,8 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
     private const int DrawStride = sizeof(float) * (3 + 3 + 4 + (3 + 2) * 3);
     private const int MaxBufferSize = 2500000;
 
-    [SerializeField] private List<GrassData> grassData = new(); // base data lists
+    [SerializeField, HideInInspector]
+    private List<GrassData> grassData = new(); // base data lists
     [SerializeField] private Material instantiatedMaterial;
     [SerializeField] private GrassSettingSO grassSetting;
 
@@ -54,14 +55,14 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
     private IGrassColorProvider _colorProvider;
 
-    private readonly GraphicsBuffer.IndirectDrawArgs _argsBufferReset = new()
+    private readonly uint[] _argsBufferReset =
     {
-        vertexCountPerInstance = 0,
-        instanceCount = 1,
-        startInstance = 0,
-        startVertex = 0
+        0, // Number of vertices to render (Calculated in the compute shader with "InterlockedAdd(_IndirectArgsBuffer[0].numVertices);")
+        1, // Number of instances to render (should only be 1 instance since it should produce a single mesh)
+        0, // Index of the first vertex to render
+        0, // Index of the first instance to render
+        0 // Not used
     };
-    private GraphicsBuffer.IndirectDrawArgs[] _argsBufferResetArray;
 
     public List<GrassData> GrassDataList
     {
@@ -159,7 +160,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
         // Clear the draw and indirect args buffers of last frame's data
         _drawBuffer.SetCounterValue(0);
-        _argsBuffer.SetData(_argsBufferResetArray);
+        _argsBuffer.SetData(_argsBufferReset);
 
         _dispatchSize = (_grassVisibleIDList.Count + (int)_threadGroupSize - 1) >>
                         (int)Math.Log(_threadGroupSize, 2);
@@ -326,8 +327,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
         _drawBuffer = new ComputeBuffer(MaxBufferSize, DrawStride, ComputeBufferType.Append);
         _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1,
-            GraphicsBuffer.IndirectDrawArgs.size);
-        _argsBufferResetArray = new[] { _argsBufferReset };
+            _argsBufferReset.Length * sizeof(uint));
         _visibleIDBuffer = new ComputeBuffer(grassData.Count, sizeof(uint), ComputeBufferType.Structured);
         _cutBuffer = new ComputeBuffer(grassData.Count, sizeof(float), ComputeBufferType.Structured);
 
@@ -398,10 +398,9 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
         // Get frustum data from the main camera without modifying far clip plane
         GeometryUtility.CalculateFrustumPlanes(_mainCamera, _cameraFrustumPlanes);
-        _mainCamera.farClipPlane = grassSetting.maxFadeDistance;
+        // _mainCamera.farClipPlane = grassSetting.maxFadeDistance;
 
         UpdateCulling(_cameraFrustumPlanes);
-        _visibleIDBuffer.SetData(_grassVisibleIDList);
     }
 
     // Update the shader with frame specific data
@@ -548,6 +547,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
     {
         _grassVisibleIDList.Clear();
         _cullingTree?.RetrieveLeaves(cameraFrustumPlanes, _grassVisibleIDList);
+        _visibleIDBuffer.SetData(_grassVisibleIDList);
     }
 
     public void GetNearbyGrass(Vector3 point, float radius)
@@ -700,7 +700,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
     public int MaximumBufferSize => MaxBufferSize;
     public int CurrentBufferCount => _currentBufferCount;
     private int _currentBufferCount;
-
+    
     private void UpdateBufferCount()
     {
         var counterBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
@@ -766,7 +766,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         _sourceVertBuffer.SetData(grassData, startIndex, startIndex, count);
 
         _drawBuffer.SetCounterValue(0);
-        _argsBuffer.SetData(_argsBufferResetArray);
+        _argsBuffer.SetData(_argsBufferReset);
 
         // _dispatchSize = Mathf.CeilToInt((int)(grassData.Count / _threadGroupSize));
 

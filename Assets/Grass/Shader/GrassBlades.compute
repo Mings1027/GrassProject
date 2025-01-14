@@ -125,7 +125,6 @@ float3x3 CreateTangentToWorld(float3 normal)
     // 두 탄젠트 벡터를 블렌딩
     float3 tangent = normalize(lerp(tangentZ, tangentX, blendFactor));
 
-    // 나머지 계산은 동일
     float3 bitangent = normalize(cross(normal, tangent));
 
     return float3x3(
@@ -133,12 +132,6 @@ float3x3 CreateTangentToWorld(float3 normal)
         tangent.y, normal.y, bitangent.y,
         tangent.z, normal.z, bitangent.z
     );
-}
-
-float2 GetSimpleBladePosition(float randValue)
-{
-    float2 randomValues = float2(randValue, frac(randValue * 1.61803)); // 황금비를 사용하여 다른 랜덤값 생성
-    return randomValues - 0.5;
 }
 
 bool IsInAnyZone(float3 position, out int zoneIndex)
@@ -161,16 +154,13 @@ bool IsInAnyZone(float3 position, out int zoneIndex)
     return false;
 }
 
-DrawVertex GrassVertex(float3 positionWS, float width, float height,
-                       float offset, float2 uv, float curve, float3 normal, float3x3 rotationMatrix)
+DrawVertex GrassVertex(float3 pos, float width, float t, float height, float offset, float3x3 faceRot,
+                       float3x3 tanWorld)
 {
     DrawVertex output;
-    float3x3 tangentToWorld = CreateTangentToWorld(normal);
-    float3 localOffset = float3(width, height, curve + offset);
-    float3 worldOffset = mul(tangentToWorld, localOffset);
-    worldOffset = mul(rotationMatrix, worldOffset);
-    output.positionWS = positionWS + worldOffset;
-    output.uv = uv;
+    float3 offsetVec = float3(width, height * t, pow(abs(t), _BladeCurve) * _BladeForward + offset);
+    output.positionWS = pos + mul(faceRot, mul(tanWorld, offsetVec));
+    output.uv = float2(width > 0 ? 0 : 1, t);
     return output;
 }
 
@@ -197,8 +187,10 @@ struct InteractionResult
 
 InteractionResult CalculateInteraction(float3 grassPosition, half grassHeight, half cut)
 {
-    InteractionResult result = (InteractionResult)0;
-
+    InteractionResult result;
+    result.bendOffset = 0;
+    result.windAttenuation = 0;
+    
     if (cut > -0.99) return result; // 잘린 잔디는 효과 무시
 
     for (int i = 0; i < _InteractorsLength; i++)
@@ -240,8 +232,6 @@ void Main(uint id : SV_DispatchThreadID)
     half distanceFade = 1 - saturate((distanceFromCamera - _MinFadeDist) / (_MaxFadeDist - _MinFadeDist));
     if (distanceFade < 0) return;
 
-    half3 grassNormal = normalize(sv.normalOS);
-
     uint localVertexCount = 0;
     half cut = _CutBuffer[visibleID];
 
@@ -277,37 +267,31 @@ void Main(uint id : SV_DispatchThreadID)
 
     half numTrianglesPerBlade = (_MaxSegmentsPerBlade - 1) * 2 + 1;
 
+    half3 grassNormal = normalize(sv.normalOS);
+    float3x3 tangentToWorld = CreateTangentToWorld(grassNormal);
+
     for (int j = 0; j < _MaxBladesPerVertex * distanceFade; j++)
     {
         DrawVertex drawVertices[GRASS_NUM_VERTICES_PER_BLADE];
-
-        float randVar1 = Hash3DToFloat01(sv.positionWS, j);
-
-        half bladeRadius = j / _MaxBladesPerVertex;
-        half offset = (1 - bladeRadius) * _BladeRadius;
-        half3x3 facingRotationMatrix = AngleAxis3x3(randVar1 * TWO_PI, grassNormal);
+        float3x3 facingRotationMatrix = AngleAxis3x3(Hash3DToFloat01(sv.positionWS, j) * TWO_PI, grassNormal);
+        float bladeRadius = j / _MaxBladesPerVertex;
+        float offset = (1 - bladeRadius) * _BladeRadius;
 
         for (int i = 0; i < _MaxSegmentsPerBlade; i++)
         {
-            half t = i / _MaxSegmentsPerBlade;
-            half segmentHeight = grassHeight * t;
-            half segmentWidth = grassWidth * _BottomWidth * (1 - t);
+            float t = i / _MaxSegmentsPerBlade;
+            float3 pos = sv.positionWS + (finalWind + grassNormal * grassHeight + interaction.bendOffset) * t;
+            float segWidth = grassWidth * _BottomWidth * (1 - t);
 
-            half3 newPos = sv.positionWS + (finalWind + grassNormal * grassHeight + interaction.bendOffset) * t;
-
-            half curveStrength = pow(abs(t), _BladeCurve) * _BladeForward;
-
-            drawVertices[i * 2] = GrassVertex(newPos, segmentWidth, segmentHeight,
-                                              offset, half2(0, t), curveStrength, grassNormal, facingRotationMatrix);
-            drawVertices[i * 2 + 1] = GrassVertex(newPos, -segmentWidth, segmentHeight,
-                                                  offset, half2(1, t), curveStrength, grassNormal,
-                                                  facingRotationMatrix);
+            drawVertices[i * 2] = GrassVertex(pos, segWidth, t, grassHeight, offset, facingRotationMatrix,
+                                              tangentToWorld);
+            drawVertices[i * 2 + 1] = GrassVertex(pos, -segWidth, t, grassHeight, offset, facingRotationMatrix,
+                                                  tangentToWorld);
         }
 
-        half3 topPosOS = sv.positionWS + finalWind + interaction.bendOffset + grassNormal * grassHeight;
-        drawVertices[_MaxSegmentsPerBlade * 2] = GrassVertex(topPosOS, 0, grassHeight, offset,
-                                                             half2(0.5, 1), _BladeForward, grassNormal,
-                                                             facingRotationMatrix);
+        float3 topPos = sv.positionWS + finalWind + interaction.bendOffset + grassNormal * grassHeight;
+        drawVertices[_MaxSegmentsPerBlade * 2] = GrassVertex(topPos, 0, 1, grassHeight, offset, facingRotationMatrix,
+                                                             tangentToWorld);
 
         for (int k = 0; k < numTrianglesPerBlade; ++k)
         {
