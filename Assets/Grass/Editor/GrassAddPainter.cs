@@ -3,116 +3,116 @@ using UnityEngine;
 
 namespace Grass.Editor
 {
-    public sealed class GrassAddPainter : BasePainter
+    public sealed class GrassAddPainter
     {
         private Vector3 _lastPosition = Vector3.zero;
         private readonly List<int> _nearbyGrassIds = new();
+        private readonly GrassComputeScript _grassCompute;
+        private readonly SpatialGrid _spatialGrid;
 
-        public GrassAddPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
-            spatialGrid) { }
+        public GrassAddPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
+        {
+            _grassCompute = grassCompute;
+            _spatialGrid = spatialGrid;
+        }
 
         public void AddGrass(Ray mousePointRay, GrassToolSettingSo toolSettings)
         {
-            var paintMaskValue = toolSettings.PaintMask.value;
-            var paintBlockMaskValue = toolSettings.PaintBlockMask.value;
-            var brushSize = toolSettings.BrushSize;
-            var density = toolSettings.Density;
-            var maxFadeDistance = grassCompute.GrassSetting.maxFadeDistance;
+            if (!Physics.Raycast(mousePointRay, out var hit, _grassCompute.GrassSetting.maxFadeDistance)) return;
 
-            if (Physics.Raycast(mousePointRay, out var hit, maxFadeDistance))
+            var hitLayer = hit.collider.gameObject.layer;
+            if (hitLayer.Matches(toolSettings.PaintBlockMask.value) ||
+                hitLayer.NotMatches(toolSettings.PaintMask.value)) return;
+
+            var distanceMoved = Vector3.Distance(_lastPosition, hit.point);
+            if (distanceMoved < toolSettings.BrushSize * 0.5f) return;
+
+            bool grassAdded = PlaceGrassInGrid(hit, mousePointRay.direction, toolSettings);
+
+            if (grassAdded)
             {
-                var hitLayer = hit.collider.gameObject.layer;
-                if (hitLayer.Matches(paintBlockMaskValue)) return;
-                if (hitLayer.NotMatches(paintMaskValue)) return;
+                _grassCompute.ResetFaster();
+            }
 
-                var distanceMoved = Vector3.Distance(_lastPosition, hit.point);
-                if (distanceMoved >= brushSize * 0.5f)
+            _lastPosition = hit.point;
+        }
+
+        private bool PlaceGrassInGrid(RaycastHit hit, Vector3 rayDirection, GrassToolSettingSo toolSettings)
+        {
+            var bounds = new Bounds(hit.point, Vector3.one * toolSettings.BrushSize * 2);
+            var tempGrid = new SpatialGrid(bounds, toolSettings.GrassSpacing);
+
+            // 기존 잔디 위치 추가
+            _nearbyGrassIds.Clear();
+            _spatialGrid.GetObjectsInRadius(hit.point, toolSettings.BrushSize, _nearbyGrassIds);
+            foreach (var id in _nearbyGrassIds)
+            {
+                tempGrid.AddObject(_grassCompute.GrassDataList[id].position, id);
+            }
+
+            var hitNormal = hit.normal;
+            var right = Vector3.Cross(hitNormal, rayDirection).normalized;
+            var forward = Vector3.Cross(right, hitNormal).normalized;
+
+            var circleArea = Mathf.PI * toolSettings.BrushSize * toolSettings.BrushSize;
+            var spacingBetweenPoints = Mathf.Sqrt(circleArea / toolSettings.Density);
+            var gridSize = Mathf.CeilToInt(toolSettings.BrushSize * 2 / spacingBetweenPoints);
+
+            var grassAdded = false;
+            var successfulPlacements = 0;
+
+            for (int x = -gridSize / 2; x < gridSize / 2; x++)
+            {
+                for (int z = -gridSize / 2; z < gridSize / 2; z++)
                 {
-                    var grassAdded = false;
-                    var hitNormal = hit.normal;
-                    var rayDirection = mousePointRay.direction;
+                    var randomOffset = new Vector3(
+                        Random.Range(-spacingBetweenPoints / 4f, spacingBetweenPoints / 4f),
+                        0,
+                        Random.Range(-spacingBetweenPoints / 4f, spacingBetweenPoints / 4f)
+                    );
 
-                    var right = Vector3.Cross(hitNormal, rayDirection).normalized;
-                    var forward = Vector3.Cross(right, hitNormal).normalized;
+                    var gridPos = hit.point + (right * x + forward * z) * spacingBetweenPoints + randomOffset;
 
-                    var maxAttempts = density * 2;
-                    var successfulPlacements = 0;
+                    if (Vector3.Distance(gridPos, hit.point) > toolSettings.BrushSize) continue;
 
-                    for (int attempt = 0; attempt < maxAttempts && successfulPlacements < density; attempt++)
+                    var surfaceRay = new Ray(gridPos - rayDirection * toolSettings.BrushSize, rayDirection);
+
+                    if (Physics.Raycast(surfaceRay, out var surfaceHit, _grassCompute.GrassSetting.maxFadeDistance))
                     {
-                        var angle = Random.Range(0f, 2f * Mathf.PI);
-                        var radius = Mathf.Sqrt(Random.Range(0f, 1f)) * brushSize;
+                        if (surfaceHit.collider.gameObject.layer.NotMatches(toolSettings.PaintMask.value)) continue;
 
-                        var randomOffset = right * (radius * Mathf.Cos(angle)) +
-                                           forward * (radius * Mathf.Sin(angle));
-                        var randomPoint = hit.point + randomOffset;
+                        var surfaceAngle = toolSettings.allowUndersideGrass
+                            ? Mathf.Acos(Mathf.Abs(surfaceHit.normal.y)) * Mathf.Rad2Deg
+                            : Mathf.Acos(surfaceHit.normal.y) * Mathf.Rad2Deg;
 
-                        var cameraToPointRay = new Ray(mousePointRay.origin,
-                            (randomPoint - mousePointRay.origin).normalized);
-                        
-                        if (Physics.Raycast(cameraToPointRay, out var cameraHit, maxFadeDistance))
+                        if (surfaceAngle <= toolSettings.NormalLimit * 90.01f)
                         {
-                            if (cameraHit.collider.gameObject.layer.Matches(paintBlockMaskValue))
-                                continue;
+                            _nearbyGrassIds.Clear();
+                            tempGrid.GetObjectsInRadius(surfaceHit.point, toolSettings.GrassSpacing, _nearbyGrassIds);
 
-                            var newRay = new Ray(randomPoint - rayDirection * brushSize, rayDirection);
-
-                            if (Physics.Raycast(newRay, out var hit2, maxFadeDistance))
+                            if (_nearbyGrassIds.Count == 0)
                             {
-                                if (hit2.collider.gameObject.layer.Matches(paintMaskValue))
-                                {
-                                    var surfaceAngle = toolSettings.allowUndersideGrass
-                                        ? Mathf.Acos(Mathf.Abs(hit2.normal.y)) * Mathf.Rad2Deg // 위아래 모두 허용
-                                        : Mathf.Acos(hit2.normal.y) * Mathf.Rad2Deg; // 위쪽만 허용
+                                var newData = CreateGrassData(surfaceHit.point, surfaceHit.normal, toolSettings);
+                                var newIndex = _grassCompute.GrassDataList.Count;
 
-                                    if (surfaceAngle <= toolSettings.NormalLimit * 90.01f)
-                                    {
-                                        _nearbyGrassIds.Clear();
-                                        spatialGrid.GetObjectsInRadius(hit2.point, toolSettings.GrassSpacing,
-                                            _nearbyGrassIds);
+                                _grassCompute.GrassDataList.Add(newData);
+                                _spatialGrid.AddObject(surfaceHit.point, newIndex);
+                                tempGrid.AddObject(surfaceHit.point, newIndex);
+                                _grassCompute.AddNewGrass(newData.position, newIndex);
 
-                                        var tooClose = false;
-                                        foreach (var nearbyId in _nearbyGrassIds)
-                                        {
-                                            var existingGrass = grassCompute.GrassDataList[nearbyId];
-                                            if (Vector3.Distance(existingGrass.position, hit2.point) <
-                                                toolSettings.GrassSpacing)
-                                            {
-                                                tooClose = true;
-                                                break;
-                                            }
-                                        }
-
-                                        if (!tooClose)
-                                        {
-                                            var newData = CreateGrassData(hit2.point, hit2.normal, toolSettings);
-                                            var newIndex = grassCompute.GrassDataList.Count;
-
-                                            grassCompute.GrassDataList.Add(newData);
-                                            spatialGrid.AddObject(hit2.point, newIndex);
-
-                                            grassCompute.AddNewGrassToCullingTree(newData.position, newIndex);
-
-                                            grassAdded = true;
-                                            successfulPlacements++;
-                                        }
-                                    }
-                                }
+                                grassAdded = true;
+                                successfulPlacements++;
                             }
                         }
                     }
-
-                    if (grassAdded)
-                    {
-                        grassCompute.ResetFaster();
-                    }
-
-                    _lastPosition = hit.point;
                 }
             }
+
+            return grassAdded;
         }
 
-        private static GrassData CreateGrassData(Vector3 grassPosition, Vector3 grassNormal, GrassToolSettingSo toolSettings)
+        private static GrassData CreateGrassData(Vector3 grassPosition, Vector3 grassNormal,
+                                                 GrassToolSettingSo toolSettings)
         {
             return new GrassData
             {
@@ -123,9 +123,8 @@ namespace Grass.Editor
             };
         }
 
-        public override void Clear()
+        public void Clear()
         {
-            base.Clear();
             _lastPosition = Vector3.zero;
         }
     }

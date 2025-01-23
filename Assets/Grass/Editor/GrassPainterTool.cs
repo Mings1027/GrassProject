@@ -1634,29 +1634,8 @@ namespace Grass.Editor
                 }
             }
 
-            // 병렬로 실행할 Task 생성
-            var generationTasks = new List<UniTask>();
-
-            // MeshFilter 오브젝트가 있을 때만 generator 생성
-            if (meshObjects.Count > 0)
-            {
-                var meshGenerator = new GrassGenerationOperation(this, grassCompute, toolSettings, _spatialGrid);
-                generationTasks.Add(meshGenerator.GenerateGrass(meshObjects));
-            }
-
-            // Terrain 오브젝트가 있을 때만 generator 생성
-            if (terrainObjects.Count > 0)
-            {
-                var terrainGenerator =
-                    new TerrainGrassGenerationOperation(this, grassCompute, toolSettings, _spatialGrid);
-                generationTasks.Add(terrainGenerator.GenerateGrass(terrainObjects));
-            }
-
-            // 생성할 작업이 있을 때만 WhenAll 실행
-            if (generationTasks.Count > 0)
-            {
-                await UniTask.WhenAll(generationTasks);
-            }
+            var generationOperation = new GrassGenerationOperation(this, grassCompute, toolSettings, _spatialGrid);
+            await generationOperation.GenerateGrass(meshObjects, terrainObjects);
         }
 
         private async UniTask RemoveGrass(GameObject[] selectedObjects)
@@ -1679,8 +1658,8 @@ namespace Grass.Editor
             }
 
            
-            var unifiedRemoval = new GrassRemovalOperation(this, grassCompute, _spatialGrid);
-            await unifiedRemoval.RemoveGrass(meshObjects, terrainObjects);
+            var removalOperation = new GrassRemovalOperation(this, grassCompute, _spatialGrid);
+            await removalOperation.RemoveGrass(meshObjects, terrainObjects);
         }
 
         private void HandleBrushSize(Event e)

@@ -15,18 +15,30 @@ namespace Grass.Editor
         {
             public Vector3 position;
             public Vector3 normal;
+            public float widthScale;
+            public float heightScale;
         }
 
-        private class ObjectGenerationData
+        private class GenerationData
         {
-            public List<(Vector3[] vertices, Vector3 normal, float area)> triangles;
             public float totalArea;
             public int targetGrassCount;
             public List<GrassPlacementData> validPositions;
+            
+            // Terrain specific data
+            public float[,,] splatmapData;
+            public TerrainData terrainData;
+            public int alphamapWidth;
+            public int alphamapHeight;
+            public Vector3 terrainPosition;
+            public Vector3 terrainSize;
+            
+            // Mesh specific data
+            public List<(Vector3[] vertices, Vector3 normal, float area)> triangles;
         }
 
         public GrassGenerationOperation(GrassPainterTool tool, GrassComputeScript grassCompute,
-                                        GrassToolSettingSo toolSettings, SpatialGrid spatialGrid)
+            GrassToolSettingSo toolSettings, SpatialGrid spatialGrid)
         {
             _tool = tool;
             _grassCompute = grassCompute;
@@ -34,72 +46,83 @@ namespace Grass.Editor
             _spatialGrid = spatialGrid;
         }
 
-        public async UniTask GenerateGrass(List<MeshFilter> meshFilters)
+        public async UniTask GenerateGrass(List<MeshFilter> meshFilters, List<Terrain> terrains)
         {
             var spacing = _toolSettings.GrassSpacing;
             var existingGrassCount = _grassCompute.GrassDataList.Count;
+            var generationDataList = new List<GenerationData>();
             var totalArea = 0f;
 
-            // 1단계: 메시 데이터 수집 및 초기 설정
-            await _tool.UpdateProgress(0, 100, "Analyzing meshes...");
+            // 1단계: 데이터 수집 및 초기 설정
+            await _tool.UpdateProgress(0, 100, "Analyzing objects...");
 
-            var objectDataList = new List<ObjectGenerationData>();
-
-            // 각 오브젝트의 메시 데이터 수집
-            foreach (var obj in meshFilters)
+            // 메시 데이터 수집
+            foreach (var meshFilter in meshFilters)
             {
-                var objectData = CollectMeshData(obj);
-                if (objectData != null)
+                var meshData = CollectMeshData(meshFilter);
+                if (meshData != null)
                 {
-                    objectDataList.Add(objectData);
-                    totalArea += objectData.totalArea;
+                    generationDataList.Add(meshData);
+                    totalArea += meshData.totalArea;
                 }
             }
 
-            if (objectDataList.Count == 0)
+            // 지형 데이터 수집
+            foreach (var terrain in terrains)
             {
-                Debug.LogWarning("No valid triangles found for grass generation!");
+                var terrainData = CollectTerrainData(terrain);
+                if (terrainData != null)
+                {
+                    generationDataList.Add(terrainData);
+                    totalArea += terrainData.totalArea;
+                }
+            }
+
+            if (generationDataList.Count == 0)
+            {
+                Debug.LogWarning("No valid data found for grass generation!");
                 return;
             }
 
-            // 전체 목표 잔디 수 계산
+            // 전체 목표 잔디 수 계산 및 할당
             var maxGrassForArea = Mathf.FloorToInt(totalArea / (spacing * spacing));
             var totalTargetGrassCount = Mathf.Min(_toolSettings.GenerateGrassCount, maxGrassForArea);
 
-            // 각 오브젝트별 목표 잔디 수 할당
-            foreach (var objData in objectDataList)
+            foreach (var data in generationDataList)
             {
-                objData.targetGrassCount = Mathf.FloorToInt((objData.totalArea / totalArea) * totalTargetGrassCount);
+                data.targetGrassCount = Mathf.FloorToInt((data.totalArea / totalArea) * totalTargetGrassCount);
             }
 
-            // 2단계: 병렬로 각 오브젝트의 잔디 위치 계산
-            await _tool.UpdateProgress(0, 100, "Calculating positions...");
+            // 2단계: 잔디 위치 계산
+            await _tool.UpdateProgress(20, 100, "Calculating positions...");
 
-            var generationTasks = new UniTask[objectDataList.Count];
-            for (int i = 0; i < objectDataList.Count; i++)
+            var generationTasks = new List<UniTask>();
+            foreach (var data in generationDataList)
             {
-                generationTasks[i] = GenerateGrassForObject(objectDataList[i]);
+                generationTasks.Add(GenerateGrassPositions(data));
             }
 
-            // 모든 작업 병렬 실행
             await UniTask.WhenAll(generationTasks);
 
-            // 3단계: 결과 수집 및 최종 데이터 생성
-            await _tool.UpdateProgress(0, 100, "Finalizing grass generation...");
+            // 3단계: 결과 수집
+            await _tool.UpdateProgress(80, 100, "Finalizing grass generation...");
 
-            var allGrassData = new List<GrassData>();
             var currentIndex = existingGrassCount;
+            var allGrassData = new List<GrassData>();
 
-            foreach (var objData in objectDataList)
+            foreach (var data in generationDataList)
             {
-                foreach (var placement in objData.validPositions)
+                foreach (var placement in data.validPositions)
                 {
                     var grassData = new GrassData
                     {
                         position = placement.position,
                         normal = placement.normal,
                         color = GrassEditorHelper.GetRandomColor(_toolSettings),
-                        widthHeight = new Vector2(_toolSettings.GrassWidth, _toolSettings.GrassHeight)
+                        widthHeight = new Vector2(
+                            _toolSettings.GrassWidth * placement.widthScale,
+                            _toolSettings.GrassHeight * placement.heightScale
+                        )
                     };
 
                     allGrassData.Add(grassData);
@@ -111,9 +134,9 @@ namespace Grass.Editor
             await _tool.UpdateProgress(100, 100, $"Complete! Generated {allGrassData.Count} grass instances");
         }
 
-        private ObjectGenerationData CollectMeshData(MeshFilter meshFilter)
+        private GenerationData CollectMeshData(MeshFilter meshFilter)
         {
-            var objectData = new ObjectGenerationData
+            var data = new GenerationData
             {
                 triangles = new List<(Vector3[] vertices, Vector3 normal, float area)>(),
                 validPositions = new List<GrassPlacementData>()
@@ -136,48 +159,80 @@ namespace Grass.Editor
                 ).normalized;
 
                 var area = Vector3.Cross(v2 - v1, v3 - v1).magnitude * 0.5f;
-                    
-                var surfaceAngle = _toolSettings.allowUndersideGrass 
-                    ? Mathf.Acos(Mathf.Abs(normal.y)) * Mathf.Rad2Deg  // 위아래 모두 허용
-                    : Mathf.Acos(normal.y) * Mathf.Rad2Deg;           // 위쪽만 허용
                 
+                var surfaceAngle = _toolSettings.allowUndersideGrass 
+                    ? Mathf.Acos(Mathf.Abs(normal.y)) * Mathf.Rad2Deg
+                    : Mathf.Acos(normal.y) * Mathf.Rad2Deg;
+
                 if (surfaceAngle <= _toolSettings.NormalLimit * 90.01f)
                 {
-                    objectData.triangles.Add((new[] { v1, v2, v3 }, normal, area));
-                    objectData.totalArea += area;
+                    data.triangles.Add((new[] { v1, v2, v3 }, normal, area));
+                    data.totalArea += area;
                 }
             }
 
-            return objectData;
+            return data.totalArea > 0 ? data : null;
         }
 
-        private async UniTask GenerateGrassForObject(ObjectGenerationData objData)
+        private GenerationData CollectTerrainData(Terrain terrain)
+        {
+            if (terrain == null || terrain.terrainData == null) return null;
+
+            var terrainData = terrain.terrainData;
+            var alphamapWidth = terrainData.alphamapWidth;
+            var alphamapHeight = terrainData.alphamapHeight;
+
+            return new GenerationData
+            {
+                terrainData = terrainData,
+                splatmapData = terrainData.GetAlphamaps(0, 0, alphamapWidth, alphamapHeight),
+                alphamapWidth = alphamapWidth,
+                alphamapHeight = alphamapHeight,
+                terrainPosition = terrain.transform.position,
+                terrainSize = terrainData.size,
+                totalArea = terrainData.size.x * terrainData.size.z,
+                validPositions = new List<GrassPlacementData>()
+            };
+        }
+
+        private async UniTask GenerateGrassPositions(GenerationData data)
+        {
+            if (data.triangles != null)
+            {
+                await GenerateMeshGrassPositions(data);
+            }
+            else if (data.terrainData != null)
+            {
+                await GenerateTerrainGrassPositions(data);
+            }
+        }
+
+        private async UniTask GenerateMeshGrassPositions(GenerationData data)
         {
             var spacing = _toolSettings.GrassSpacing;
+            var attempts = 0;
+            var maxAttempts = data.targetGrassCount * 2;
+
             var bounds = new Bounds(Vector3.zero, new Vector3(1000, 1000, 1000));
             var objectGrid = new SpatialGrid(bounds, spacing);
-            var attempts = 0;
-            var maxAttempts = objData.targetGrassCount * 2;
 
-            while (objData.validPositions.Count < objData.targetGrassCount && attempts < maxAttempts)
+            while (data.validPositions.Count < data.targetGrassCount && attempts < maxAttempts)
             {
                 attempts++;
-
+                
                 if (attempts % Mathf.Max(1, maxAttempts / 100) == 0)
                 {
-                    var progress = Mathf.RoundToInt((float)attempts / maxAttempts * 100);
-                    progress = Mathf.Min(progress, 100);
-                    await _tool.UpdateProgress(progress, 100, "Calculating positions... ");
+                    var progress = 20 + Mathf.RoundToInt((float)attempts / maxAttempts * 60);
+                    await _tool.UpdateProgress(progress, 100, "Calculating positions...");
                 }
 
-                // 면적 기반으로 삼각형 선택
-                var randomValue = Random.value * objData.totalArea;
+                var randomValue = Random.value * data.totalArea;
                 var currentSum = 0f;
-                int selectedIndex = 0;
+                var selectedIndex = 0;
 
-                for (int i = 0; i < objData.triangles.Count; i++)
+                for (int i = 0; i < data.triangles.Count; i++)
                 {
-                    currentSum += objData.triangles[i].area;
+                    currentSum += data.triangles[i].area;
                     if (currentSum >= randomValue)
                     {
                         selectedIndex = i;
@@ -185,27 +240,116 @@ namespace Grass.Editor
                     }
                 }
 
-                var (vertices, normal, _) = objData.triangles[selectedIndex];
+                var (vertices, normal, _) = data.triangles[selectedIndex];
                 var randomPoint = GetRandomPointInTriangle(vertices[0], vertices[1], vertices[2]);
 
-                // 현재 오브젝트의 그리드에서만 간격 체크
                 var tempPositionIds = new List<int>();
                 objectGrid.GetObjectsInRadius(randomPoint, spacing, tempPositionIds);
 
                 if (tempPositionIds.Count > 0) continue;
 
-                // 장애물 체크
                 if (Physics.CheckSphere(randomPoint, 0.01f, _toolSettings.PaintBlockMask))
                     continue;
 
                 var placementData = new GrassPlacementData
                 {
                     position = randomPoint,
-                    normal = normal
+                    normal = normal,
+                    widthScale = 1f,
+                    heightScale = 1f
                 };
 
-                objData.validPositions.Add(placementData);
-                objectGrid.AddObject(randomPoint, objData.validPositions.Count - 1);
+                data.validPositions.Add(placementData);
+                objectGrid.AddObject(randomPoint, data.validPositions.Count - 1);
+            }
+        }
+
+        private async UniTask GenerateTerrainGrassPositions(GenerationData data)
+        {
+            var spacing = _toolSettings.GrassSpacing;
+            var attempts = 0;
+            var maxAttempts = data.targetGrassCount * 2;
+
+            var bounds = new Bounds(data.terrainPosition, data.terrainSize);
+            var objectGrid = new SpatialGrid(bounds, spacing);
+
+            while (data.validPositions.Count < data.targetGrassCount && attempts < maxAttempts)
+            {
+                attempts++;
+
+                if (attempts % Mathf.Max(1, maxAttempts / 100) == 0)
+                {
+                    var progress = 20 + Mathf.RoundToInt((float)attempts / maxAttempts * 60);
+                    await _tool.UpdateProgress(progress, 100, "Calculating positions...");
+                }
+
+                var randomX = Random.value * data.terrainSize.x;
+                var randomZ = Random.value * data.terrainSize.z;
+
+                var normX = randomX / data.terrainSize.x;
+                var normZ = randomZ / data.terrainSize.z;
+
+                var mapX = Mathf.FloorToInt(normX * (data.alphamapWidth - 1));
+                var mapZ = Mathf.FloorToInt(normZ * (data.alphamapHeight - 1));
+
+                var finalWidthScale = 1f;
+                var finalHeightScale = 1f;
+                var isLayerEnabled = true;
+
+                if (data.splatmapData != null && data.splatmapData.GetLength(2) > 0)
+                {
+                    var layerCount = data.splatmapData.GetLength(2);
+                    var dominantLayer = -1;
+                    var maxWeight = 0f;
+
+                    for (var layer = 0; layer < layerCount; layer++)
+                    {
+                        var weight = data.splatmapData[mapZ, mapX, layer];
+                        if (weight > maxWeight)
+                        {
+                            maxWeight = weight;
+                            dominantLayer = layer;
+                        }
+                    }
+
+                    if (dominantLayer >= 0)
+                    {
+                        isLayerEnabled = _toolSettings.LayerEnabled[dominantLayer];
+                        finalWidthScale = _toolSettings.WidthFading[dominantLayer];
+                        finalHeightScale = _toolSettings.HeightFading[dominantLayer];
+                    }
+                }
+
+                if (!isLayerEnabled || finalHeightScale <= 0) continue;
+
+                var worldPos = data.terrainPosition + new Vector3(randomX, 0, randomZ);
+                worldPos.y = data.terrainData.GetHeight(
+                    Mathf.RoundToInt(normX * data.terrainData.heightmapResolution),
+                    Mathf.RoundToInt(normZ * data.terrainData.heightmapResolution)
+                );
+
+                var tempLocalPositionIds = new List<int>();
+                objectGrid.GetObjectsInRadius(worldPos, spacing, tempLocalPositionIds);
+
+                if (tempLocalPositionIds.Count > 0) continue;
+
+                var normal = data.terrainData.GetInterpolatedNormal(normX, normZ);
+                var surfaceAngle = Mathf.Acos(normal.y) * Mathf.Rad2Deg;
+                if (surfaceAngle > _toolSettings.NormalLimit * 90.01f) continue;
+
+                if (Physics.CheckSphere(worldPos, 0.01f, _toolSettings.PaintBlockMask))
+                    continue;
+
+                var placementData = new GrassPlacementData
+                {
+                    position = worldPos,
+                    normal = normal,
+                    widthScale = finalWidthScale,
+                    heightScale = finalHeightScale
+                };
+
+                data.validPositions.Add(placementData);
+                objectGrid.AddObject(worldPos, data.validPositions.Count - 1);
             }
         }
 
@@ -213,11 +357,9 @@ namespace Grass.Editor
         {
             float r1 = Mathf.Sqrt(Random.value);
             float r2 = Random.value;
-
             float m1 = 1 - r1;
             float m2 = r1 * (1 - r2);
             float m3 = r1 * r2;
-
             return v1 * m1 + v2 * m2 + v3 * m3;
         }
     }

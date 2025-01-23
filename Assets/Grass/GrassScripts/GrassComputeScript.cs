@@ -264,7 +264,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         }
 
         if (ValidateSetup()) return;
-        InitShader();
+        InitResources();
         InitBuffers();
         SetupComputeShader();
         SetupQuadTree(full);
@@ -312,7 +312,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         return false;
     }
 
-    private void InitShader()
+    private void InitResources()
     {
         _instComputeShader = Instantiate(grassSetting.shaderToUse);
         instantiatedMaterial = Instantiate(grassSetting.materialToUse);
@@ -729,7 +729,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         }
     }
 
-    public void AddNewGrassToCullingTree(Vector3 position, int index)
+    public void AddNewGrass(Vector3 position, int index)
     {
         if (_bounds.Contains(position))
         {

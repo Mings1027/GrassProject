@@ -15,16 +15,16 @@ MonoBehaviour:
   shaderToUse: {fileID: 7200000, guid: 11036af5f2d1499c8845585fb5fadb4c, type: 3}
   materialToUse: {fileID: 2100000, guid: 62e33da08240646939128cbd216c0c12, type: 2}
   bladeRadius: 1
-  bladeForward: 1
+  bladeForward: 1.02
   bladeCurve: 2
-  bottomWidth: 0.34
+  bottomWidth: 0.32
   minWidth: 0.01
   maxWidth: 2
   minHeight: 0.01
   maxHeight: 3
   randomHeightMin: 0
-  randomHeightMax: 0.3
-  windSpeed: 6
+  randomHeightMax: 0.29999995
+  windSpeed: 4.8
   windStrength: 0.3
   windDirection: 45
   windDirectionVector: {x: 0.70710677, y: 0.70710677}
@@ -53,11 +53,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: afbb04eae13f742bb9aad8403d8a7d00, type: 2}
   - {fileID: 11400000, guid: 05a3b84b9ff8c4233b50d65de664dd81, type: 2}
   - {fileID: 11400000, guid: 75ff67505d9ba4d7cb01cbacd6814ce6, type: 2}
-  drawBounds: 1
-  drawAllBounds: 1
+  drawBounds: 0
+  drawAllBounds: 0
   seasonSettingFolder: {fileID: 102900000, guid: bfcf47eb377b24fd4a75c76b1bfc8fb7, type: 3}
   cullingTreeDepth: 5
-  minFadeDistance: 205
-  maxFadeDistance: 268
+  minFadeDistance: 50
+  maxFadeDistance: 160
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}
   castShadow: 0

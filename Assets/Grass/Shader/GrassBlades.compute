@@ -191,7 +191,7 @@ InteractionResult CalculateInteraction(float3 grassPosition, half grassHeight, h
     result.bendOffset = 0;
     result.windAttenuation = 0;
     
-    if (cut > -0.99) return result; // 잘린 잔디는 효과 무시
+    // if (cut > -0.99) return result; // 잘린 잔디는 효과 무시
 
     for (int i = 0; i < _InteractorsLength; i++)
     {
@@ -310,7 +310,7 @@ void Main(uint id : SV_DispatchThreadID)
     }
 
     // uint finalLocalVertexCount = (_MaxBladesPerVertex * distanceFade) * numTrianglesPerBlade * 3;
-    // 위와 같이 한번에 계산하지 않고 for문에서 += 3 을 한 이유는
+    // 윗줄처럼 한번에 계산하지 않고 for문에서 localVertexCount += 3 을 한 이유는
     // 1. 나중에 조건부로 삼각형 생성을 건너뛰는 경우가 생길 수 있고
     // 2. 실제로 생성된 삼각형의 수를 추적하기 편할 수 있으며
     // 3. 각 삼각형이 생성될 때마다 버텍스 수를 증가시키는 것이 논리적 흐름에 맞기 때문
