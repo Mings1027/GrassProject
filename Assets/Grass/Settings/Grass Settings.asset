@@ -53,11 +53,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: afbb04eae13f742bb9aad8403d8a7d00, type: 2}
   - {fileID: 11400000, guid: 05a3b84b9ff8c4233b50d65de664dd81, type: 2}
   - {fileID: 11400000, guid: 75ff67505d9ba4d7cb01cbacd6814ce6, type: 2}
-  drawBounds: 0
+  drawBounds: 1
   drawAllBounds: 0
   seasonSettingFolder: {fileID: 102900000, guid: bfcf47eb377b24fd4a75c76b1bfc8fb7, type: 3}
   cullingTreeDepth: 5
-  minFadeDistance: 50
+  minFadeDistance: 60
   maxFadeDistance: 160
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}
   castShadow: 0

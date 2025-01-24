@@ -27,7 +27,7 @@ namespace Grass.Editor
             var distanceMoved = Vector3.Distance(_lastPosition, hit.point);
             if (distanceMoved < toolSettings.BrushSize * 0.5f) return;
 
-            bool grassAdded = PlaceGrassInGrid(hit, mousePointRay.direction, toolSettings);
+            var grassAdded = PlaceGrassInGrid(hit, mousePointRay.direction, toolSettings);
 
             if (grassAdded)
             {
@@ -61,9 +61,9 @@ namespace Grass.Editor
             var grassAdded = false;
             var successfulPlacements = 0;
 
-            for (int x = -gridSize / 2; x < gridSize / 2; x++)
+            for (var x = -gridSize / 2; x < gridSize / 2; x++)
             {
-                for (int z = -gridSize / 2; z < gridSize / 2; z++)
+                for (var z = -gridSize / 2; z < gridSize / 2; z++)
                 {
                     var randomOffset = new Vector3(
                         Random.Range(-spacingBetweenPoints / 4f, spacingBetweenPoints / 4f),
@@ -98,6 +98,7 @@ namespace Grass.Editor
                                 _grassCompute.GrassDataList.Add(newData);
                                 _spatialGrid.AddObject(surfaceHit.point, newIndex);
                                 tempGrid.AddObject(surfaceHit.point, newIndex);
+                                
                                 _grassCompute.AddNewGrass(newData.position, newIndex);
 
                                 grassAdded = true;

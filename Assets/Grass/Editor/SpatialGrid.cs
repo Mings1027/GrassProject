@@ -1,11 +1,10 @@
 using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class SpatialGrid
 {
     private readonly Dictionary<long, HashSet<int>> _grid = new();
-    private float _cellSize;
+    private readonly float _cellSize;
     private readonly Vector3 _origin;
 
     // 임시 리스트를 재사용하기 위한 필드

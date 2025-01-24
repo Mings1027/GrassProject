@@ -25,7 +25,7 @@ public class CullingTree
 
         if (depth > 0)
         {
-            // 4분할만 하든 4,8 번갈아 하든 ReturnLeafList 성능은 유의미한 차이가 보이지 않음
+            // 프로파일링 해보고 4분할만 하든 4,8 번갈아 하든 선택하면 될듯함.
             CreateChild(depth);
             // CreateChildEight(depth);
         }
@@ -84,7 +84,7 @@ public class CullingTree
     /// </summary>
     /// <param name="frustum">카메라 프러스텀 평면들</param>
     /// <param name="visibleIDList">보이는 잔디 ID들을 저장할 리스트</param>
-    public void RetrieveLeaves(Plane[] frustum, List<int> visibleIDList)
+    public void GetVisibleObjectsInFrustum(Plane[] frustum, List<int> visibleIDList)
     {
 #if UNITY_EDITOR
         _boundsList.Clear();
@@ -107,7 +107,7 @@ public class CullingTree
                 {
                     if (_children[i] != null)
                     {
-                        _children[i].RetrieveLeaves(frustum, visibleIDList);
+                        _children[i].GetVisibleObjectsInFrustum(frustum, visibleIDList);
 #if UNITY_EDITOR
                         _boundsList.AddRange(_children[i]._boundsList);
 #endif
@@ -123,23 +123,21 @@ public class CullingTree
     /// <param name="point">잔디 위치</param>
     /// <param name="index">잔디 ID</param>
     /// <returns></returns>
-    public bool FindLeaf(Vector3 point, int index)
+    public bool GetClosestNode(Vector3 point, int index)
     {
-        if (_bounds.Contains(point))
+        if (!_bounds.Contains(point)) return false;
+        
+        if (_children.Length == 0) // 내부 노드면 자식 검사
         {
-            if (_children.Length == 0) // 내부 노드면 자식 검사
-                // 리프 노드면 ID 추가
-            {
-                _grassIDHeld.Add(index);
-                return true;
-            }
+            _grassIDHeld.Add(index);
+            return true;
+        }
 
-            for (var i = 0; i < _children.Length; i++)
+        foreach (var child in _children)
+        {
+            if (child != null && child.GetClosestNode(point, index))
             {
-                if (_children[i] != null && _children[i].FindLeaf(point, index))
-                {
-                    return true;
-                }
+                return true;
             }
         }
 
@@ -151,7 +149,7 @@ public class CullingTree
     /// 트리 전체 구조순화 혹은 디버깅 때 사용
     /// </summary>
     /// <param name="target">결과 저장 리스트</param>
-    public void RetrieveAllLeaves(List<CullingTree> target)
+    public void GetAllNodes(List<CullingTree> target)
     {
         if (_children.Length == 0)
         {
@@ -163,7 +161,7 @@ public class CullingTree
             {
                 if (_children[i] != null)
                 {
-                    _children[i].RetrieveAllLeaves(target);
+                    _children[i].GetAllNodes(target);
                 }
             }
         }
@@ -174,7 +172,7 @@ public class CullingTree
     /// 잔디 제거, 이동된 후 불필요한 노드들 제거
     /// </summary>
     /// <returns>현재 노드가 비어있는지</returns>
-    public bool ClearEmpty()
+    public bool ClearEmptyNodes()
     {
         if (_children.Length > 0)
         {
@@ -183,7 +181,7 @@ public class CullingTree
             {
                 if (_children[i] != null)
                 {
-                    if (_children[i].ClearEmpty())
+                    if (_children[i].ClearEmptyNodes())
                     {
                         _children[i] = null; // 빈 자식 노드 제거
                     }
@@ -210,7 +208,7 @@ public class CullingTree
     /// <param name="resultList"></param>
     /// <param name="point"></param>
     /// <param name="radius"></param>
-    public void ReturnLeafList(List<int> resultList, Vector3 point, float radius)
+    public void GetObjectsInRadius(List<int> resultList, Vector3 point, float radius)
     {
         var expandedBounds = _bounds;
         expandedBounds.Expand(radius * 2);
@@ -229,7 +227,7 @@ public class CullingTree
             {
                 if (_children[i] != null && _children[i]._bounds.SqrDistance(point) <= radius * radius)
                 {
-                    _children[i].ReturnLeafList(resultList, point, radius);
+                    _children[i].GetObjectsInRadius(resultList, point, radius);
                 }
             }
         }
@@ -242,7 +240,7 @@ public class CullingTree
     /// <param name="point">제거할 잔디 위치</param>
     /// <param name="index">제거할 잔디 ID</param>
     /// <returns></returns>
-    public bool Remove(Vector3 point, int index)
+    public bool RemoveObject(Vector3 point, int index)
     {
         if (!_bounds.Contains(point))
         {
@@ -256,7 +254,7 @@ public class CullingTree
 
         for (var i = 0; i < _children.Length; i++)
         {
-            if (_children[i] != null && _children[i].Remove(point, index))
+            if (_children[i] != null && _children[i].RemoveObject(point, index))
             {
                 return true;
             }

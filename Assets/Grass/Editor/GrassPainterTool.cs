@@ -1758,17 +1758,14 @@ namespace Grass.Editor
 
             var bounds = new Bounds(Vector3.zero, new Vector3(1000, 1000, 1000));
             _spatialGrid = new SpatialGrid(bounds, toolSettings.BrushSize);
+            _spatialGrid.Clear();
+            
             var grassData = grassCompute.GrassDataList;
 
-            if (_spatialGrid != null)
+            for (var i = 0; i < grassData.Count; i++)
             {
-                _spatialGrid.Clear();
-
-                for (var i = 0; i < grassData.Count; i++)
-                {
-                    var grass = grassData[i];
-                    _spatialGrid.AddObject(grass.position, i);
-                }
+                var grass = grassData[i];
+                _spatialGrid.AddObject(grass.position, i);
             }
         }
 
