@@ -41,13 +41,13 @@ MonoBehaviour:
   paintBlockMask:
     serializedVersion: 2
     m_Bits: 64
-  brushSize: 39.6
+  brushSize: 13.75
   brushTransitionSpeed: 0.45
   normalLimit: 1
   allowUndersideGrass: 1
-  density: 1000
-  grassSpacing: 0.4
-  brushHeight: 60.400063
+  density: 54
+  grassSpacing: 0.6
+  brushHeight: 58.00014
   generateGrassCount: 1000000
   grassMouseButton: 0
   brushSizeShortcut: 2

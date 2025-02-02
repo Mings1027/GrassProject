@@ -83,10 +83,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
     private EventBinding<InteractorRemovedEvent> _removeBinding;
     //==============================================================================================================================
 
-#if UNITY_EDITOR
-
-    private SceneView _view;
-
     public void Reset()
     {
         ReleaseResources();
@@ -95,6 +91,24 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         UnregisterEvents();
         RegisterEvents();
     }
+
+    private void ReleaseResources()
+    {
+        ReleaseBuffer();
+        if (!Application.isPlaying)
+        {
+            DestroyImmediate(_instComputeShader);
+            DestroyImmediate(_instantiatedMaterial);
+        }
+        else
+        {
+            Destroy(_instComputeShader);
+            Destroy(_instantiatedMaterial);
+        }
+    }
+#if UNITY_EDITOR
+
+    private SceneView _view;
 
     protected override void OnDestroy()
     {
@@ -136,12 +150,6 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         }
     }
 
-    private void ReleaseResources()
-    {
-        ReleaseBuffer();
-        DestroyImmediate(_instComputeShader);
-        DestroyImmediate(_instantiatedMaterial);
-    }
 #endif
     /*=============================================================================================================
      *                                            Unity Event Functions
@@ -669,6 +677,10 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
     {
         _instComputeShader.SetFloat(GrassShaderPropertyID.MinFadeDist, grassSetting.minFadeDistance);
         _instComputeShader.SetFloat(GrassShaderPropertyID.MaxFadeDist, grassSetting.maxFadeDistance);
+        if (Application.isPlaying)
+        {
+            _mainCamera.farClipPlane = grassSetting.maxFadeDistance;
+        }
     }
     #endregion
 
@@ -725,6 +737,15 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
         if (!_bounds.Contains(position))
         {
             _bounds.Encapsulate(position);
+            var extents = _bounds.extents;
+            _bounds.extents = extents * 1.1f;
+
+            _cullingTree = new CullingTree(_bounds, grassSetting.cullingTreeDepth);
+
+            for (int i = 0; i < grassData.Count; i++)
+            {
+                _cullingTree.GetClosestNode(grassData[i].position, i);
+            }
         }
 
         if (_cullingTree != null && _cullingTree.GetClosestNode(position, index))

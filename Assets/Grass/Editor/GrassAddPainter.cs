@@ -127,6 +127,7 @@ namespace Grass.Editor
         public void Clear()
         {
             _lastPosition = Vector3.zero;
+            _grassCompute.Reset();
         }
     }
 }

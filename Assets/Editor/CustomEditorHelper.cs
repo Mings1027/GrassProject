@@ -1,9 +1,10 @@
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace EditorHelper
+namespace Editor
 {
     public static class CustomEditorHelper
     {
@@ -248,3 +249,4 @@ namespace EditorHelper
         }
     }
 }
+#endif

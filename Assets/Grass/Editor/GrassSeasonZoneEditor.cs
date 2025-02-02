@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System.Linq;
-using EditorHelper;
+using Editor;
 using Grass.GrassScripts;
 
 namespace Grass.Editor

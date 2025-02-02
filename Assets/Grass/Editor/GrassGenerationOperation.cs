@@ -53,29 +53,24 @@ namespace Grass.Editor
             var generationDataList = new List<GenerationData>();
             var totalArea = 0f;
 
-            // 1단계: 데이터 수집 및 초기 설정
-            await _tool.UpdateProgress(0, 100, "Analyzing objects...");
-
             // 메시 데이터 수집
             foreach (var meshFilter in meshFilters)
             {
                 var meshData = CollectMeshData(meshFilter);
-                if (meshData != null)
-                {
-                    generationDataList.Add(meshData);
-                    totalArea += meshData.totalArea;
-                }
+                if (meshData == null) continue;
+                
+                generationDataList.Add(meshData);
+                totalArea += meshData.totalArea;
             }
 
             // 지형 데이터 수집
             foreach (var terrain in terrains)
             {
                 var terrainData = CollectTerrainData(terrain);
-                if (terrainData != null)
-                {
-                    generationDataList.Add(terrainData);
-                    totalArea += terrainData.totalArea;
-                }
+                if (terrainData == null) continue;
+                
+                generationDataList.Add(terrainData);
+                totalArea += terrainData.totalArea;
             }
 
             if (generationDataList.Count == 0)
@@ -90,12 +85,9 @@ namespace Grass.Editor
 
             foreach (var data in generationDataList)
             {
-                data.targetGrassCount = Mathf.FloorToInt((data.totalArea / totalArea) * totalTargetGrassCount);
+                data.targetGrassCount = Mathf.FloorToInt(data.totalArea / totalArea * totalTargetGrassCount);
             }
-
-            // 2단계: 잔디 위치 계산
-            await _tool.UpdateProgress(20, 100, "Calculating positions...");
-
+            
             var generationTasks = new List<UniTask>();
             foreach (var data in generationDataList)
             {
@@ -103,10 +95,7 @@ namespace Grass.Editor
             }
 
             await UniTask.WhenAll(generationTasks);
-
-            // 3단계: 결과 수집
-            await _tool.UpdateProgress(80, 100, "Finalizing grass generation...");
-
+            
             var currentIndex = existingGrassCount;
             var allGrassData = new List<GrassData>();
 
@@ -131,7 +120,6 @@ namespace Grass.Editor
             }
 
             _grassCompute.GrassDataList.AddRange(allGrassData);
-            await _tool.UpdateProgress(100, 100, $"Complete! Generated {allGrassData.Count} grass instances");
         }
 
         private GenerationData CollectMeshData(MeshFilter meshFilter)
@@ -222,7 +210,7 @@ namespace Grass.Editor
                 
                 if (attempts % Mathf.Max(1, maxAttempts / 100) == 0)
                 {
-                    var progress = 20 + Mathf.RoundToInt((float)attempts / maxAttempts * 60);
+                    var progress = Mathf.RoundToInt((float)attempts / maxAttempts * 60);
                     await _tool.UpdateProgress(progress, 100, "Calculating positions...");
                 }
 
@@ -279,7 +267,7 @@ namespace Grass.Editor
 
                 if (attempts % Mathf.Max(1, maxAttempts / 100) == 0)
                 {
-                    var progress = 20 + Mathf.RoundToInt((float)attempts / maxAttempts * 60);
+                    var progress = Mathf.RoundToInt((float)attempts / maxAttempts * 60);
                     await _tool.UpdateProgress(progress, 100, "Calculating positions...");
                 }
 

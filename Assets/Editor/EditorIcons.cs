@@ -1,7 +1,8 @@
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
 
-namespace EditorHelper
+namespace Editor
 {
     public static class EditorIcons
     {
@@ -20,3 +21,4 @@ namespace EditorHelper
         }
     }
 }
+#endif

@@ -1,13 +1,14 @@
+#if UNITY_EDITOR
+
 using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Reflection;
-using EditorHelper;
+using Editor;
 using EventBusSystem.Scripts;
 
-#if UNITY_EDITOR
 public class EventBusDebugWindow : EditorWindow
 {
     private Vector2 _scrollPosition;
