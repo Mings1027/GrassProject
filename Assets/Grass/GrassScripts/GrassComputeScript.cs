@@ -662,7 +662,7 @@ public class GrassComputeScript : MonoSingleton<GrassComputeScript>
 
     public void SpecularSetting()
     {
-        _instantiatedMaterial.SetFloat(GrassShaderPropertyID.Glossiness, grassSetting.glossiness);
+        _instantiatedMaterial.SetFloat(GrassShaderPropertyID.Glossiness, grassSetting.specularFalloff);
         _instantiatedMaterial.SetFloat(GrassShaderPropertyID.SpecularStrength, grassSetting.specularStrength);
         _instantiatedMaterial.SetFloat(GrassShaderPropertyID.SpecularHeight, grassSetting.specularHeight);
     }

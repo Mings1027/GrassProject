@@ -22,8 +22,7 @@ namespace Grass.Editor
             sharedIndices.Clear();
             _changedIndices.Clear();
 
-            var extendRadius = Mathf.Sqrt(brushSizeSqr + toolSettings.BrushHeight * toolSettings.BrushHeight);
-            spatialGrid.GetObjectsInRadius(hitPoint, extendRadius, sharedIndices);
+            spatialGrid.GetObjectsInRadius(hitPoint, toolSettings.BrushSize, sharedIndices);
 
             var grassList = grassCompute.GrassDataList;
 

@@ -6,8 +6,7 @@ public class GrassInteractor : MonoBehaviour, InteractorData
 {
     public Vector3 Position => transform.position;
     public float Radius => radius;
-    public int ID => GetInstanceID();
-    
+
     [Range(0, 100)] public float radius = 1f;
 
     private void OnEnable()
@@ -23,8 +22,12 @@ public class GrassInteractor : MonoBehaviour, InteractorData
     }
 
 #if UNITY_EDITOR
+
+    [SerializeField] private bool drawGizmos;
+    
     private void OnDrawGizmos()
     {
+        if (!drawGizmos) return;
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, radius);
     }

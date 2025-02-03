@@ -98,7 +98,7 @@ public class GrassSettingSO : ScriptableObject
     public Color additionalLightShadowColor = Color.black;
 
     [Header("Specular")]
-    public float glossiness = 4.5f;
+    public float specularFalloff = 4.5f;
     public float specularStrength = 1f;
     public float specularHeight = 0.5f;
 

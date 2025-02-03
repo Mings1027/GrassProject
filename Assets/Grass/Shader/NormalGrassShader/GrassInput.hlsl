@@ -37,7 +37,7 @@ half _MinShadowBrightness;
 half4 _ShadowColor;
 
 //Specular
-float _Glossiness; // 반사광의 선명도 조절
+float _SpecularFalloff; // 반사광의 선명도 조절
 float _SpecularStrength; // 반사광의 강도
 float _SpecularHeight;
 CBUFFER_END

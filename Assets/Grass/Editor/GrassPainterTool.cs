@@ -1220,8 +1220,8 @@ namespace Grass.Editor
                 EditorGUI.BeginChangeCheck();
                 Undo.RecordObject(grassSetting, "Specular Settings");
 
-                grassSetting.glossiness =
-                    CustomEditorHelper.FloatSlider("Glossiness", "", grassSetting.glossiness, 0f, 10f);
+                grassSetting.specularFalloff =
+                    CustomEditorHelper.FloatSlider("Specular Falloff", "", grassSetting.specularFalloff, 0f, 10f);
                 grassSetting.specularStrength =
                     CustomEditorHelper.FloatSlider("Specular Strength", "", grassSetting.specularStrength, 0f, 1f);
                 grassSetting.specularHeight =

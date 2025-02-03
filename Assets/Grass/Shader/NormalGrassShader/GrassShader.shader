@@ -24,7 +24,7 @@ Shader "Custom/GrassShader"
 		_ShadowColor ("Shadow Color", Color) = (0.5, 0.5, 0.5, 1)
 
 		[Header(Specular)]
-		_Glossiness("Glossiness", Range(0, 10)) = 0.5
+		_SpecularFalloff("Specular Falloff", Range(0, 10)) = 0.5
 		_SpecularStrength("Specular Strength", Range(0, 1)) = 0.5
 		_SpecularHeight("Specular Height", Range(0, 1)) = 0.7
 	}

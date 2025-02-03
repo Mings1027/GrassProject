@@ -28,9 +28,9 @@ MonoBehaviour:
   windStrength: 0.3
   windDirection: 45
   windDirectionVector: {x: 0.70710677, y: 0.70710677}
-  bladesPerVertex: 15
+  bladesPerVertex: 10
   segmentsPerBlade: 1
-  interactorStrength: 0.68
+  interactorStrength: 1
   topTint: {r: 1, g: 1, b: 1, a: 1}
   bottomTint: {r: 0.103773594, g: 0.103773594, b: 0.103773594, a: 1}
   ambientStrength: 0.2
@@ -44,7 +44,7 @@ MonoBehaviour:
   additionalLightIntensity: 0.5
   additionalLightShadowStrength: 1
   additionalLightShadowColor: {r: 0, g: 0.07363987, b: 1, a: 1}
-  glossiness: 5
+  specularFalloff: 3
   specularStrength: 1
   specularHeight: 0.6
   maxZoneCount: 20
@@ -58,6 +58,6 @@ MonoBehaviour:
   seasonSettingFolder: {fileID: 102900000, guid: bfcf47eb377b24fd4a75c76b1bfc8fb7, type: 3}
   cullingTreeDepth: 5
   minFadeDistance: 50
-  maxFadeDistance: 170
+  maxFadeDistance: 180
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}
   castShadow: 0
