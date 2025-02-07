@@ -23,7 +23,7 @@ MonoBehaviour:
   minHeight: 0.01
   maxHeight: 3
   randomHeightMin: 0
-  randomHeightMax: 0.29999995
+  randomHeightMax: 0.29999983
   windSpeed: 7
   windStrength: 0.3
   windDirection: 45
@@ -37,14 +37,14 @@ MonoBehaviour:
   blendMultiply: 1
   blendOffset: 0.2
   ambientAdjustmentColor: {r: 0, g: 0, b: 0, a: 1}
-  shadowDistance: 100
-  shadowFadeRange: 20
+  shadowDistance: 300
+  shadowFadeRange: 30
   shadowBrightness: 0
   shadowColor: {r: 0, g: 0, b: 0, a: 1}
   additionalLightIntensity: 0.5
   additionalLightShadowStrength: 1
   additionalLightShadowColor: {r: 0, g: 0.07363987, b: 1, a: 1}
-  specularFalloff: 3
+  specularFalloff: 4
   specularStrength: 1
   specularHeight: 0.6
   maxZoneCount: 20
@@ -53,11 +53,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: afbb04eae13f742bb9aad8403d8a7d00, type: 2}
   - {fileID: 11400000, guid: 05a3b84b9ff8c4233b50d65de664dd81, type: 2}
   - {fileID: 11400000, guid: 75ff67505d9ba4d7cb01cbacd6814ce6, type: 2}
-  drawBounds: 1
+  drawBounds: 0
   drawAllBounds: 0
   seasonSettingFolder: {fileID: 102900000, guid: bfcf47eb377b24fd4a75c76b1bfc8fb7, type: 3}
-  cullingTreeDepth: 5
-  minFadeDistance: 50
-  maxFadeDistance: 180
+  cullingTreeDepth: 7
+  minFadeDistance: 100
+  maxFadeDistance: 300
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}
   castShadow: 0

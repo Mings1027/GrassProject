@@ -48,8 +48,8 @@ half3 CalculateMainLight(half3 albedo, FragmentData input)
     half3 viewDir = normalize(_WorldSpaceCameraPos - input.worldPos);
     half3 halfVector = normalize(mainLight.direction + viewDir);
     half NdotH = saturate(dot(input.normalWS, halfVector));
-    half specularPower = exp2(_Glossiness);
-    half heightFactor = saturate((input.uv.y - _SpecularHeight) / (1 - _SpecularHeight));
+    half specularPower = exp2(_SpecularFalloff);
+    half heightFactor = smoothstep(_SpecularHeight, 1.0, input.uv.y);
     half3 specular = mainLight.color * _SpecularStrength * pow(NdotH, specularPower) * shadowAtten * heightFactor;
 
     // Ambient

@@ -167,7 +167,7 @@ PlayerSettings:
   applicationIdentifier:
     Android: com.GrassCompany.GrassProduct
     Standalone: com.Unity-Technologies.com.unity.template.urp-blank
-    iPhone: com.Unity-Technologies.com.unity.template.urp-blank
+    iPhone: com.GrassProject
   buildNumber:
     Standalone: 0
     VisionOS: 0

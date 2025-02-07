@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Threading;
 
 #if UNITY_EDITOR
 using System.Diagnostics;
@@ -156,5 +158,62 @@ namespace EventBusSystem.Scripts
             return count;
         }
 #endif
+    }
+
+    internal static class RequestContext
+    {
+        private static readonly AsyncLocal<Guid?> CurrentRequestId = new();
+
+        public static Guid? RequestId
+        {
+            get => CurrentRequestId.Value;
+            set => CurrentRequestId.Value = value;
+        }
+    }
+
+    public static class EventBusExtensions
+    {
+        private static readonly Dictionary<Guid, IEvent> ResponseMap = new();
+
+        public static TResponse Request<TRequest, TResponse>(TRequest request)
+            where TRequest : IEvent
+            where TResponse : IEvent
+        {
+            var requestId = Guid.NewGuid();
+            RequestContext.RequestId = requestId;
+
+            try
+            {
+                EventBus<TRequest>.Raise(request);
+
+                if (ResponseMap.Remove(requestId, out var response))
+                {
+                    return (TResponse)response;
+                }
+
+                return default;
+            }
+            finally
+            {
+                RequestContext.RequestId = null;
+            }
+        }
+
+        public static void Respond<TResponse>(TResponse response) where TResponse : IEvent
+        {
+            var requestId = RequestContext.RequestId;
+            if (!requestId.HasValue)
+            {
+                throw new InvalidOperationException(
+                    "Cannot respond outside of a request context. Make sure this is called during event handling.");
+            }
+
+            ResponseMap[requestId.Value] = response;
+        }
+
+        internal static void ClearResponses()
+        {
+            ResponseMap.Clear();
+        }
     }
 }

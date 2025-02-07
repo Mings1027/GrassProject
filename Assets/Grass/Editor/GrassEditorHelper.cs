@@ -28,7 +28,8 @@ namespace Grass.Editor
     {
         EditColors,
         EditWidthHeight,
-        Both
+        Both,
+        SetSize
     }
 
     public enum ModifyOption
@@ -40,8 +41,8 @@ namespace Grass.Editor
 
     public enum GenerateTab
     {
-        Basic,
-        TerrainLayers,
+        Mesh,
+        Terrain,
     }
 
     public static class GrassEditorHelper
@@ -108,7 +109,7 @@ namespace Grass.Editor
 
             // 새로운 SeasonSettings 에셋 생성
             var asset = ScriptableObject.CreateInstance<SeasonSettings>();
-            asset.seasonType = (SeasonType)Random.Range(0, System.Enum.GetValues(typeof(SeasonType)).Length);
+            asset.seasonType = (SeasonType)Random.Range(0, Enum.GetValues(typeof(SeasonType)).Length);
             asset.seasonColor = Color.white;
             asset.width = asset.height = 1f;
 
@@ -137,119 +138,148 @@ namespace Grass.Editor
 
             if (_seasonList == null || _seasonList.list != seasonSettings)
             {
-                _seasonList = new ReorderableList(seasonSettings, typeof(SeasonSettings), true, true, true, true);
-
-                // 헤더 그리기
-                _seasonList.drawHeaderCallback = rect =>
+                _seasonList = new ReorderableList(seasonSettings, typeof(SeasonSettings), true, true, true, true)
                 {
-                    if (seasonSettings.Count == 0)
+                    // 헤더 그리기
+                    drawHeaderCallback = rect =>
                     {
-                        EditorGUI.LabelField(rect, "Season Settings (No Seasons)");
-                        return;
-                    }
-
-                    var sequence = new System.Text.StringBuilder();
-                    for (int i = 0; i < seasonSettings.Count; i++)
-                    {
-                        var season = seasonSettings[i];
-                        if (season != null)
+                        if (seasonSettings.Count == 0)
                         {
-                            if (i > 0) sequence.Append(" → ");
-                            sequence.Append(season.seasonType.ToString());
+                            EditorGUI.LabelField(rect, "Season Settings (No Seasons)");
+                            return;
                         }
-                    }
 
-                    if (seasonSettings[0] != null)
+                        var sequence = new System.Text.StringBuilder();
+                        for (int i = 0; i < seasonSettings.Count; i++)
+                        {
+                            var season = seasonSettings[i];
+                            if (season != null)
+                            {
+                                if (i > 0) sequence.Append(" → ");
+                                sequence.Append(season.seasonType.ToString());
+                            }
+                        }
+
+                        if (seasonSettings[0] != null)
+                        {
+                            sequence.Append(" → ");
+                            sequence.Append(seasonSettings[0].seasonType.ToString());
+                        }
+
+                        EditorGUI.LabelField(rect, sequence.ToString());
+                    },
+                    // 각 요소 그리기
+                    drawElementCallback = (rect, index, isActive, isFocused) =>
                     {
-                        sequence.Append(" → ");
-                        sequence.Append(seasonSettings[0].seasonType.ToString());
-                    }
+                        var settings = seasonSettings[index];
+                        float padding = 2f;
+                        rect.y += padding;
+                        rect.height = EditorGUIUtility.singleLineHeight;
 
-                    EditorGUI.LabelField(rect, sequence.ToString());
-                };
+                        // 첫 줄: SeasonType 레이블 + Object Field
+                        var labelWidth = 70f;
+                        var labelRect = new Rect(rect.x, rect.y, labelWidth, rect.height);
+                        EditorGUI.LabelField(labelRect, settings != null ? settings.seasonType.ToString() : "Empty");
 
-                // 각 요소 그리기
-                _seasonList.drawElementCallback = (rect, index, isActive, isFocused) =>
-                {
-                    var settings = seasonSettings[index];
-                    float padding = 2f;
-                    rect.y += padding;
-                    rect.height = EditorGUIUtility.singleLineHeight;
+                        EditorGUI.BeginChangeCheck();
+                        var objectRect = new Rect(rect.x + labelWidth, rect.y, rect.width - labelWidth, rect.height);
+                        var newSettings = (SeasonSettings)EditorGUI.ObjectField(objectRect, settings,
+                            typeof(SeasonSettings), false);
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            Undo.RecordObject(grassSetting, "Change Season Settings");
+                            seasonSettings[index] = newSettings;
+                            settings = newSettings;
+                        }
 
-                    // 첫 줄: SeasonType 레이블 + Object Field
-                    var labelWidth = 70f;
-                    var labelRect = new Rect(rect.x, rect.y, labelWidth, rect.height);
-                    EditorGUI.LabelField(labelRect, settings != null ? settings.seasonType.ToString() : "Empty");
+                        if (settings != null)
+                        {
+                            // 두 번째 줄: Type + Color
+                            rect.y += EditorGUIUtility.singleLineHeight + padding;
+                            float labelWidth2 = 40f;
+                            var halfWidth = (rect.width - padding) / 2;
 
-                    var objectRect = new Rect(rect.x + labelWidth, rect.y, rect.width - labelWidth, rect.height);
-                    settings = (SeasonSettings)EditorGUI.ObjectField(objectRect, settings, typeof(SeasonSettings),
-                        false);
+                            // Type
+                            var typeRect = new Rect(rect.x, rect.y, halfWidth, rect.height);
+                            EditorGUI.LabelField(new Rect(typeRect.x, typeRect.y, labelWidth2, typeRect.height),
+                                "Type");
+                            typeRect.x += labelWidth2;
+                            typeRect.width -= labelWidth2;
 
-                    if (settings != null)
+                            EditorGUI.BeginChangeCheck();
+                            var newSeasonType = (SeasonType)EditorGUI.EnumPopup(typeRect, settings.seasonType);
+                            if (EditorGUI.EndChangeCheck())
+                            {
+                                Undo.RecordObject(settings, "Change Season Type");
+                                settings.seasonType = newSeasonType;
+                                EditorUtility.SetDirty(settings);
+                            }
+
+                            // Color
+                            var colorRect = new Rect(rect.x + halfWidth + padding, rect.y, halfWidth, rect.height);
+                            EditorGUI.LabelField(new Rect(colorRect.x, colorRect.y, labelWidth2, colorRect.height),
+                                "Color");
+                            colorRect.x += labelWidth2;
+                            colorRect.width -= labelWidth2;
+
+                            EditorGUI.BeginChangeCheck();
+                            var newColor = EditorGUI.ColorField(colorRect, settings.seasonColor);
+                            if (EditorGUI.EndChangeCheck())
+                            {
+                                Undo.RecordObject(settings, "Change Season Color");
+                                settings.seasonColor = newColor;
+                                EditorUtility.SetDirty(settings);
+                            }
+
+                            // Width/Height 슬라이더
+                            rect.y += EditorGUIUtility.singleLineHeight + padding;
+
+                            EditorGUI.BeginChangeCheck();
+
+                            // Width
+                            var widthRect = new Rect(rect.x, rect.y, halfWidth, rect.height);
+                            EditorGUI.LabelField(new Rect(widthRect.x, widthRect.y, labelWidth2, widthRect.height),
+                                "Width");
+                            widthRect.x += labelWidth2;
+                            widthRect.width -= labelWidth2;
+                            var newWidth = EditorGUI.Slider(widthRect, settings.width, 0, 2);
+
+                            // Height
+                            var heightRect = new Rect(rect.x + halfWidth + padding, rect.y, halfWidth, rect.height);
+                            EditorGUI.LabelField(new Rect(heightRect.x, heightRect.y, labelWidth2, heightRect.height),
+                                "Height");
+                            heightRect.x += labelWidth2;
+                            heightRect.width -= labelWidth2;
+                            var newHeight = EditorGUI.Slider(heightRect, settings.height, 0, 2);
+
+                            if (EditorGUI.EndChangeCheck())
+                            {
+                                Undo.RecordObject(settings, "Change Season Width/Height");
+                                settings.width = newWidth;
+                                settings.height = newHeight;
+                                EditorUtility.SetDirty(settings);
+                            }
+                        }
+                    },
+                    // 요소 높이 설정
+                    elementHeightCallback = index =>
                     {
-                        // 두 번째 줄: Type + Color
-                        rect.y += EditorGUIUtility.singleLineHeight + padding;
-                        float labelWidth2 = 40f;
-                        var halfWidth = (rect.width - padding) / 2;
+                        float baseHeight = EditorGUIUtility.singleLineHeight;
+                        float padding = 2f;
+                        float totalHeight = baseHeight + padding * 2; // 기본 한 줄 + 패딩
 
-                        // Type
-                        var typeRect = new Rect(rect.x, rect.y, halfWidth, rect.height);
-                        EditorGUI.LabelField(new Rect(typeRect.x, typeRect.y, labelWidth2, typeRect.height), "Type");
-                        typeRect.x += labelWidth2;
-                        typeRect.width -= labelWidth2;
-                        settings.seasonType = (SeasonType)EditorGUI.EnumPopup(typeRect, settings.seasonType);
+                        if (seasonSettings[index] != null)
+                        {
+                            totalHeight += (baseHeight + padding) * 2; // 추가 두 줄 + 패딩
+                        }
 
-                        // Color
-                        var colorRect = new Rect(rect.x + halfWidth + padding, rect.y, halfWidth, rect.height);
-                        EditorGUI.LabelField(new Rect(colorRect.x, colorRect.y, labelWidth2, colorRect.height),
-                            "Color");
-                        colorRect.x += labelWidth2;
-                        colorRect.width -= labelWidth2;
-                        settings.seasonColor = EditorGUI.ColorField(colorRect, settings.seasonColor);
-
-                        // 세 번째 줄: Width + Height 슬라이더
-                        rect.y += EditorGUIUtility.singleLineHeight + padding;
-
-                        // Width
-                        var widthRect = new Rect(rect.x, rect.y, halfWidth, rect.height);
-                        EditorGUI.LabelField(new Rect(widthRect.x, widthRect.y, labelWidth2, widthRect.height),
-                            "Width");
-                        widthRect.x += labelWidth2;
-                        widthRect.width -= labelWidth2;
-                        settings.width = EditorGUI.Slider(widthRect, settings.width, 0, 2);
-
-                        // Height
-                        var heightRect = new Rect(rect.x + halfWidth + padding, rect.y, halfWidth, rect.height);
-                        EditorGUI.LabelField(new Rect(heightRect.x, heightRect.y, labelWidth2, heightRect.height),
-                            "Height");
-                        heightRect.x += labelWidth2;
-                        heightRect.width -= labelWidth2;
-                        settings.height = EditorGUI.Slider(heightRect, settings.height, 0, 2);
-                    }
-
-                    seasonSettings[index] = settings;
+                        return totalHeight;
+                    },
+                    // 새 요소 추가
+                    onAddCallback = list => { seasonSettings.Add(null); },
+                    // 요소 제거
+                    onRemoveCallback = list => { seasonSettings.RemoveAt(list.index); }
                 };
-
-                // 요소 높이 설정
-                _seasonList.elementHeightCallback = index =>
-                {
-                    float baseHeight = EditorGUIUtility.singleLineHeight;
-                    float padding = 2f;
-                    float totalHeight = baseHeight + padding * 2; // 기본 한 줄 + 패딩
-
-                    if (seasonSettings[index] != null)
-                    {
-                        totalHeight += (baseHeight + padding) * 2; // 추가 두 줄 + 패딩
-                    }
-
-                    return totalHeight;
-                };
-
-                // 새 요소 추가
-                _seasonList.onAddCallback = list => { seasonSettings.Add(null); };
-
-                // 요소 제거
-                _seasonList.onRemoveCallback = list => { seasonSettings.RemoveAt(list.index); };
             }
 
             _seasonList.DoLayoutList();

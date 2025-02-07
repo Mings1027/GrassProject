@@ -93,76 +93,84 @@ namespace Editor
             return toggleChanged;
         }
 
-        public static bool DrawFoldoutSection(string title, Action drawContent)
-        {
-            return DrawFoldoutSection(title, null, drawContent);
-        }
-
-        public static bool DrawFoldoutSection(GUIContent titleContent, Action drawContent)
-        {
-            return DrawFoldoutSection(titleContent.text, null, drawContent);
-        }
-
         public static bool DrawFoldoutSection(string title, string subtitle, Action drawContent)
         {
-            var prefKey = $"Foldout_{title}";
-            FoldoutStates.TryAdd(title, EditorPrefs.GetBool(prefKey, true));
+            return DrawFoldoutSection(new GUIContent(title), subtitle, drawContent);
+        }
 
+        public static bool DrawFoldoutSection(string title, Action drawContent)
+        {
+            return DrawFoldoutSection(new GUIContent(title), null, drawContent);
+        }
+
+        public static bool DrawFoldoutSection(GUIContent content, Action drawContent)
+        {
+            return DrawFoldoutSection(content, null, drawContent);
+        }
+
+        public static bool DrawFoldoutSection(GUIContent titleContent, string subtitle, Action drawContent)
+        {
+            var prefKey = $"Foldout_{titleContent.text}";
+            FoldoutStates.TryAdd(titleContent.text, EditorPrefs.GetBool(prefKey, true));
+
+            // Header style setup
             var headerStyle = new GUIStyle(GUI.skin.button)
             {
                 fontSize = 12,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleLeft,
                 padding = new RectOffset(35, 10, 5, 5),
-                margin = new RectOffset(0, 0, 5, 0)
+                fixedHeight = 25
             };
 
-            var fullTitle = new GUIContent($"{title}{(string.IsNullOrEmpty(subtitle) ? "" : " " + subtitle)}");
-            var rect = GUILayoutUtility.GetRect(fullTitle, headerStyle, GUILayout.Height(25));
-            var arrowRect = new Rect(rect.x + 10, rect.y + 5, 20, 20);
-
-            if (GUI.Button(rect, title, headerStyle))
+            EditorGUILayout.BeginHorizontal();
             {
-                FoldoutStates[title] = !FoldoutStates[title];
-                EditorPrefs.SetBool(prefKey, FoldoutStates[title]);
-                GUI.changed = true;
-            }
+                // Get arrow content
+                var arrowContent =
+                    EditorGUIUtility.IconContent(FoldoutStates[titleContent.text] ? "d_dropdown" : "d_forward");
 
-            if (!string.IsNullOrEmpty(subtitle))
-            {
-                var subtitleStyle = new GUIStyle(headerStyle)
+                // Combine: arrow + text + icon
+                var combinedContent = new GUIContent
                 {
-                    fontSize = 11,
-                    fontStyle = FontStyle.Normal,
-                    normal = { textColor = new Color(0.7f, 0.7f, 0.7f) }
+                    text = titleContent.text,
+                    image = titleContent.image
                 };
 
-                var subtitleRect = new Rect(
-                    rect.x + headerStyle.CalcSize(new GUIContent(title)).x + 5,
-                    rect.y,
-                    rect.width - headerStyle.CalcSize(new GUIContent(title)).x - 5,
-                    rect.height
-                );
-                GUI.Label(subtitleRect, subtitle, subtitleStyle);
-            }
-
-            var arrowContent = EditorGUIUtility.IconContent(FoldoutStates[title] ? "d_dropdown" : "d_forward");
-            GUI.Label(arrowRect, arrowContent);
-
-            if (FoldoutStates[title])
-            {
-                var contentStyle = new GUIStyle(EditorStyles.helpBox)
+                if (GUILayout.Button(new GUIContent($"    {combinedContent.text}", combinedContent.image), headerStyle))
                 {
-                    padding = new RectOffset(15, 15, 10, 10),
-                    margin = new RectOffset(0, 0, 0, 0)
-                };
+                    FoldoutStates[titleContent.text] = !FoldoutStates[titleContent.text];
+                    EditorPrefs.SetBool(prefKey, FoldoutStates[titleContent.text]);
+                }
 
-                EditorGUILayout.BeginVertical(contentStyle);
+                // Draw arrow
+                var buttonRect = GUILayoutUtility.GetLastRect();
+                GUI.Label(new Rect(buttonRect.x + 10, buttonRect.y + 4, 20, 20), arrowContent);
+
+                // Subtitle if exists
+                if (!string.IsNullOrEmpty(subtitle))
+                {
+                    var subtitleStyle = new GUIStyle(EditorStyles.label)
+                    {
+                        fontSize = 11,
+                        fontStyle = FontStyle.Normal,
+                        normal = { textColor = new Color(0.7f, 0.7f, 0.7f) }
+                    };
+                    EditorGUILayout.LabelField(subtitle, subtitleStyle);
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+
+            // Content section
+            if (FoldoutStates[titleContent.text])
+            {
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                GUILayout.Space(5);
                 drawContent?.Invoke();
+                GUILayout.Space(5);
                 EditorGUILayout.EndVertical();
             }
 
-            return FoldoutStates[title];
+            return FoldoutStates[titleContent.text];
         }
 
         public static int IntSlider(string label, string tooltip, int value, int minValue, int maxValue)
@@ -237,6 +245,43 @@ namespace Editor
             }
 
             EditorGUILayout.EndHorizontal();
+        }
+
+        public static (float min, float max) DrawMinMaxSection(string label, float currentMin, float currentMax,
+                                                               float minLimit, float maxLimit)
+        {
+            float tempMin = currentMin;
+            float tempMax = currentMax;
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.MinMaxSlider(new GUIContent(label), ref tempMin, ref tempMax, minLimit, maxLimit);
+
+            var roundedMin = (float)Math.Round(tempMin, 2);
+            var roundedMax = (float)Math.Round(tempMax, 2);
+
+            EditorGUI.BeginChangeCheck();
+            var newMin = EditorGUILayout.FloatField(
+                new GUIContent("", $"Min value for {label}"),
+                roundedMin,
+                GUILayout.Width(50)
+            );
+            if (EditorGUI.EndChangeCheck())
+            {
+                tempMin = Mathf.Clamp(newMin, minLimit, tempMax);
+            }
+
+            EditorGUI.BeginChangeCheck();
+            var newMax = EditorGUILayout.FloatField(
+                new GUIContent("", $"Max value for {label}"),
+                roundedMax,
+                GUILayout.Width(50)
+            );
+            if (EditorGUI.EndChangeCheck())
+            {
+                tempMax = Mathf.Clamp(newMax, tempMin, maxLimit);
+            }
+
+            EditorGUILayout.EndHorizontal();
+            return (tempMin, tempMax);
         }
 
         // 최적화된 거리 계산 (제곱근 계산 제거)

@@ -35,9 +35,20 @@ public static class EventBusUtil
     static void OnPlayModeStateChanged(PlayModeStateChange state)
     {
         PlayModeState = state;
-        if (state == PlayModeStateChange.ExitingPlayMode)
+        switch (state)
         {
-            ClearAllBuses();
+            case PlayModeStateChange.EnteredEditMode:
+                break;
+            case PlayModeStateChange.ExitingEditMode:
+                ClearAllBuses();
+                break;
+            case PlayModeStateChange.EnteredPlayMode:
+                break;
+            case PlayModeStateChange.ExitingPlayMode:
+                ClearAllBuses();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(state), state, null);
         }
     }
 #endif
@@ -111,6 +122,8 @@ public static class EventBusUtil
 
             EventBusTypes = tempBusTypes;
         }
+
+        // EventBusExtensions.CleanupCallbacks();
 
 #if UNITY_EDITOR
         Debug.Log($"Clearing all buses in {(Application.isPlaying ? "Play" : "Edit")} mode...");

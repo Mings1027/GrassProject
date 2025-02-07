@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
@@ -12,18 +13,17 @@ namespace Grass.Editor
     {
         private SerializedProperty _seasonValue;
         private SerializedProperty _showGizmos;
-        private GrassSeasonZone _seasonZone;
-        private List<SeasonSettings> _seasonSettingList;
-        private GrassSettingSO _grassSetting;
-        private bool _isSeasonValueSliderDragging;
+        private SerializedProperty _useLocalSeasonSettings;
+        private SerializedProperty _seasonSettingList;
+        private SerializedProperty _grassSetting;
 
         private void OnEnable()
         {
             _seasonValue = serializedObject.FindProperty("seasonValue");
             _showGizmos = serializedObject.FindProperty("showGizmos");
-            _seasonZone = (GrassSeasonZone)target;
-            _seasonSettingList = _seasonZone.SeasonSettings;
-            _grassSetting = _seasonZone.GrassSetting;
+            _useLocalSeasonSettings = serializedObject.FindProperty("useLocalSeasonSettings");
+            _seasonSettingList = serializedObject.FindProperty("seasonSettings");
+            _grassSetting = serializedObject.FindProperty("grassSetting");
         }
 
         public override void OnInspectorGUI()
@@ -32,14 +32,14 @@ namespace Grass.Editor
 
             DrawGizmosToggle();
 
-            if (CustomEditorHelper.DrawToggleButton("Override Global Season Setting", _seasonZone.OverrideGlobalSettings,
+            if (CustomEditorHelper.DrawToggleButton("Use Local Season Setting", _useLocalSeasonSettings.boolValue,
                     out var newState))
             {
-                _seasonZone.OverrideGlobalSettings = newState;
+                _useLocalSeasonSettings.boolValue = newState;
                 UpdateGrass();
             }
 
-            if (_seasonZone.OverrideGlobalSettings)
+            if (_useLocalSeasonSettings.boolValue)
             {
                 DrawOverrideSettings();
             }
@@ -72,24 +72,32 @@ namespace Grass.Editor
 
         private void UpdateGrass()
         {
-            if (_seasonZone != null)
+            var seasonZone = (GrassSeasonZone)target;
+            if (seasonZone != null)
             {
                 // SeasonValue가 변경되면 업데이트
-                var min = _seasonZone.MinRange;
-                var max = _seasonZone.MaxRange;
+                var min = seasonZone.MinRange;
+                var max = seasonZone.MaxRange;
                 if (_grassSetting != null)
                 {
-                    _seasonZone.UpdateSeasonValue(_seasonValue.floatValue, min, max);
+                    seasonZone.UpdateSeasonValue(_seasonValue.floatValue, min, max);
                 }
             }
         }
 
         private void DrawSeasonValueSlider()
         {
-            var settings = _seasonZone.OverrideGlobalSettings ? _seasonSettingList : _grassSetting?.seasonSettings;
+            var seasonZone = (GrassSeasonZone)target;
+            var grassSettingObj = _grassSetting.objectReferenceValue as GrassSettingSO;
+
+            if (grassSettingObj == null) return;
+
+            var settings = _useLocalSeasonSettings.boolValue
+                ? GetSettingsFromProperty(_seasonSettingList)
+                : grassSettingObj.seasonSettings;
 
             // 설정이 없거나 비어있는 경우 체크
-            if (settings == null || settings.Count == 0 || settings.All(s => s == null))
+            if (settings == null || settings.Count == 0)
             {
                 EditorGUILayout.HelpBox("No valid season settings available.", MessageType.Warning);
                 return;
@@ -98,8 +106,8 @@ namespace Grass.Editor
             EditorGUILayout.Space(10);
             EditorGUILayout.LabelField("Season Value", EditorStyles.boldLabel);
 
-            var minRange = _seasonZone.MinRange;
-            var maxRange = _seasonZone.MaxRange;
+            var minRange = seasonZone.MinRange;
+            var maxRange = seasonZone.MaxRange;
 
             if (maxRange > minRange)
             {
@@ -109,36 +117,11 @@ namespace Grass.Editor
                 if (EditorGUI.EndChangeCheck())
                 {
                     _seasonValue.floatValue = newValue;
-                    _seasonZone.SetSeasonValue(newValue);
+                    seasonZone.SetSeasonValue(newValue);
                 }
 
-                // 현재 시즌 전환 상태 가져오기
-                var (currentSeason, transition) = _seasonZone.GetCurrentSeasonTransition();
-                var seasonSettingList = _seasonZone.OverrideGlobalSettings
-                    ? _seasonSettingList
-                    : _grassSetting?.seasonSettings;
-
-                if (seasonSettingList != null && seasonSettingList.Count > 0)
-                {
-                    var sequence = new System.Text.StringBuilder();
-                    for (int i = 0; i < seasonSettingList.Count; i++)
-                    {
-                        if (settings[i] != null)
-                        {
-                            if (sequence.Length > 0)
-                            {
-                                sequence.Append(" → ");
-                            }
-
-                            var season = settings[i].seasonType.ToString();
-                            sequence.Append(season == currentSeason.ToString() ? $"<b>{season}</b>" : season);
-                        }
-                    }
-
-                    var style = new GUIStyle(EditorStyles.label) { richText = true };
-                    EditorGUILayout.LabelField(sequence.ToString(), style);
-                    EditorGUILayout.LabelField($"Transition: {transition:P0}");
-                }
+                var (currentSeason, transition) = seasonZone.GetCurrentSeasonTransition();
+                DrawSeasonTransitionInfo(settings, currentSeason, transition);
             }
             else
             {
@@ -146,30 +129,78 @@ namespace Grass.Editor
             }
         }
 
+        private List<SeasonSettings> GetSettingsFromProperty(SerializedProperty listProperty)
+        {
+            var result = new List<SeasonSettings>();
+            for (int i = 0; i < listProperty.arraySize; i++)
+            {
+                var element = listProperty.GetArrayElementAtIndex(i).objectReferenceValue as SeasonSettings;
+                if (element != null)
+                {
+                    result.Add(element);
+                }
+            }
+
+            return result;
+        }
+
+        private void DrawSeasonTransitionInfo(List<SeasonSettings> settings,
+                                              SeasonType currentSeason, float transition)
+        {
+            var sequence = new System.Text.StringBuilder();
+            for (int i = 0; i < settings.Count; i++)
+            {
+                if (settings[i] != null)
+                {
+                    if (sequence.Length > 0)
+                    {
+                        sequence.Append(" → ");
+                    }
+
+                    var season = settings[i].seasonType.ToString();
+                    sequence.Append(season == currentSeason.ToString() ? $"<b>{season}</b>" : season);
+                }
+            }
+
+            var style = new GUIStyle(EditorStyles.label) { richText = true };
+            EditorGUILayout.LabelField(sequence.ToString(), style);
+            EditorGUILayout.LabelField($"Transition: {transition:P0}");
+        }
+
         private void DrawGlobalSettings()
         {
             EditorGUILayout.Space(10);
             EditorGUILayout.LabelField("Global Season Settings (Read Only)", EditorStyles.boldLabel);
 
-            if (_grassSetting == null)
+            var grassSettingObj = _grassSetting.objectReferenceValue as GrassSettingSO;
+            if (grassSettingObj == null)
             {
                 EditorGUILayout.HelpBox("No GrassSettingSO found in scene.", MessageType.Warning);
                 return;
             }
 
             EditorGUI.BeginDisabledGroup(true);
-            GrassEditorHelper.DrawSeasonSettings(_grassSetting.seasonSettings, _grassSetting);
+            GrassEditorHelper.DrawSeasonSettings(grassSettingObj.seasonSettings, grassSettingObj);
             EditorGUI.EndDisabledGroup();
         }
 
         private void DrawOverrideSettings()
         {
             EditorGUILayout.Space(10);
+            EditorGUILayout.LabelField("Local Season Settings", EditorStyles.boldLabel);
+
             EditorGUI.BeginChangeCheck();
-            GrassEditorHelper.DrawSeasonSettings(_seasonSettingList, _grassSetting);
-            if (EditorGUI.EndChangeCheck())
+            var grassSettingObj = _grassSetting.objectReferenceValue as GrassSettingSO;
+            if (grassSettingObj != null)
             {
-                _seasonZone.UpdateZoneImmediate();
+                GrassEditorHelper.DrawSeasonSettings(GetSettingsFromProperty(_seasonSettingList), grassSettingObj);
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    var seasonZone = (GrassSeasonZone)target;
+                    seasonZone.UpdateZoneImmediate();
+                    serializedObject.ApplyModifiedProperties();
+                }
             }
         }
     }

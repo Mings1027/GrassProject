@@ -1,8 +1,9 @@
+using System;
 using UnityEngine;
 
 public interface IEvent { }
 
-public interface InteractorData
+public interface IInteractorData
 {
     Vector3 Position { get; }
     float Radius { get; }
@@ -10,10 +11,21 @@ public interface InteractorData
 
 public struct InteractorAddedEvent : IEvent
 {
-    public InteractorData data;
+    public IInteractorData data;
 }
 
 public struct InteractorRemovedEvent : IEvent
 {
-    public InteractorData data;
+    public IInteractorData data;
+}
+
+public struct GrassColorEvent : IEvent
+{
+    public Vector3 position;
+    public Color defaultColor;
+}
+
+public struct GrassColorResultEvent : IEvent
+{
+    public Color resultColor;
 }

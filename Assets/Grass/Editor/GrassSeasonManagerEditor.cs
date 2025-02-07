@@ -24,21 +24,12 @@ namespace Grass.Editor
         {
             serializedObject.Update();
 
-            DrawManualUpdateButton();
             DrawGizmosToggle();
             DrawCreateSeasonZoneButton();
             DrawGlobalSeasonValueSlider();
             EditorGUILayout.Space(10);
 
             serializedObject.ApplyModifiedProperties();
-        }
-
-        private void DrawManualUpdateButton()
-        {
-            if (GUILayout.Button("Manual Update", GUILayout.Height(25)))
-            {
-                _manager.Init();
-            }
         }
 
         private void DrawGizmosToggle()
@@ -103,7 +94,10 @@ namespace Grass.Editor
             EditorGUILayout.LabelField("Global Season Value", EditorStyles.boldLabel);
 
             EditorGUI.BeginChangeCheck();
-            var newValue = EditorGUILayout.Slider(_seasonValue.floatValue, 0, _manager.GrassComputeScript.GrassSetting.seasonSettings.Count);
+            var grassCompute = FindAnyObjectByType<GrassComputeScript>();
+
+            var newValue = EditorGUILayout.Slider(_seasonValue.floatValue, 0,
+                grassCompute.GrassSetting.seasonSettings.Count);
             if (EditorGUI.EndChangeCheck())
             {
                 _seasonValue.floatValue = newValue;

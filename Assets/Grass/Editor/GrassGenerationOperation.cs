@@ -24,7 +24,7 @@ namespace Grass.Editor
             public float totalArea;
             public int targetGrassCount;
             public List<GrassPlacementData> validPositions;
-            
+
             // Terrain specific data
             public float[,,] splatmapData;
             public TerrainData terrainData;
@@ -32,13 +32,13 @@ namespace Grass.Editor
             public int alphamapHeight;
             public Vector3 terrainPosition;
             public Vector3 terrainSize;
-            
+
             // Mesh specific data
             public List<(Vector3[] vertices, Vector3 normal, float area)> triangles;
         }
 
         public GrassGenerationOperation(GrassPainterTool tool, GrassComputeScript grassCompute,
-            GrassToolSettingSo toolSettings, SpatialGrid spatialGrid)
+                                        GrassToolSettingSo toolSettings, SpatialGrid spatialGrid)
         {
             _tool = tool;
             _grassCompute = grassCompute;
@@ -46,29 +46,48 @@ namespace Grass.Editor
             _spatialGrid = spatialGrid;
         }
 
-        public async UniTask GenerateGrass(List<MeshFilter> meshFilters, List<Terrain> terrains)
+        public async UniTask GenerateGrass(GameObject[] selectedObjects)
         {
+            var meshObjects = new List<MeshFilter>();
+            var terrainObjects = new List<Terrain>();
+
+            foreach (var obj in selectedObjects)
+            {
+                var layer = obj.layer;
+                if (layer.NotMatches(_toolSettings.PaintMask.value)) continue;
+                
+                if (obj.TryGetComponent<MeshFilter>(out var meshFilter))
+                {
+                    meshObjects.Add(meshFilter);
+                }
+
+                if (obj.TryGetComponent<Terrain>(out var terrain))
+                {
+                    terrainObjects.Add(terrain);
+                }
+            }
+
             var spacing = _toolSettings.GrassSpacing;
             var existingGrassCount = _grassCompute.GrassDataList.Count;
             var generationDataList = new List<GenerationData>();
             var totalArea = 0f;
 
             // 메시 데이터 수집
-            foreach (var meshFilter in meshFilters)
+            foreach (var meshFilter in meshObjects)
             {
                 var meshData = CollectMeshData(meshFilter);
                 if (meshData == null) continue;
-                
+
                 generationDataList.Add(meshData);
                 totalArea += meshData.totalArea;
             }
 
             // 지형 데이터 수집
-            foreach (var terrain in terrains)
+            foreach (var terrain in terrainObjects)
             {
                 var terrainData = CollectTerrainData(terrain);
                 if (terrainData == null) continue;
-                
+
                 generationDataList.Add(terrainData);
                 totalArea += terrainData.totalArea;
             }
@@ -87,7 +106,7 @@ namespace Grass.Editor
             {
                 data.targetGrassCount = Mathf.FloorToInt(data.totalArea / totalArea * totalTargetGrassCount);
             }
-            
+
             var generationTasks = new List<UniTask>();
             foreach (var data in generationDataList)
             {
@@ -95,7 +114,7 @@ namespace Grass.Editor
             }
 
             await UniTask.WhenAll(generationTasks);
-            
+
             var currentIndex = existingGrassCount;
             var allGrassData = new List<GrassData>();
 
@@ -147,8 +166,8 @@ namespace Grass.Editor
                 ).normalized;
 
                 var area = Vector3.Cross(v2 - v1, v3 - v1).magnitude * 0.5f;
-                
-                var surfaceAngle = _toolSettings.allowUndersideGrass 
+
+                var surfaceAngle = _toolSettings.allowUndersideGrass
                     ? Mathf.Acos(Mathf.Abs(normal.y)) * Mathf.Rad2Deg
                     : Mathf.Acos(normal.y) * Mathf.Rad2Deg;
 
@@ -207,7 +226,7 @@ namespace Grass.Editor
             while (data.validPositions.Count < data.targetGrassCount && attempts < maxAttempts)
             {
                 attempts++;
-                
+
                 if (attempts % Mathf.Max(1, maxAttempts / 100) == 0)
                 {
                     var progress = Mathf.RoundToInt((float)attempts / maxAttempts * 60);

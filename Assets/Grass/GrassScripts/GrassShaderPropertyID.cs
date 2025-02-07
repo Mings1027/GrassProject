@@ -57,7 +57,7 @@ namespace Grass.GrassScripts
         public static readonly int AdditionalLightShadowStrength = Shader.PropertyToID("_AdditionalLightShadowStrength");
         public static readonly int AdditionalShadowColor = Shader.PropertyToID("_AdditionalShadowColor");
         
-        public static readonly int Glossiness = Shader.PropertyToID("_Glossiness");
+        public static readonly int SpecularFalloff = Shader.PropertyToID("_SpecularFalloff");
         public static readonly int SpecularStrength = Shader.PropertyToID("_SpecularStrength");
         public static readonly int SpecularHeight = Shader.PropertyToID("_SpecularHeight");
         

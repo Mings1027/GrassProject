@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEditor.SceneManagement;
@@ -6,6 +7,22 @@ using UnityEngine.SceneManagement;
 
 namespace Grass.Editor
 {
+    public readonly struct ModifyOperation
+    {
+        public readonly string title;
+        public readonly string message;
+        public readonly string undoMessage;
+        public readonly Func<UniTask> action;
+
+        public ModifyOperation(string title, string message, string undoMessage, Func<UniTask> action)
+        {
+            this.title = title;
+            this.message = message;
+            this.undoMessage = undoMessage;
+            this.action = action;
+        }
+    }
+
     public class GrassModifyOperation
     {
         private readonly GrassPainterTool _painterTool;
@@ -20,7 +37,7 @@ namespace Grass.Editor
             _toolSettings = toolSettings;
         }
 
-        public async UniTask ModifyColor()
+        private async UniTask ModifyColor()
         {
             var grassData = new List<GrassData>(_grassCompute.GrassDataList);
             var totalCount = grassData.Count;
@@ -38,7 +55,7 @@ namespace Grass.Editor
             RebuildMesh();
         }
 
-        public async UniTask ModifySize()
+        private async UniTask ModifySize()
         {
             var grassData = new List<GrassData>(_grassCompute.GrassDataList);
             var totalCount = grassData.Count;
@@ -56,7 +73,7 @@ namespace Grass.Editor
             RebuildMesh();
         }
 
-        public async UniTask ModifySizeAndColor()
+        private async UniTask ModifySizeAndColor()
         {
             var grassData = new List<GrassData>(_grassCompute.GrassDataList);
             var totalCount = grassData.Count;
@@ -73,6 +90,34 @@ namespace Grass.Editor
 
             _grassCompute.GrassDataList = grassData;
             RebuildMesh();
+        }
+
+        public ModifyOperation GetModifyOperation(ModifyOption modifyOption)
+        {
+            return modifyOption switch
+            {
+                ModifyOption.Color => new ModifyOperation(
+                    "Modify Color",
+                    "Modify the color of all grass elements?",
+                    "Modified Color",
+                    ModifyColor),
+                ModifyOption.WidthHeight => new ModifyOperation(
+                    "Modify Width and Height",
+                    "Modify the width and height of all grass elements?",
+                    "Modified Size",
+                    ModifySize),
+                ModifyOption.Both => new ModifyOperation(
+                    "Modify Width Height and Color",
+                    "Modify the width, height and color of all grass elements?",
+                    "Modified Size and Color",
+                    ModifySizeAndColor),
+                _ => throw new ArgumentOutOfRangeException(nameof(modifyOption), modifyOption, null)
+            };
+        }
+
+        public async UniTask ExecuteOperation(Func<UniTask> action)
+        {
+            await action();
         }
 
         private void RebuildMesh()

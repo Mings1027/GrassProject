@@ -1,23 +1,22 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using EventBusSystem.Scripts;
 using Grass.GrassScripts;
 using UnityEditor;
 using UnityEngine;
 
 [ExecuteInEditMode]
-public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>, IGrassColorProvider
+public class GrassSeasonManager : MonoBehaviour
 {
     private GrassComputeScript _grassComputeScript;
+    private EventBinding<GrassColorEvent> _colorRequestBinding;
 
     [SerializeField] private float globalSeasonValue;
     [SerializeField] private List<GrassSeasonZone> seasonZones = new();
 
-    public GrassComputeScript GrassComputeScript => _grassComputeScript;
-
     private void OnEnable()
     {
         _grassComputeScript = FindAnyObjectByType<GrassComputeScript>();
-        _grassComputeScript.SetColorProvider(this);
         foreach (var zone in seasonZones)
         {
             SubscribeToZone(zone);
@@ -25,21 +24,21 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>, IGrassColor
 
         UpdateSeasonZones();
         Init();
+
+        _colorRequestBinding = new EventBinding<GrassColorEvent>(HandleColorRequest);
+        EventBus<GrassColorEvent>.Register(_colorRequestBinding);
     }
 
     private void OnDisable()
     {
-        if (_grassComputeScript != null)
-        {
-            _grassComputeScript.SetColorProvider(null);
-        }
-
         foreach (var zone in seasonZones)
         {
             UnsubscribeFromZone(zone);
         }
 
         Init();
+
+        EventBus<GrassColorEvent>.Deregister(_colorRequestBinding);
     }
 
     private void Update()
@@ -71,20 +70,27 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>, IGrassColor
         }
     }
 
-    public Color GetGrassColor(Vector3 position, Color defaultColor)
+    private void HandleColorRequest(GrassColorEvent evt)
     {
         foreach (var zone in seasonZones)
         {
-            if (zone.gameObject.activeInHierarchy && zone.ContainsPosition(position))
+            if (zone.gameObject.activeInHierarchy && zone.ContainsPosition(evt.position))
             {
-                return zone.GetZoneColor();
+                EventBusExtensions.Respond(new GrassColorResultEvent
+                {
+                    resultColor = zone.GetZoneColor()
+                });
+                return;
             }
         }
 
-        return defaultColor;
+        EventBusExtensions.Respond(new GrassColorResultEvent
+        {
+            resultColor = evt.defaultColor
+        });
     }
 
-    public void Init()
+    private void Init()
     {
         for (int i = 0; i < seasonZones.Count; i++)
         {
@@ -92,10 +98,11 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>, IGrassColor
         }
     }
 
-    public void UpdateSeasonZones()
+    private void UpdateSeasonZones()
     {
         seasonZones.Clear();
-        var foundZones = GetComponentsInChildren<GrassSeasonZone>(true); // includeInactive를 true로 설정하여 비활성화된 zone도 가져옴
+        var foundZones =
+            GetComponentsInChildren<GrassSeasonZone>(true); // 파라미터인 includeInactive를 true로 설정하여 비활성화된 zone도 가져옴
         var maxCount = _grassComputeScript.GrassSetting.maxZoneCount;
 
         foreach (var zone in foundZones)
@@ -127,14 +134,6 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>, IGrassColor
         UpdateShaderData();
     }
 
-    public void UpdateAllSeasonZones()
-    {
-        foreach (var seasonZone in seasonZones)
-        {
-            seasonZone.UpdateSeasonValue(globalSeasonValue, 0, _grassComputeScript.GrassSetting.seasonSettings.Count);
-        }
-    }
-
     public void UpdateShaderData()
     {
         var positions = new Vector4[seasonZones.Count];
@@ -155,7 +154,51 @@ public class GrassSeasonManager : MonoSingleton<GrassSeasonManager>, IGrassColor
         _grassComputeScript.UpdateSeasonData(positions, scales, colors, widthHeights, seasonZones.Count);
     }
 
+    private const float DefaultTransitionDuration = 2.0f;
+
+    public void PlayCycles(float transitionDuration = DefaultTransitionDuration)
+    {
+        foreach (var zone in seasonZones)
+        {
+            if (zone != null && zone.gameObject.activeInHierarchy)
+            {
+                zone.PlayCycle(transitionDuration);
+            }
+        }
+    }
+
+    public void PlayNextSeasons(float transitionDuration = DefaultTransitionDuration)
+    {
+        foreach (var zone in seasonZones)
+        {
+            if (zone != null && zone.gameObject.activeInHierarchy)
+            {
+                zone.PlayNextSeason(transitionDuration);
+            }
+        }
+    }
+
+    public void PauseTransitions(float transitionDuration = DefaultTransitionDuration)
+    {
+        foreach (var zone in seasonZones)
+        {
+            if (zone != null && zone.gameObject.activeInHierarchy)
+            {
+                zone.PauseTransition();
+            }
+        }
+    }
+
 #if UNITY_EDITOR
+
+    public void UpdateAllSeasonZones()
+    {
+        foreach (var seasonZone in seasonZones)
+        {
+            seasonZone.UpdateSeasonValue(globalSeasonValue, 0, _grassComputeScript.GrassSetting.seasonSettings.Count);
+        }
+    }
+
     public void CreateSeasonZone()
     {
         var zoneObject = new GameObject("Grass Season Zone");

@@ -78,10 +78,17 @@ namespace Grass.Editor
 
                 if (distanceSqr <= _currentBrushSizeSqr)
                 {
+                    if (editOption == EditOption.SetSize)
+                    {
+                        grassData.widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight);
+                        _modifiedGrassData[index] = grassData;
+                        _processedIndices.Add(index);
+                        continue;
+                    }
+
                     var distanceFalloff = 1f - distanceSqr / _currentBrushSizeSqr;
 
                     _cumulativeChanges.TryAdd(index, 0f);
-
                     _cumulativeChanges[index] =
                         Mathf.Clamp01(_cumulativeChanges[index] + _deltaTimeSpeed * distanceFalloff);
 

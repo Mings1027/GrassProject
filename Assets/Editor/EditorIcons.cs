@@ -13,7 +13,7 @@ namespace Editor
         public static GUIContent Warning => IconContent("d_console.warnicon");
         public static GUIContent Trash => IconContent("d_TreeEditor.Trash");
         public static GUIContent Minus => IconContent("d_Toolbar Minus");
-        
+
         private static GUIContent IconContent(string iconName)
         {
             var icon = EditorGUIUtility.IconContent(iconName);

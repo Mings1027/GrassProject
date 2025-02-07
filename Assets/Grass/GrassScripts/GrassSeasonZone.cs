@@ -4,103 +4,53 @@ using System.Threading;
 using System.Threading.Tasks;
 using Grass.GrassScripts;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [ExecuteInEditMode]
 public class GrassSeasonZone : MonoBehaviour
 {
-    private readonly struct SeasonState
-    {
-        private readonly Vector3 _position;
-        private readonly Vector3 _scale;
-        public readonly Color color;
-        private readonly float _width;
-        private readonly float _height;
+    private const float DefaultTransitionDuration = 2.0f;
 
-        public SeasonState(Vector3 position, Vector3 scale, Color color, float width, float height)
-        {
-            _position = position;
-            _scale = scale;
-            this.color = color;
-            _width = width;
-            _height = height;
-        }
-
-        public static SeasonState Default(Transform transform) => new(
-            transform.position,
-            transform.localScale,
-            Color.white,
-            1f,
-            1f
-        );
-
-        public ZoneData ToZoneData(bool isActive) => new()
-        {
-            position = _position,
-            scale = _scale,
-            color = color,
-            width = _width,
-            height = _height,
-            isActive = isActive
-        };
-    }
-
-    [SerializeField] private bool overrideGlobalSettings;
+    [SerializeField] private bool useLocalSeasonSettings;
     [SerializeField] private float seasonValue;
     [SerializeField] private List<SeasonSettings> seasonSettings = new();
+    [SerializeField] private GrassSettingSO grassSetting;
 
-    private GrassSettingSO _grassSetting;
     private ZoneData _zoneData;
     private Color _zoneColor;
     private Vector3 _lastPosition;
     private Vector3 _lastScale;
     private CancellationTokenSource _transitionCts;
 
-    private const float DefaultTransitionDuration = 2.0f;
-
     public event Action OnZoneStateChanged;
 
     public float MinRange => 0;
-    public float MaxRange => overrideGlobalSettings ? seasonSettings.Count : _grassSetting?.seasonSettings.Count ?? 0;
+    public float MaxRange => useLocalSeasonSettings ? seasonSettings.Count : grassSetting?.seasonSettings.Count ?? 0;
 
-    public SeasonType CurrentSeason
-    {
-        get
-        {
-            var settings = ActiveSettings;
-            var normalizedValue = seasonValue % settings.Count;
-            var currentIndex = Mathf.FloorToInt(normalizedValue);
-            return settings[currentIndex].seasonType;
-        }
-    }
+    public SeasonType CurrentSeason => GetCurrentSeasonType();
 
-    private List<SeasonSettings> ActiveSettings =>
-        overrideGlobalSettings ? seasonSettings : _grassSetting?.seasonSettings;
+    private List<SeasonSettings> SeasonSettingsList =>
+        useLocalSeasonSettings ? seasonSettings : grassSetting?.seasonSettings;
 
     private bool HasValidSettings =>
-        _grassSetting != null && ActiveSettings?.Count > 0;
+        grassSetting != null && SeasonSettingsList?.Count > 0;
 
-#if UNITY_EDITOR
-    [SerializeField] private bool showGizmos = true;
-    public bool OverrideGlobalSettings
-    {
-        get => overrideGlobalSettings;
-        set => overrideGlobalSettings = value;
-    }
-    public List<SeasonSettings> SeasonSettings => seasonSettings;
-    public GrassSettingSO GrassSetting => _grassSetting;
-#endif
+    public Color GetZoneColor() => _zoneColor;
 
+    #region Unity Lifecycle
     private void OnEnable() => UpdateZoneState();
 
     private void OnDisable()
     {
-        StopSeasonTransition();
+        PauseTransition();
         UpdateZoneState();
     }
+    #endregion
 
+    #region Public Methods
     public void Init(GrassSettingSO settings)
     {
-        _grassSetting = settings;
+        grassSetting = settings;
         _lastPosition = Vector3.zero;
         _lastScale = Vector3.zero;
         UpdateZoneState();
@@ -118,11 +68,63 @@ public class GrassSeasonZone : MonoBehaviour
 
     public void UpdateSeasonValue(float globalValue, float globalMin, float globalMax)
     {
-        seasonValue = overrideGlobalSettings
+        seasonValue = useLocalSeasonSettings
             ? Mathf.Lerp(MinRange, MaxRange, Mathf.InverseLerp(globalMin, globalMax, globalValue))
             : Mathf.Clamp(globalValue, globalMin, globalMax);
 
         UpdateZoneState();
+    }
+
+    public void PlayCycle(float transitionDuration = DefaultTransitionDuration) =>
+        _ = PlayTransition(TransitionType.FullCycle, transitionDuration);
+
+    public void PlayNextSeason(float transitionDuration = DefaultTransitionDuration) =>
+        _ = PlayTransition(TransitionType.NextSeason, transitionDuration);
+
+    public Task PlayCycleAsync(float transitionDuration = DefaultTransitionDuration) =>
+        PlayTransition(TransitionType.FullCycle, transitionDuration);
+
+    public Task PlayNextSeasonAsync(float transitionDuration = DefaultTransitionDuration) =>
+        PlayTransition(TransitionType.NextSeason, transitionDuration);
+
+    public void PauseTransition()
+    {
+        if (_transitionCts?.IsCancellationRequested == false)
+        {
+            _transitionCts.Cancel();
+        }
+    }
+
+    public void SetSeasonValue(float value)
+    {
+        var settings = SeasonSettingsList;
+        if (settings != null && value >= settings.Count)
+            seasonValue = value % settings.Count;
+        else
+            seasonValue = value;
+
+        UpdateZoneState();
+    }
+
+    public ZoneData GetZoneData() => _zoneData;
+
+
+    public bool ContainsPosition(Vector3 position)
+    {
+        var worldBounds = new Bounds(transform.position, Vector3.Scale(Vector3.one, transform.localScale));
+        return worldBounds.Contains(position);
+    }
+    #endregion
+
+    #region Private Methods
+    private SeasonType GetCurrentSeasonType()
+    {
+        var settings = SeasonSettingsList;
+        if (settings == null || settings.Count == 0) return default;
+
+        var normalizedValue = seasonValue % settings.Count;
+        var currentIndex = Mathf.FloorToInt(normalizedValue);
+        return settings[currentIndex].seasonType;
     }
 
     private void UpdateZoneState()
@@ -140,39 +142,88 @@ public class GrassSeasonZone : MonoBehaviour
         if (!HasValidSettings)
             return SeasonState.Default(transform);
 
-        var settings = ActiveSettings;
-        float normalizedValue = seasonValue % settings.Count;
-        int currentIndex = Mathf.FloorToInt(normalizedValue);
-        float t = normalizedValue - currentIndex;
-        int nextIndex = (currentIndex + 1) % settings.Count;
+        var settings = SeasonSettingsList;
+        var normalizedValue = seasonValue % settings.Count;
+        var currentIndex = Mathf.FloorToInt(normalizedValue);
+        var nextIndex = (currentIndex + 1) % settings.Count;
 
         var currentSeason = settings[currentIndex];
         var nextSeason = settings[nextIndex];
+        var transitionProgress = normalizedValue - currentIndex;
 
         return new SeasonState
         (
             transform.position,
             transform.localScale,
-            Color.Lerp(currentSeason.seasonColor, nextSeason.seasonColor, t),
-            Mathf.Lerp(currentSeason.width, nextSeason.width, t),
-            Mathf.Lerp(currentSeason.height, nextSeason.height, t)
+            Color.Lerp(currentSeason.seasonColor, nextSeason.seasonColor, transitionProgress),
+            Mathf.Lerp(currentSeason.width, nextSeason.width, transitionProgress),
+            Mathf.Lerp(currentSeason.height, nextSeason.height, transitionProgress)
         );
     }
 
-    private async Task TransitionSeason(float startValue, float targetValue, float duration,
-                                        CancellationToken cancellationToken)
+    private async Task PlayTransition(TransitionType transitionType,
+                                      float transitionDuration = DefaultTransitionDuration)
+    {
+        PauseTransition();
+        _transitionCts = new CancellationTokenSource();
+
+        try
+        {
+            switch (transitionType)
+            {
+                case TransitionType.FullCycle:
+                    await TransitionFullCycle(transitionDuration, _transitionCts.Token);
+                    break;
+                case TransitionType.NextSeason:
+                    await TransitionToNext(transitionDuration, _transitionCts.Token);
+                    break;
+            }
+        }
+        finally
+        {
+            _transitionCts?.Dispose();
+            _transitionCts = null;
+        }
+    }
+
+    private async Task TransitionFullCycle(float transitionDuration = DefaultTransitionDuration,
+                                           CancellationToken cancellationToken = default)
     {
         if (!HasValidSettings) return;
 
-        float elapsedTime = 0f;
-        while (elapsedTime < duration)
-        {
-            if (cancellationToken.IsCancellationRequested)
-                break;
+        var startValue = seasonValue;
+        var targetValue = startValue + SeasonSettingsList.Count;
+        await TransitionToValue(startValue, targetValue, transitionDuration * SeasonSettingsList.Count,
+            cancellationToken);
+    }
 
+    private async Task TransitionToNext(float transitionDuration = DefaultTransitionDuration,
+                                        CancellationToken cancellationToken = default)
+    {
+        if (!HasValidSettings) return;
+
+        var startValue = seasonValue;
+        var targetValue = Mathf.Floor(startValue) + 1;
+
+        if (targetValue >= SeasonSettingsList.Count)
+        {
+            targetValue = 0;
+        }
+
+        await TransitionToValue(startValue, targetValue, transitionDuration, cancellationToken);
+    }
+
+    private async Task TransitionToValue(float startValue, float targetValue, float duration,
+                                         CancellationToken cancellationToken)
+    {
+        if (!HasValidSettings) return;
+
+        var elapsedTime = 0f;
+        while (elapsedTime < duration && !cancellationToken.IsCancellationRequested)
+        {
             elapsedTime += Time.deltaTime;
-            float t = elapsedTime / duration;
-            float newValue = Mathf.Lerp(startValue, targetValue, t);
+            var t = elapsedTime / duration;
+            var newValue = Mathf.Lerp(startValue, targetValue, t);
 
             await Task.Yield();
             SetSeasonValue(newValue);
@@ -183,91 +234,14 @@ public class GrassSeasonZone : MonoBehaviour
             SetSeasonValue(targetValue);
         }
     }
-
-    public async Task PlayFullSeasonCycle(float transitionDuration = DefaultTransitionDuration,
-                                          CancellationToken cancellationToken = default)
-    {
-        if (!HasValidSettings) return;
-
-        float startValue = seasonValue;
-        float targetValue = startValue + ActiveSettings.Count;
-        await TransitionSeason(startValue, targetValue, transitionDuration * ActiveSettings.Count, cancellationToken);
-    }
-
-    public async Task TransitionToNextSeason(float transitionDuration = DefaultTransitionDuration,
-                                             CancellationToken cancellationToken = default)
-    {
-        if (!HasValidSettings) return;
-
-        float startValue = seasonValue;
-        float targetValue = Mathf.Floor(startValue) + 1;
-
-        if (targetValue >= ActiveSettings.Count)
-        {
-            targetValue = 0;
-        }
-
-        await TransitionSeason(startValue, targetValue, transitionDuration, cancellationToken);
-    }
-
-    public async Task StartSeasonTransition(bool fullCycle = false,
-                                            float transitionDuration = DefaultTransitionDuration)
-    {
-        StopSeasonTransition();
-        _transitionCts = new CancellationTokenSource();
-
-        try
-        {
-            if (fullCycle)
-                await PlayFullSeasonCycle(transitionDuration, _transitionCts.Token);
-            else
-                await TransitionToNextSeason(transitionDuration, _transitionCts.Token);
-        }
-        catch (TaskCanceledException)
-        {
-            // 취소된 경우 무시
-        }
-        finally
-        {
-            _transitionCts?.Dispose();
-            _transitionCts = null;
-        }
-    }
-
-    public void StopSeasonTransition()
-    {
-        if (_transitionCts?.IsCancellationRequested == false)
-        {
-            _transitionCts.Cancel();
-        }
-    }
-
-    public void SetSeasonValue(float value)
-    {
-        var settings = ActiveSettings;
-        seasonValue = value;
-        if (seasonValue >= settings.Count)
-        {
-            seasonValue %= settings.Count;
-        }
-
-        UpdateZoneState();
-    }
-
-    public ZoneData GetZoneData() => _zoneData;
-
-    public Color GetZoneColor() => _zoneColor;
-
-    public bool ContainsPosition(Vector3 position)
-    {
-        var worldBounds = new Bounds(transform.position, Vector3.Scale(Vector3.one, transform.localScale));
-        return worldBounds.Contains(position);
-    }
+    #endregion
 
 #if UNITY_EDITOR
+    [SerializeField] private bool showGizmos = true;
+
     public (SeasonType currentSeason, float transition) GetCurrentSeasonTransition()
     {
-        var settings = ActiveSettings;
+        var settings = SeasonSettingsList;
         if (settings == null || settings.Count == 0)
             return (SeasonType.Winter, 0f);
 
@@ -275,9 +249,9 @@ public class GrassSeasonZone : MonoBehaviour
         if (validSettings.Count == 0)
             return (SeasonType.Winter, 0f);
 
-        float normalizedValue = seasonValue % settings.Count;
-        int currentIndex = Mathf.FloorToInt(normalizedValue);
-        float transitionValue = normalizedValue - currentIndex;
+        var normalizedValue = seasonValue % settings.Count;
+        var currentIndex = Mathf.FloorToInt(normalizedValue);
+        var transitionValue = normalizedValue - currentIndex;
 
         return (settings[currentIndex].seasonType, transitionValue);
     }
@@ -299,4 +273,10 @@ public class GrassSeasonZone : MonoBehaviour
         Gizmos.DrawWireCube(Vector3.zero, Vector3.one);
     }
 #endif
+
+    private enum TransitionType
+    {
+        FullCycle,
+        NextSeason,
+    }
 }

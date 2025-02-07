@@ -55,7 +55,7 @@ public sealed class GrassRemovePainter : BasePainter
         grassCompute.SetCutBuffer(cutIDs);
     }
 
-    public void ExecuteRemoval()
+    private void ExecuteRemoval()
     {
         if (_pendingDeletes.Count == 0) return;
 

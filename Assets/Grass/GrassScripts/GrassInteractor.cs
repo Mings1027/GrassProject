@@ -2,7 +2,7 @@ using EventBusSystem.Scripts;
 using UnityEngine;
 
 [ExecuteInEditMode]
-public class GrassInteractor : MonoBehaviour, InteractorData
+public class GrassInteractor : MonoBehaviour, IInteractorData
 {
     public Vector3 Position => transform.position;
     public float Radius => radius;
