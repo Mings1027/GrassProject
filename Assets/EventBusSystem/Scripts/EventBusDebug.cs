@@ -23,7 +23,7 @@ namespace EventBusSystem.Scripts
             EditorPrefs.SetBool(EventBusDebugEnableLog, enable);
         }
 
-        public static string GetEventSpecificLogKey(string eventTypeName)
+        private static string GetEventSpecificLogKey(string eventTypeName)
         {
             return $"{EventBusSpecificLogPrefix}{eventTypeName}";
         }

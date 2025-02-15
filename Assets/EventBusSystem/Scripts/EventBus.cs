@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -16,14 +17,13 @@ namespace EventBusSystem.Scripts
         private static readonly HashSet<IEventBinding<T>> Snapshots = new();
 
 #if UNITY_EDITOR
-        private static bool _localLogEnabled;
-        private static int _eventRaiseCount;
+        private static bool _logEnabled;
 
-        public static void SetLogEnabled(bool enable) => _localLogEnabled = enable;
-
-        private static bool IsEnableLog => _localLogEnabled || EventBusDebug.EnableLog;
+        public static void SetLogEnabled(bool enabled)
+        {
+            _logEnabled = enabled;
+        }
 #endif
-
         public static void Register(EventBinding<T> binding)
         {
 #if UNITY_EDITOR
@@ -33,9 +33,8 @@ namespace EventBusSystem.Scripts
                 return;
             }
 
-            if (IsEnableLog)
-                Debug.Log($"[EventBus:{typeof(T).Name}] Registered new binding");
 #endif
+            Debug.Log($"Registering {typeof(T).Name}");
             Bindings.Add(binding);
         }
 
@@ -48,17 +47,30 @@ namespace EventBusSystem.Scripts
                 return;
             }
 
-            if (IsEnableLog)
-                Debug.Log($"[EventBus:{typeof(T).Name}] Deregistered binding");
 #endif
+            Debug.Log($"Deregistering {typeof(T).Name}");
             Bindings.Remove(binding);
         }
 
         public static void Raise(T @event)
         {
 #if UNITY_EDITOR
-            _eventRaiseCount++;
-            var timer = IsEnableLog ? Stopwatch.StartNew() : null;
+            if ((_logEnabled || EventBusDebug.GetEventSpecificLogEnabled(typeof(T).Name))
+                && !typeof(IRequest).IsAssignableFrom(typeof(T))
+                && !typeof(IResponse).IsAssignableFrom(typeof(T)))
+            {
+                var stackTrace = new StackTrace(true);
+                var callerFrame = stackTrace.GetFrame(1); // Get the caller's stack frame
+                if (callerFrame != null)
+                {
+                    var eventDetails = string.Join(", ",
+                        @event.GetType()
+                              .GetFields()
+                              .Select(f => $"{f.Name}: {f.GetValue(@event)}"));
+
+                    Debug.Log($"[EventBus] Raising event {typeof(T).Name} {{ {eventDetails} }}");
+                }
+            }
 #endif
             Snapshots.Clear();
             Snapshots.UnionWith(Bindings);
@@ -68,147 +80,119 @@ namespace EventBusSystem.Scripts
                 binding.OnEvent?.Invoke(@event);
                 binding.OnEventNoArgs?.Invoke();
             }
-
-#if UNITY_EDITOR
-            if (IsEnableLog && timer != null)
-            {
-                timer.Stop();
-                Debug.Log($"[EventBus:{typeof(T).Name}] Event completed in {timer.ElapsedMilliseconds}ms " +
-                          $"(Total raised: {_eventRaiseCount}, Active listeners: {Bindings.Count})");
-            }
-#endif
         }
 
         private static void Clear()
         {
-#if UNITY_EDITOR
-            if (IsEnableLog)
-                Debug.Log($"[EventBus:{typeof(T).Name}] Cleared {Bindings.Count} bindings");
-#endif
             Bindings.Clear();
             Snapshots.Clear();
-        }
-
-#if UNITY_EDITOR
-        public static int GetActiveBindingsCount() => Bindings.Count;
-        public static int GetTotalEventsRaised() => _eventRaiseCount;
-
-        public static List<string> GetRegisteredList()
-        {
-            var methodNames = new List<string>();
-
-            foreach (var binding in Bindings)
-            {
-                // Delegate 처리를 위한 헬퍼 함수
-                void ProcessDelegate(Delegate d)
-                {
-                    var method = d.Method;
-                    var declaringType = method.DeclaringType?.Name ?? "Unknown";
-                    var methodName = method.Name;
-
-                    // 컴파일러 생성 메서드 필터링
-                    bool isCompilerGenerated =
-                        methodName.Contains("<") || // 람다, 로컬 함수 등
-                        methodName.Contains("__") || // 컴파일러 생성 백업 필드
-                        methodName.StartsWith("get_") || // 자동 구현 프로퍼티 getter
-                        methodName.StartsWith("set_") || // 자동 구현 프로퍼티 setter
-                        methodName == ".ctor" || // 생성자
-                        methodName == ".cctor" || // 정적 생성자
-                        method.DeclaringType?.Name.Contains("<>") == true; // 컴파일러 생성 타입
-
-                    if (!isCompilerGenerated)
-                    {
-                        methodNames.Add($"{declaringType}.{methodName}");
-                    }
-                }
-
-                // Action<T> 델리게이트 체크
-                if (binding.OnEvent != null)
-                {
-                    foreach (var d in binding.OnEvent.GetInvocationList())
-                    {
-                        ProcessDelegate(d);
-                    }
-                }
-
-                // Action 델리게이트 체크
-                if (binding.OnEventNoArgs != null)
-                {
-                    foreach (var d in binding.OnEventNoArgs.GetInvocationList())
-                    {
-                        ProcessDelegate(d);
-                    }
-                }
-            }
-
-            return methodNames;
-        }
-
-        public static int GetRegisteredCount()
-        {
-            var count = 0;
-            foreach (var binding in Bindings)
-            {
-                if (binding.OnEvent != null)
-                    count += binding.OnEvent.GetInvocationList().Length;
-                if (binding.OnEventNoArgs != null)
-                    count += binding.OnEventNoArgs.GetInvocationList().Length;
-            }
-
-            return count;
-        }
-#endif
-    }
-
-    internal static class RequestContext
-    {
-        private static readonly AsyncLocal<Guid?> CurrentRequestId = new();
-
-        public static Guid? RequestId
-        {
-            get => CurrentRequestId.Value;
-            set => CurrentRequestId.Value = value;
         }
     }
 
     public static class EventBusExtensions
     {
         private static readonly Dictionary<Guid, IEvent> ResponseMap = new();
+        private static Guid _currentRequestId;
+
+        public static TResponse Request<TRequest, TResponse>()
+            where TRequest : IRequest, new() where TResponse : IResponse
+        {
+            return Request<TRequest, TResponse>(new TRequest());
+        }
 
         public static TResponse Request<TRequest, TResponse>(TRequest request)
-            where TRequest : IEvent
-            where TResponse : IEvent
+            where TRequest : IRequest where TResponse : IResponse
         {
-            var requestId = Guid.NewGuid();
-            RequestContext.RequestId = requestId;
+            _currentRequestId = Guid.NewGuid();
+
+#if UNITY_EDITOR
+            if (EventBusDebug.EnableLog || EventBusDebug.GetEventSpecificLogEnabled(typeof(TRequest).Name))
+            {
+                var requestDetails = string.Join(", ",
+                    request.GetType()
+                           .GetFields()
+                           .Select(f => $"{f.Name}: {f.GetValue(request)}"));
+                Debug.Log(
+                    $"[EventBus] Request {typeof(TRequest).Name} {{ {requestDetails} }} (ID: {_currentRequestId.ToString().Substring(0, 8)})");
+            }
+#endif
+            try
+            {
+                EventBus<TRequest>.Raise(request);
+                if (ResponseMap.TryGetValue(_currentRequestId, out var response))
+                {
+                    var typedResponse = (TResponse)response;
+#if UNITY_EDITOR
+                    if (EventBusDebug.EnableLog || EventBusDebug.GetEventSpecificLogEnabled(typeof(TResponse).Name))
+                    {
+                        var responseDetails = string.Join(", ",
+                            typedResponse.GetType()
+                                         .GetFields()
+                                         .Select(f => $"{f.Name}: {f.GetValue(typedResponse)}"));
+                        Debug.Log(
+                            $"[EventBus] Response {typeof(TResponse).Name} {{ {responseDetails} }} (ID: {_currentRequestId.ToString().Substring(0, 8)})");
+                    }
+#endif
+                    return typedResponse;
+                }
+
+                throw new InvalidOperationException(
+                    $"No response received for request {typeof(TRequest).Name} (ID: {_currentRequestId.ToString()[..8]})");
+            }
+            finally
+            {
+                ResponseMap.Remove(_currentRequestId);
+            }
+        }
+
+        public static bool TryRequest<TRequest, TResponse>(TRequest request, out TResponse response)
+            where TRequest : IRequest where TResponse : IResponse
+        {
+            _currentRequestId = Guid.NewGuid();
+
+#if UNITY_EDITOR
+            if (EventBusDebug.EnableLog || EventBusDebug.GetEventSpecificLogEnabled(typeof(TRequest).Name))
+            {
+                var requestDetails = string.Join(", ",
+                    request.GetType()
+                           .GetFields()
+                           .Select(f => $"{f.Name}: {f.GetValue(request)}"));
+                Debug.Log($"[EventBus] Request {typeof(TRequest).Name} {{ {requestDetails} }}");
+            }
+#endif
 
             try
             {
                 EventBus<TRequest>.Raise(request);
-
-                if (ResponseMap.Remove(requestId, out var response))
+                if (ResponseMap.TryGetValue(_currentRequestId, out var responseObj))
                 {
-                    return (TResponse)response;
+                    response = (TResponse)responseObj;
+#if UNITY_EDITOR
+                    if (EventBusDebug.EnableLog || EventBusDebug.GetEventSpecificLogEnabled(typeof(TResponse).Name))
+                    {
+                        var response1 = response;
+                        var responseDetails = string.Join(", ",
+                            response.GetType()
+                                    .GetFields()
+                                    .Select(f => $"{f.Name}: {f.GetValue(response1)}"));
+                        Debug.Log($"[EventBus] Response {typeof(TResponse).Name} {{ {responseDetails} }}");
+                    }
+#endif
+                    return true;
                 }
 
-                return default;
+                response = default;
+                return false;
             }
             finally
             {
-                RequestContext.RequestId = null;
+                ResponseMap.Remove(_currentRequestId);
             }
         }
 
-        public static void Respond<TResponse>(TResponse response) where TResponse : IEvent
+        public static void Response<TResponse>(TResponse response) where TResponse : IEvent
         {
-            var requestId = RequestContext.RequestId;
-            if (!requestId.HasValue)
-            {
-                throw new InvalidOperationException(
-                    "Cannot respond outside of a request context. Make sure this is called during event handling.");
-            }
-
-            ResponseMap[requestId.Value] = response;
+            ResponseMap[_currentRequestId] = response;
         }
 
         internal static void ClearResponses()

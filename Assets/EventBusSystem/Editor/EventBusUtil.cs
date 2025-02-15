@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using System.Collections.Generic;
+using System.Linq;
 using EventBusSystem.Scripts;
 using UnityEditor;
 using UnityEngine;
@@ -10,11 +11,10 @@ using UnityEngine;
 /// </summary>
 public static class EventBusUtil
 {
-    public static IReadOnlyList<Type> EventTypes { get; set; }
-    public static IReadOnlyList<Type> EventBusTypes { get; set; }
+    public static IReadOnlyList<Type> EventTypes { get; private set; }
+    public static IReadOnlyList<Type> EventBusTypes { get; private set; }
 
 #if UNITY_EDITOR
-    public static PlayModeStateChange PlayModeState { get; set; }
 
     /// <summary>
     /// Initializes the Unity Editor related components of the EventBusUtil.
@@ -34,10 +34,10 @@ public static class EventBusUtil
 
     static void OnPlayModeStateChanged(PlayModeStateChange state)
     {
-        PlayModeState = state;
         switch (state)
         {
             case PlayModeStateChange.EnteredEditMode:
+                Init();
                 break;
             case PlayModeStateChange.ExitingEditMode:
                 ClearAllBuses();
@@ -61,14 +61,15 @@ public static class EventBusUtil
     /// done before any game objects, scripts or components have started.
     /// </summary>
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-    public static void Initialize()
+    public static void Init()
     {
-        EventTypes = PredefinedAssemblyUtil.GetTypes(typeof(IEvent));
+        EventTypes = PredefinedAssemblyUtil.GetTypes(typeof(IEvent))
+                                           .Where(type => !type.IsInterface).ToList();
         EventBusTypes = InitializeAllBuses();
 
 #if UNITY_EDITOR
         var savedGlobalLogState = EditorPrefs.GetBool(EventBusDebug.EventBusDebugEnableLog);
-        
+
         foreach (var eventType in EventTypes)
         {
             var busType = typeof(EventBus<>).MakeGenericType(eventType);
@@ -84,13 +85,13 @@ public static class EventBusUtil
         }
 #endif
     }
-    
+
     static List<Type> InitializeAllBuses()
     {
         var eventBusTypes = new List<Type>();
 
         var typedef = typeof(EventBus<>);
-        foreach (var eventType in EventTypes)
+        foreach (var eventType in EventTypes.Where(type => !type.IsInterface))
         {
             var busType = typedef.MakeGenericType(eventType);
             eventBusTypes.Add(busType);
@@ -105,7 +106,7 @@ public static class EventBusUtil
     /// <summary>
     /// Clears (removes all listeners from) all event buses in the application.
     /// </summary>
-    public static void ClearAllBuses()
+    private static void ClearAllBuses()
     {
         // If EventTypes is null, we need to initialize them first
         if (EventTypes == null || EventBusTypes == null)
@@ -123,7 +124,7 @@ public static class EventBusUtil
             EventBusTypes = tempBusTypes;
         }
 
-        // EventBusExtensions.CleanupCallbacks();
+        EventBusExtensions.ClearResponses();
 
 #if UNITY_EDITOR
         Debug.Log($"Clearing all buses in {(Application.isPlaying ? "Play" : "Edit")} mode...");

@@ -99,8 +99,6 @@ namespace Grass.Editor
                                 _spatialGrid.AddObject(surfaceHit.point, newIndex);
                                 tempGrid.AddObject(surfaceHit.point, newIndex);
                                 
-                                _grassCompute.AddNewGrass(newData.position, newIndex);
-
                                 grassAdded = true;
                                 successfulPlacements++;
                             }

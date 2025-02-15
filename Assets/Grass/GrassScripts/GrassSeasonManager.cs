@@ -9,7 +9,7 @@ using UnityEngine;
 public class GrassSeasonManager : MonoBehaviour
 {
     private GrassComputeScript _grassComputeScript;
-    private EventBinding<GrassColorEvent> _colorRequestBinding;
+    private EventBinding<GrassColorRequest> _colorRequestBinding;
 
     [SerializeField] private float globalSeasonValue;
     [SerializeField] private List<GrassSeasonZone> seasonZones = new();
@@ -25,8 +25,8 @@ public class GrassSeasonManager : MonoBehaviour
         UpdateSeasonZones();
         Init();
 
-        _colorRequestBinding = new EventBinding<GrassColorEvent>(HandleColorRequest);
-        EventBus<GrassColorEvent>.Register(_colorRequestBinding);
+        _colorRequestBinding = new EventBinding<GrassColorRequest>(HandleColorRequest);
+        EventBus<GrassColorRequest>.Register(_colorRequestBinding);
     }
 
     private void OnDisable()
@@ -38,7 +38,7 @@ public class GrassSeasonManager : MonoBehaviour
 
         Init();
 
-        EventBus<GrassColorEvent>.Deregister(_colorRequestBinding);
+        EventBus<GrassColorRequest>.Deregister(_colorRequestBinding);
     }
 
     private void Update()
@@ -70,13 +70,13 @@ public class GrassSeasonManager : MonoBehaviour
         }
     }
 
-    private void HandleColorRequest(GrassColorEvent evt)
+    private void HandleColorRequest(GrassColorRequest evt)
     {
         foreach (var zone in seasonZones)
         {
             if (zone.gameObject.activeInHierarchy && zone.ContainsPosition(evt.position))
             {
-                EventBusExtensions.Respond(new GrassColorResultEvent
+                EventBusExtensions.Response(new GrassColorResponse
                 {
                     resultColor = zone.GetZoneColor()
                 });
@@ -84,7 +84,7 @@ public class GrassSeasonManager : MonoBehaviour
             }
         }
 
-        EventBusExtensions.Respond(new GrassColorResultEvent
+        EventBusExtensions.Response(new GrassColorResponse
         {
             resultColor = evt.defaultColor
         });

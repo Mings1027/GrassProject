@@ -833,7 +833,7 @@ namespace Grass.Editor
                 "Brush Transition Speed",
                 "Speed of grass modifications",
                 toolSettings.BrushTransitionSpeed,
-                0f, 1f
+                0.01f, 1f
             );
             if (EditorGUI.EndChangeCheck())
             {

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Grass Settings
   m_EditorClassIdentifier: 
   shaderToUse: {fileID: 7200000, guid: 11036af5f2d1499c8845585fb5fadb4c, type: 3}
-  materialToUse: {fileID: 2100000, guid: 62e33da08240646939128cbd216c0c12, type: 2}
+  materialToUse: {fileID: 2100000, guid: 7725493650b5a4b4d9c0d612493ca34d, type: 2}
   bladeRadius: 1
   bladeForward: 1
   bladeCurve: 2
@@ -25,7 +25,7 @@ MonoBehaviour:
   randomHeightMin: 0
   randomHeightMax: 0.29999983
   windSpeed: 7
-  windStrength: 0.3
+  windStrength: 0.266
   windDirection: 45
   windDirectionVector: {x: 0.70710677, y: 0.70710677}
   bladesPerVertex: 10
@@ -37,7 +37,7 @@ MonoBehaviour:
   blendMultiply: 1
   blendOffset: 0.2
   ambientAdjustmentColor: {r: 0, g: 0, b: 0, a: 1}
-  shadowDistance: 300
+  shadowDistance: 148
   shadowFadeRange: 30
   shadowBrightness: 0
   shadowColor: {r: 0, g: 0, b: 0, a: 1}

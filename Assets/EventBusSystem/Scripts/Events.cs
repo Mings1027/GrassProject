@@ -1,31 +1,37 @@
-using System;
 using UnityEngine;
 
-public interface IEvent { }
-
-public interface IInteractorData
+namespace EventBusSystem.Scripts
 {
-    Vector3 Position { get; }
-    float Radius { get; }
-}
+    public interface IEvent { }
 
-public struct InteractorAddedEvent : IEvent
-{
-    public IInteractorData data;
-}
+    public interface IRequest : IEvent { }
 
-public struct InteractorRemovedEvent : IEvent
-{
-    public IInteractorData data;
-}
+    public interface IResponse : IEvent { }
 
-public struct GrassColorEvent : IEvent
-{
-    public Vector3 position;
-    public Color defaultColor;
-}
+    public interface IInteractorData
+    {
+        Vector3 Position { get; }
+        float Radius { get; }
+    }
 
-public struct GrassColorResultEvent : IEvent
-{
-    public Color resultColor;
+    public struct InteractorAddedEvent : IEvent
+    {
+        public IInteractorData data;
+    }
+
+    public struct InteractorRemovedEvent : IEvent
+    {
+        public IInteractorData data;
+    }
+
+    public struct GrassColorRequest : IRequest
+    {
+        public Vector3 position;
+        public Color defaultColor;
+    }
+
+    public struct GrassColorResponse : IResponse
+    {
+        public Color resultColor;
+    }
 }

@@ -277,7 +277,6 @@ public class GrassComputeScript : MonoBehaviour
         InitBuffers();
         SetupComputeShader();
         SetupQuadTree(full);
-        GetFrustumData();
 #if UNITY_EDITOR
         var interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
         _interactors = new List<IInteractorData>(interactors);
@@ -373,14 +372,16 @@ public class GrassComputeScript : MonoBehaviour
         {
             InitCullingTree();
         }
-
-        var visibleArray = new uint[grassData.Count];
-        for (int i = 0; i < grassVisibleIDList.Count && i < visibleArray.Length; i++)
+        else
         {
-            visibleArray[i] = (uint)grassVisibleIDList[i];
-        }
+            grassVisibleIDList = new List<int>(grassData.Count);
+            for (int i = 0; i < grassData.Count; i++)
+            {
+                grassVisibleIDList.Add(i);
+            }
 
-        _visibleIDBuffer?.SetData(visibleArray);
+            _visibleIDBuffer?.SetData(grassVisibleIDList);
+        }
     }
 
     // Get the data from the camera for culling
@@ -510,9 +511,11 @@ public class GrassComputeScript : MonoBehaviour
     private Color GetGrassColor(int index, Vector3 position)
     {
         var baseColor = new Color(grassData[index].color.x, grassData[index].color.y, grassData[index].color.z);
-        var colorRequest = new GrassColorEvent { position = position, defaultColor = baseColor };
-        var response = EventBusExtensions.Request<GrassColorEvent, GrassColorResultEvent>(colorRequest);
-        return response.resultColor;
+        var colorRequest = new GrassColorRequest { position = position, defaultColor = baseColor };
+
+        return EventBusExtensions.TryRequest<GrassColorRequest, GrassColorResponse>(colorRequest, out var response)
+            ? response.resultColor
+            : baseColor;
     }
 
     private void SpawnCuttingParticle(Vector3 position, Color col)
@@ -741,37 +744,6 @@ public class GrassComputeScript : MonoBehaviour
         _fastMode = true;
         ReleaseResources();
         MainSetup(false);
-    }
-
-    public void AddNewGrass(Vector3 position, int index)
-    {
-        if (!_bounds.Contains(position))
-        {
-            _bounds.Encapsulate(position);
-            var extents = _bounds.extents;
-            _bounds.extents = extents * 1.1f;
-
-            _cullingTree = new CullingTree(_bounds, grassSetting.cullingTreeDepth);
-
-            for (int i = 0; i < grassData.Count; i++)
-            {
-                _cullingTree.GetClosestNode(grassData[i].position, i);
-            }
-        }
-
-        if (_visibleIDBuffer.count <= index)
-        {
-            var newBufferSize = Mathf.Max(index + 1, grassData.Count);
-            var oldBuffer = _visibleIDBuffer;
-            _visibleIDBuffer = new ComputeBuffer(newBufferSize, sizeof(uint), ComputeBufferType.Structured);
-            _instComputeShader.SetBuffer(_idGrassKernel, GrassShaderPropertyID.VisibleIDBuffer, _visibleIDBuffer);
-            oldBuffer.Release();
-        }
-
-        if (_cullingTree != null && _cullingTree.GetClosestNode(position, index))
-        {
-            grassVisibleIDList.Add(index);
-        }
     }
 
     public void UpdateGrassDataFaster(int startIndex = 0, int count = -1)

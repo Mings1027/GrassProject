@@ -1,352 +1,222 @@
-#if UNITY_EDITOR
-
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using EventBusSystem.Scripts;
 using UnityEditor;
 using UnityEngine;
-using System.Collections.Generic;
-using System;
-using System.IO;
-using System.Reflection;
-using Editor;
-using EventBusSystem.Scripts;
 
-public class EventBusDebugWindow : EditorWindow
+namespace EventBusSystem.Editor
 {
-    private Vector2 _scrollPosition;
-    private List<Type> _cachedEventTypes;
-
-    [MenuItem("Tools/Event Bus/Event Bus Debug")]
-    public static void ShowWindow()
+    public class EventBusDebugWindow : EditorWindow
     {
-        var window = GetWindow<EventBusDebugWindow>("Event Bus Debug");
-        window.Show();
-    }
+        private const string ShowAllEventBusKey = "EventBusDebug_ShowAllEventBus";
+        private bool _showAllEventBus;
 
-    private void OnEnable() => UpdateEventTypesCache();
-
-    private void UpdateEventTypesCache()
-    {
-        _cachedEventTypes = PredefinedAssemblyUtil.GetTypes(typeof(IEvent));
-    }
-
-    private void OnGUI()
-    {
-        DrawGlobalControls();
-        DrawEventTypeList();
-        DrawClearAllButton();
-    }
-
-    private void DrawGlobalControls()
-    {
-        if (CustomEditorHelper.DrawToggleButton("Enable All Event Bus Log", EventBusDebug.EnableLog,
-                out var enableLog))
+        private void OnEnable()
         {
-            EventBusDebug.SetLogEnabled(enableLog);
-            SetAllEventBusLogs(enableLog);
-            EditorPrefs.SetBool(EventBusDebug.EventBusDebugEnableLog, enableLog);
+            _showAllEventBus = EditorPrefs.GetBool(ShowAllEventBusKey, false);
         }
 
-        EditorGUILayout.Space(10);
-
-        if (GUILayout.Button("Refresh Event Types"))
+        private void OnGUI()
         {
-            UpdateEventTypesCache();
+            DrawButtons();
+            DrawEventBusBindings();
         }
-    }
 
-    private void DrawEventTypeList()
-    {
-        _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
-
-        if (_cachedEventTypes?.Count > 0)
+        private void DrawButtons()
         {
-            if (Application.isPlaying)
+            EditorGUILayout.BeginHorizontal();
+
+            // Show All Event Bus toggle button
+            if (EditorHelper.DrawToggleButton(
+                    new GUIContent("Show All Event Bus", "Show all event buses including those with no bindings"),
+                    _showAllEventBus,
+                    out bool newShowAllState))
             {
-                DisplayEventList(DisplayRuntimeEventInfo);
-                Repaint();
-            }
-            else
-            {
-                DisplayEventList(DisplayEditorTimeEventInfo);
-            }
-        }
-        else
-        {
-            EditorGUILayout.HelpBox("No event types found. Try refreshing event types.", MessageType.Info);
-        }
-
-        EditorGUILayout.EndScrollView();
-        EditorGUILayout.Space(10);
-    }
-
-    private void DisplayEventList(Action<Type> displayFunc)
-    {
-        foreach (var eventType in _cachedEventTypes)
-        {
-            CustomEditorHelper.DrawFoldoutSection($"Event: {eventType.Name}", () =>
-            {
-                DisplayEventProperties(eventType);
-                EditorGUILayout.Space(5);
-                displayFunc(eventType);
-            });
-        }
-    }
-
-    private void DisplayEditorTimeEventInfo(Type eventType)
-    {
-        var busType = typeof(EventBus<>).MakeGenericType(eventType);
-        var activeBindings = (int)busType.GetMethod("GetActiveBindingsCount")?.Invoke(null, null);
-
-        DisplayLogToggle(eventType.Name, busType);
-        if (activeBindings > 0)
-        {
-            EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField($"Editor-time Active Bindings: {activeBindings}", EditorStyles.boldLabel);
-            DisplayRegisteredMethodsList(busType);
-        }
-        else
-        {
-            EditorGUILayout.LabelField("No editor-time bindings registered");
-        }
-    }
-
-    private void DisplayRuntimeEventInfo(Type eventType)
-    {
-        var busType = typeof(EventBus<>).MakeGenericType(eventType);
-
-        DisplayLogToggle(eventType.Name, busType);
-        DisplayEventStats(busType);
-        DisplayRegisteredMethodsList(busType);
-        DisplayClearButton(eventType, busType);
-    }
-
-    private void DisplayEventStats(Type busType)
-    {
-        var activeBindings = (int)busType.GetMethod("GetActiveBindingsCount")?.Invoke(null, null);
-        var totalRaised = (int)busType.GetMethod("GetTotalEventsRaised")?.Invoke(null, null);
-
-        EditorGUILayout.LabelField($"Active Bindings: {activeBindings}");
-        EditorGUILayout.LabelField($"Total Events Raised: {totalRaised}");
-    }
-
-    private void DisplayRegisteredMethodsList(Type busType)
-    {
-        var getRegisteredList = busType.GetMethod("GetRegisteredList");
-        if (getRegisteredList != null)
-        {
-            EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("Registered Methods:", EditorStyles.boldLabel);
-            var registeredMethods = (List<string>)getRegisteredList.Invoke(null, null);
-            DisplayRegisteredMethods(registeredMethods);
-        }
-    }
-
-    private void DisplayRegisteredMethods(List<string> registeredMethods)
-    {
-        if (registeredMethods?.Count > 0)
-        {
-            EditorGUI.indentLevel++;
-            var linkStyle = CreateLinkStyle();
-
-            foreach (var method in registeredMethods)
-            {
-                DrawMethodLink(method, linkStyle);
+                _showAllEventBus = newShowAllState;
+                EditorPrefs.SetBool(ShowAllEventBusKey, newShowAllState);
             }
 
-            EditorGUI.indentLevel--;
-        }
-    }
-
-    private GUIStyle CreateLinkStyle()
-    {
-        return new GUIStyle(EditorStyles.label)
-        {
-            normal = { textColor = new Color(0.3f, 0.7f, 1f) },
-            hover = { textColor = new Color(1f, 1f, 1f) },
-            padding = new RectOffset(15, 0, 0, 0)
-        };
-    }
-
-    private void DrawMethodLink(string method, GUIStyle linkStyle)
-    {
-        var rect = EditorGUILayout.GetControlRect();
-        var bulletRect = new Rect(rect.x, rect.y, 15, rect.height);
-        var linkRect = new Rect(rect.x + 15, rect.y, rect.width - 15, rect.height);
-
-        EditorGUI.LabelField(bulletRect, "•");
-
-        if (GUI.Button(linkRect, method, linkStyle))
-        {
-            OpenScriptWithMethod(method);
-        }
-
-        if (linkRect.Contains(Event.current.mousePosition))
-        {
-            EditorGUIUtility.AddCursorRect(linkRect, MouseCursor.Link);
-        }
-    }
-
-    private void DrawClearAllButton()
-    {
-        bool hasAnyBindings = false;
-        foreach (var eventType in _cachedEventTypes)
-        {
-            var busType = typeof(EventBus<>).MakeGenericType(eventType);
-            var activeBindings = (int)busType.GetMethod("GetActiveBindingsCount")?.Invoke(null, null);
-            if (activeBindings > 0)
+            // Enable All Log toggle button
+            if (EditorHelper.DrawToggleButton(
+                    new GUIContent("Enable All Log", "Enable logging for all event buses"),
+                    EventBusDebug.EnableLog,
+                    out bool newEnableLogState))
             {
-                hasAnyBindings = true;
-                break;
-            }
-        }
+                EventBusDebug.SetLogEnabled(newEnableLogState);
 
-        if (hasAnyBindings)
-        {
-            var prevColor = GUI.backgroundColor;
-            GUI.backgroundColor = new Color(1f, 0.4f, 0.4f);
-
-            var buttonText = Application.isPlaying
-                ? "Clear ALL Runtime Event Buses"
-                : "Clear ALL Editor Event Buses";
-
-            if (GUILayout.Button(buttonText, GUILayout.Height(30)))
-            {
-                string message = Application.isPlaying
-                    ? "Are you sure you want to clear ALL event buses?\nThis will remove all registered listeners from every event bus."
-                    : "Are you sure you want to clear ALL event buses?\nThis will remove all registered listeners including those registered in Edit Mode.";
-
-                if (EditorUtility.DisplayDialog("Clear All Event Buses", message, "Yes, Clear All", "Cancel"))
+                // Also update all individual event bus log states
+                if (EventBusUtil.EventTypes != null)
                 {
-                    EventBusUtil.ClearAllBuses();
-                    Debug.Log($"Cleared all event buses in {(Application.isPlaying ? "Play" : "Edit")} mode");
-                }
-            }
-
-            GUI.backgroundColor = prevColor;
-        }
-    }
-
-    private void SetAllEventBusLogs(bool enabled)
-    {
-        if (_cachedEventTypes == null) return;
-        foreach (var eventType in _cachedEventTypes)
-        {
-            var busType = typeof(EventBus<>).MakeGenericType(eventType);
-            var setLogEnabled = busType.GetMethod("SetLogEnabled");
-            if (setLogEnabled != null)
-            {
-                setLogEnabled.Invoke(null, new object[] { enabled });
-            }
-        }
-    }
-
-    private void DisplayLogToggle(string eventTypeName, Type busType)
-    {
-        bool currentState = EventBusDebug.GetEventSpecificLogEnabled(eventTypeName);
-        if (CustomEditorHelper.DrawToggleButton("Enable Log", currentState, out var newState))
-        {
-            EventBusDebug.SetEventSpecificLogEnabled(eventTypeName, newState);
-            var setLogEnabled = busType.GetMethod("SetLogEnabled");
-            if (setLogEnabled != null)
-            {
-                setLogEnabled.Invoke(null, new object[] { newState });
-            }
-        }
-    }
-
-    private void DisplayClearButton(Type eventType, Type busType)
-    {
-        var activeBindings = (int)busType.GetMethod("GetActiveBindingsCount")?.Invoke(null, null);
-
-        if (activeBindings > 0 && GUILayout.Button($"Clear {eventType.Name} Event Bus"))
-        {
-            if (EditorUtility.DisplayDialog($"Clear {eventType.Name} Event Bus",
-                    $"Are you sure you want to clear {eventType.Name} event bus? This will remove all registered listeners.",
-                    "Yes", "No"))
-            {
-                var clearMethod = busType.GetMethod("Clear", BindingFlags.NonPublic | BindingFlags.Static);
-                if (clearMethod != null)
-                {
-                    clearMethod.Invoke(null, null);
-                    Debug.Log($"Cleared {eventType.Name} Event Bus");
-                }
-                else
-                {
-                    Debug.LogError($"Could not find Clear method for {eventType.Name} Event Bus");
-                }
-            }
-        }
-    }
-
-    private void OpenScriptWithMethod(string methodInfo)
-    {
-        var parts = methodInfo.Split('.');
-        if (parts.Length != 2) return;
-
-        string className = parts[0];
-        string methodName = parts[1];
-
-        var guids = AssetDatabase.FindAssets("t:Script");
-        foreach (var guid in guids)
-        {
-            string path = AssetDatabase.GUIDToAssetPath(guid);
-            var script = AssetDatabase.LoadAssetAtPath<MonoScript>(path);
-
-            if (script != null)
-            {
-                var scriptClass = script.GetClass();
-                if (scriptClass != null && scriptClass.Name == className)
-                {
-                    var method = scriptClass.GetMethod(methodName,
-                        BindingFlags.Public | BindingFlags.NonPublic |
-                        BindingFlags.Static | BindingFlags.Instance);
-
-                    if (method != null)
+                    foreach (var eventType in EventBusUtil.EventTypes)
                     {
-                        int lineNumber = GetMethodLineNumber(script.text, method.Name);
-                        if (lineNumber > 0)
+                        var busType = typeof(EventBus<>).MakeGenericType(eventType);
+                        var setLogEnabled = busType.GetMethod("SetLogEnabled");
+                        setLogEnabled?.Invoke(null, new object[] { newEnableLogState });
+                    }
+                }
+            }
+
+            EditorGUILayout.EndHorizontal();
+
+            GUILayout.Space(10);
+        }
+
+        private void DrawEventBusBindings()
+        {
+            if (EventBusUtil.EventTypes == null) return;
+
+            foreach (var eventType in EventBusUtil.EventTypes)
+            {
+                var bindingCount = GetBindingCount(eventType);
+                if (bindingCount == 0 && !_showAllEventBus) continue;
+
+                EditorHelper.DrawFoldoutSection(new GUIContent($"{eventType.Name}    Registered: {bindingCount}"),
+                    () => DrawEventBindings(eventType)
+                );
+            }
+        }
+
+        private void DrawEventBindings(Type eventType)
+        {
+            var bindings = GetBindings(eventType);
+            if (bindings == null) return;
+
+            foreach (var binding in bindings)
+            {
+                if (binding == null) continue;
+
+
+                // OnEvent 델리게이트
+                var onEventDelegate = GetFieldValue<Delegate>(binding, "_onEvent");
+                if (onEventDelegate != null)
+                {
+                    foreach (var handler in onEventDelegate.GetInvocationList())
+                    {
+                        if (IsValidMethod(handler.Method))
+                            DrawMethodInfo(handler.Method, handler.Target);
+                    }
+                }
+
+                // OnEventNoArgs 델리게이트
+                var onEventNoArgsDelegate = GetFieldValue<Delegate>(binding, "_onEventNoArgs");
+                if (onEventNoArgsDelegate != null)
+                {
+                    foreach (var handler in onEventNoArgsDelegate.GetInvocationList())
+                    {
+                        if (IsValidMethod(handler.Method))
+                            DrawMethodInfo(handler.Method, handler.Target);
+                    }
+                }
+            }
+        }
+
+        private bool IsValidMethod(MethodInfo method)
+        {
+            if (method == null) return false;
+
+            // 컴파일러 생성 메서드 필터링
+            if (method.Name.Contains("<") || method.Name.Contains(">")) return false;
+            if (method.Name.Contains(".ctor")) return false;
+            if (method.DeclaringType?.Name.Contains("<") ?? false) return false;
+
+            return true;
+        }
+
+        private void DrawMethodInfo(MethodInfo method, object target)
+        {
+            EditorGUILayout.BeginHorizontal();
+
+            // 스크립트 아이콘
+            var scriptIcon = EditorGUIUtility.IconContent("cs Script Icon").image;
+            GUILayout.Label(new GUIContent(scriptIcon), GUILayout.Width(20), GUILayout.Height(20));
+
+            // 타겟 객체 정보와 메서드 이름
+            var targetType = target?.GetType();
+            string targetInfo = targetType != null ? $"{targetType.Name}" : "Static";
+
+            var buttonStyle = new GUIStyle(EditorStyles.boldLabel)
+            {
+                normal = { textColor = new Color(0.4f, 0.6f, 1.0f) }, // 링크처럼 보이게 파란색으로
+                hover = { textColor = new Color(0.6f, 0.8f, 1.0f) }
+            };
+
+            // 메서드 이름을 버튼으로 표시
+            if (GUILayout.Button($"{targetInfo}.{method.Name}", buttonStyle))
+            {
+                OpenScriptAtMethod(method);
+            }
+
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private void OpenScriptAtMethod(MethodInfo method)
+        {
+            if (method == null) return;
+
+            var scripts = AssetDatabase.FindAssets($"t:Script {method.DeclaringType.Name}");
+            foreach (var guid in scripts)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var script = AssetDatabase.LoadAssetAtPath<MonoScript>(path);
+
+                if (script != null && script.GetClass() == method.DeclaringType)
+                {
+                    // 메소드 이름으로 해당 라인을 찾습니다
+                    var lines = script.text.Split('\n');
+                    for (int i = 0; i < lines.Length; i++)
+                    {
+                        if (lines[i].Contains($" {method.Name}(")) // 메소드 선언 패턴 매칭
                         {
-                            AssetDatabase.OpenAsset(script, lineNumber);
+                            // 해당 라인 번호로 파일을 엽니다
+                            AssetDatabase.OpenAsset(script, i + 1);
                             return;
                         }
                     }
 
+                    // 메소드를 찾지 못했다면 그냥 파일만 엽니다
                     AssetDatabase.OpenAsset(script);
-                    return;
+                    break;
                 }
             }
         }
-    }
 
-    private int GetMethodLineNumber(string scriptText, string methodName)
-    {
-        string[] lines = scriptText.Split('\n');
-        for (int i = 0; i < lines.Length; i++)
+        private IEnumerable<object> GetBindings(Type eventType)
         {
-            if (lines[i].Contains(methodName) &&
-                lines[i].Contains("(") &&
-                !lines[i].Contains(";")) // 메서드 호출이 아닌 선언을 찾기 위함
+            try
             {
-                return i + 1;
+                var busType = typeof(EventBus<>).MakeGenericType(eventType);
+                var bindingsField = busType.GetField("Bindings",
+                    BindingFlags.NonPublic | BindingFlags.Static);
+
+                return bindingsField?.GetValue(null) as IEnumerable<object>;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error getting bindings for {eventType.Name}: {e.Message}");
+                return null;
             }
         }
 
-        return -1;
-    }
-
-    private static void DisplayEventProperties(Type eventType)
-    {
-        var properties = eventType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-        if (properties.Length > 0)
+        private int GetBindingCount(Type eventType)
         {
-            EditorGUI.indentLevel++;
-            EditorGUILayout.LabelField("Properties:", EditorStyles.boldLabel);
-            foreach (var prop in properties)
-            {
-                EditorGUILayout.LabelField($"• {prop.PropertyType.Name} {prop.Name}");
-            }
+            var bindings = GetBindings(eventType);
+            return bindings?.Count() ?? 0;
+        }
 
-            EditorGUI.indentLevel--;
+        private T GetFieldValue<T>(object obj, string fieldName)
+        {
+            try
+            {
+                var field = obj.GetType().GetField(fieldName,
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+                return (T)field?.GetValue(obj);
+            }
+            catch
+            {
+                return default;
+            }
         }
     }
 }
-#endif

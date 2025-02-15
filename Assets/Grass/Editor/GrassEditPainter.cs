@@ -11,7 +11,6 @@ namespace Grass.Editor
 
         private float _currentBrushSizeSqr;
         private Vector3 _currentHitPoint;
-        private float _deltaTimeSpeed;
 
         public GrassEditPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
             spatialGrid) { }
@@ -27,7 +26,6 @@ namespace Grass.Editor
             // 자주 사용되는 값들을 미리 계산
             _currentHitPoint = hit.point;
             _currentBrushSizeSqr = toolSettings.BrushSize * toolSettings.BrushSize;
-            _deltaTimeSpeed = Time.deltaTime * toolSettings.BrushTransitionSpeed;
 
             // 범위 내의 잔디 인덱스들 가져오기
             spatialGrid.GetObjectsInRadius(hit.point, toolSettings.BrushSize, sharedIndices);
@@ -86,11 +84,11 @@ namespace Grass.Editor
                         continue;
                     }
 
-                    var distanceFalloff = 1f - distanceSqr / _currentBrushSizeSqr;
-
                     _cumulativeChanges.TryAdd(index, 0f);
-                    _cumulativeChanges[index] =
-                        Mathf.Clamp01(_cumulativeChanges[index] + _deltaTimeSpeed * distanceFalloff);
+
+                    var currentValue = _cumulativeChanges[index];
+                    var speed = Mathf.Pow(toolSettings.BrushTransitionSpeed, 2) ;
+                    _cumulativeChanges[index] = Mathf.Clamp01(currentValue + speed);
 
                     if (editOption is EditOption.EditColors or EditOption.Both)
                     {

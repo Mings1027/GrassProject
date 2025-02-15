@@ -5,6 +5,7 @@ public class RuntimeGrassGenerator : MonoBehaviour
 {
     [SerializeField] private GrassComputeScript grassCompute;
     [SerializeField] private GrassToolSettingSo toolSettings;
+    [SerializeField] private bool forceGenerate;
     [SerializeField] private GameObject[] targetObjects;
 
     private class GenerationData
@@ -54,23 +55,24 @@ public class RuntimeGrassGenerator : MonoBehaviour
             return;
         }
 
-        ClearGrass();
-        GenerateGrass();
-        grassCompute.Reset();
+        ExecuteGrassGeneration();
     }
 
     [ContextMenu("Preview Grass")]
     private void PreviewGrass()
     {
+        ExecuteGrassGeneration();
+    }
+
+    private void ExecuteGrassGeneration()
+    {
+        if (!forceGenerate) return;
         ClearGrass();
         GenerateGrass();
-        grassCompute.Reset();
     }
 
     private void ClearGrass()
     {
-        if (grassCompute.GrassDataList.Count <= 0) return;
-
         grassCompute.GrassDataList = new List<GrassData>();
     }
 
