@@ -126,7 +126,7 @@ public class CullingTree
     public bool GetClosestNode(Vector3 point, int index)
     {
         if (!_bounds.Contains(point)) return false;
-        
+
         if (_children.Length == 0) // 내부 노드면 자식 검사
         {
             _grassIDHeld.Add(index);

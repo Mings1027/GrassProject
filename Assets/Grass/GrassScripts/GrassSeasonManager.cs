@@ -178,6 +178,17 @@ public class GrassSeasonManager : MonoBehaviour
         }
     }
 
+    public void ResumeTransitions()
+    {
+        foreach (var zone in seasonZones)
+        {
+            if (zone != null && zone.gameObject.activeInHierarchy)
+            {
+                zone.ResumeTransition();
+            }
+        }
+    }
+
     public void PauseTransitions(float transitionDuration = DefaultTransitionDuration)
     {
         foreach (var zone in seasonZones)

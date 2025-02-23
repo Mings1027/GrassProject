@@ -7,8 +7,8 @@ TerrainLayer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Desert_ground_1
-  m_DiffuseTexture: {fileID: 2800000, guid: 4fb4973db0a5dae4fbd1ac0736d1b116, type: 3}
-  m_NormalMapTexture: {fileID: 2800000, guid: 22b25c1dfb5cf504a8616f59f86bca4d, type: 3}
+  m_DiffuseTexture: {fileID: 2800000, guid: 0d0fc3feab34bd84c83667452056eca9, type: 3}
+  m_NormalMapTexture: {fileID: 2800000, guid: 138c24e3eb062b44caf709bfc5d9880f, type: 3}
   m_MaskMapTexture: {fileID: 0}
   m_TileSize: {x: 2, y: 2}
   m_TileOffset: {x: 0, y: 0}
@@ -20,3 +20,4 @@ TerrainLayer:
   m_DiffuseRemapMax: {x: 1, y: 1, z: 1, w: 1}
   m_MaskMapRemapMin: {x: 0, y: 0, z: 0, w: 0}
   m_MaskMapRemapMax: {x: 1, y: 1, z: 1, w: 1}
+  m_SmoothnessSource: 1

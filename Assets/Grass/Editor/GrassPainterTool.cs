@@ -58,7 +58,6 @@ namespace Grass.Editor
         private GrassSeasonManager _seasonManager;
 
         private bool _isInit;
-        private bool _isProcessing;
         private CancellationTokenSource _cts;
         private readonly ObjectProgress _objectProgress = new();
 
@@ -106,12 +105,6 @@ namespace Grass.Editor
 
         private void OnGUI()
         {
-            if (_isProcessing)
-            {
-                DrawProcessingUI();
-                return;
-            }
-
             if (grassCompute == null)
             {
                 grassCompute = FindAnyObjectByType<GrassComputeScript>();
@@ -200,39 +193,6 @@ namespace Grass.Editor
         private void OnDestroy()
         {
             RemoveDelegates();
-        }
-
-        private void DrawProcessingUI()
-        {
-            const float bottomMargin = 10f;
-            const float progressBarHeight = 20f;
-            const float buttonHeight = 25f;
-            const float buttonWidth = 150f;
-            const float spacing = 5f;
-
-            // Kill 버튼 배치
-            var buttonRect = new Rect(
-                (position.width - buttonWidth) / 2,
-                position.height - bottomMargin - progressBarHeight - spacing - buttonHeight,
-                buttonWidth,
-                buttonHeight
-            );
-            if (GUI.Button(buttonRect, "Kill Grass Process"))
-            {
-                _isProcessing = false;
-                _cts.Cancel();
-                Debug.LogWarning("Progress update was cancelled");
-            }
-
-            // 프로그레스 바 배치
-            var progressRect = new Rect(
-                10,
-                position.height - bottomMargin - progressBarHeight,
-                position.width - 20,
-                progressBarHeight
-            );
-            EditorGUI.ProgressBar(progressRect, _objectProgress.progress, _objectProgress.progressMessage);
-            Repaint();
         }
 
         private void DrawBasicControls()
@@ -495,7 +455,7 @@ namespace Grass.Editor
             EditorGUILayout.Space(5);
             if (GUILayout.Button("Apply", GUILayout.Height(25)))
             {
-                HandleModifyOptionsButton().Forget();
+                HandleModifyOptionsButton();
             }
         }
 
@@ -557,21 +517,25 @@ namespace Grass.Editor
             EditorGUILayout.LabelField(toolName, headerStyle, GUILayout.Height(25));
         }
 
-        private async UniTask HandleModifyOptionsButton()
+        private void HandleModifyOptionsButton()
         {
-            var grassModifyOperation = new GrassModifyOperation(this, grassCompute, toolSettings);
+            // var grassModifyOperation = new GrassModifyOperation(this, grassCompute, toolSettings);
+            //
+            // var operation = grassModifyOperation.GetModifyOperation(_selectedModifyOption);
+            //
+            // if (EditorUtility.DisplayDialog(operation.title, operation.message, "Yes", "No"))
+            // {
+            //     Undo.RegisterCompleteObjectUndo(grassCompute, operation.undoMessage);
+            //     grassModifyOperation.ExecuteOperation(operation.action);
+            // }
 
-            var operation = grassModifyOperation.GetModifyOperation(_selectedModifyOption);
+            var syncModifyOperation = new SyncGrassModifyOperation(grassCompute, toolSettings);
+            var syncOperation = syncModifyOperation.GetSyncModifyOperation(_selectedModifyOption);
 
-            if (EditorUtility.DisplayDialog(operation.title, operation.message, "Yes", "No"))
+            if (EditorUtility.DisplayDialog(syncOperation.title, syncOperation.message, "Yes", "No"))
             {
-                Undo.RegisterCompleteObjectUndo(grassCompute, operation.undoMessage);
-                _isProcessing = true;
-                _cts = new CancellationTokenSource();
-
-                await grassModifyOperation.ExecuteOperation(operation.action);
-
-                _isProcessing = false;
+                Undo.RegisterCompleteObjectUndo(grassCompute, syncOperation.undoMessage);
+                syncModifyOperation.ExecuteOperation(syncOperation.action);
             }
         }
 
@@ -588,9 +552,9 @@ namespace Grass.Editor
             if (_seasonManager == null) _seasonManager = FindAnyObjectByType<GrassSeasonManager>();
             if (_seasonManager == null) return;
 
-            var initMethod = _seasonManager.GetType().GetMethod("Init", 
+            var initMethod = _seasonManager.GetType().GetMethod("Init",
                 BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod);
-    
+
             if (initMethod != null)
             {
                 initMethod.Invoke(_seasonManager, null);
@@ -604,10 +568,10 @@ namespace Grass.Editor
         private void UpdateSeasonZones()
         {
             if (_seasonManager == null) return;
-    
-            var updateMethod = _seasonManager.GetType().GetMethod("UpdateSeasonZones", 
+
+            var updateMethod = _seasonManager.GetType().GetMethod("UpdateSeasonZones",
                 BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod);
-    
+
             if (updateMethod != null)
             {
                 updateMethod.Invoke(_seasonManager, null);
@@ -1106,21 +1070,21 @@ namespace Grass.Editor
                     "Generate grass to selected object(s)?"))
             {
                 Undo.RegisterCompleteObjectUndo(grassCompute, "Generate Grass");
-                GenerateGrassFromSelection(Selection.gameObjects).Forget();
+                GenerateGrassFromSelection(Selection.gameObjects);
             }
 
             if (DrawButtonForSelectedObject("Selected Objects: Regenerate Grass", "Regenerate Grass",
                     "Remove existing grass and regenerate on selected object(s)?"))
             {
                 Undo.RegisterCompleteObjectUndo(grassCompute, "Regenerate Grass");
-                RegenerateGrassFromSelection(Selection.gameObjects).Forget();
+                RegenerateGrassFromSelection(Selection.gameObjects);
             }
 
             if (DrawButtonForSelectedObject("Selected Objects: Remove Grass", "Remove Grass",
                     "Remove the grass on the selected object(s)?"))
             {
                 Undo.RegisterCompleteObjectUndo(grassCompute, "Remove Grass");
-                RemoveGrassFromSelection(Selection.gameObjects).Forget();
+                RemoveGrassFromSelection(Selection.gameObjects);
             }
 
             if (GUILayout.Button("Remove All Grass"))
@@ -1355,7 +1319,7 @@ namespace Grass.Editor
                         EditorUtility.SetDirty(grassSetting);
                     }
                 });
-            CustomEditorHelper.DrawFoldoutSection(new GUIContent(EditorIcons.Cube) { text = "LOD Settings" }, () =>
+            CustomEditorHelper.DrawFoldoutSection(new GUIContent(EditorIcons.Cube) { text = "Fade Settings" }, () =>
             {
                 EditorGUI.BeginChangeCheck();
 
@@ -1366,11 +1330,11 @@ namespace Grass.Editor
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    Undo.RecordObject(grassSetting, "LOD Settings");
+                    Undo.RecordObject(grassSetting, "Fade Settings");
                     grassSetting.minFadeDistance = newMinFadeDistance;
                     grassSetting.maxFadeDistance = newMaxFadeDistance;
 
-                    grassCompute.LODSetting();
+                    grassCompute.FadeSetting();
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
@@ -1694,56 +1658,51 @@ namespace Grass.Editor
             }
         }
 
-        private async UniTask GenerateGrassFromSelection(GameObject[] selectedObjects)
+        private void GenerateGrassFromSelection(GameObject[] selectedObjects)
         {
-            _isProcessing = true;
-            _cts = new CancellationTokenSource();
-
-            await GenerateGrass(selectedObjects);
+            GenerateGrass(selectedObjects);
 
             Init();
 
-            _isProcessing = false;
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
 
-        private async UniTask RegenerateGrassFromSelection(GameObject[] selectedObjects)
+        private void RegenerateGrassFromSelection(GameObject[] selectedObjects)
         {
-            _isProcessing = true;
-            _cts = new CancellationTokenSource();
-
-            await RemoveGrass(selectedObjects);
+            RemoveGrass(selectedObjects);
             InitSpatialGrid();
-            await GenerateGrass(selectedObjects);
+            GenerateGrass(selectedObjects);
 
             Init();
 
-            _isProcessing = false;
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
 
-        private async UniTask RemoveGrassFromSelection(GameObject[] selectedObjects)
+        private void RemoveGrassFromSelection(GameObject[] selectedObjects)
         {
-            _isProcessing = true;
-            _cts = new CancellationTokenSource();
-
-            await RemoveGrass(selectedObjects);
+            RemoveGrass(selectedObjects);
 
             Init();
-            _isProcessing = false;
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
 
-        private async UniTask GenerateGrass(GameObject[] selectedObjects)
+        private void GenerateGrass(GameObject[] selectedObjects)
         {
-            var generationOperation = new GrassGenerationOperation(this, grassCompute, toolSettings, _spatialGrid);
-            await generationOperation.GenerateGrass(selectedObjects);
+            // var generationOperation = new GrassGenerationOperation(this, grassCompute, toolSettings, _spatialGrid);
+            // await generationOperation.GenerateGrass(selectedObjects);
+
+            var syncGrassGenerationOperation =
+                new SyncGrassGenerationOperation(grassCompute, toolSettings, _spatialGrid);
+            syncGrassGenerationOperation.GenerateGrass(selectedObjects);
         }
 
-        private async UniTask RemoveGrass(GameObject[] selectedObjects)
+        private void RemoveGrass(GameObject[] selectedObjects)
         {
-            var removalOperation = new GrassRemovalOperation(this, grassCompute, _spatialGrid);
-            await removalOperation.RemoveGrass(selectedObjects);
+            // var removalOperation = new GrassRemovalOperation(this, grassCompute, _spatialGrid);
+            // await removalOperation.RemoveGrass(selectedObjects);
+
+            var syncGrassRemovalOperation = new SyncGrassRemovalOperation(grassCompute, _spatialGrid);
+            syncGrassRemovalOperation.RemoveGrass(selectedObjects);
         }
 
         private void HandleBrushSize(Event e)

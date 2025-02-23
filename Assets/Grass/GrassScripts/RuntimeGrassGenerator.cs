@@ -66,7 +66,8 @@ public class RuntimeGrassGenerator : MonoBehaviour
 
     private void ExecuteGrassGeneration()
     {
-        if (!forceGenerate) return;
+        if (!forceGenerate && grassCompute.GrassDataList.Count > 0) return;
+
         ClearGrass();
         GenerateGrass();
     }

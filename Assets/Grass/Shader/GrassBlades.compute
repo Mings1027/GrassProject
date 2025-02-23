@@ -142,11 +142,10 @@ bool IsInAnyZone(float3 position, out int zoneIndex)
         float3 halfScale = _ZoneScales[i].xyz * 0.5;
 
         // 모든 축에 대해 범위 안에 있는지 체크
-        float3 inside = delta <= halfScale;
-        float isInside = inside.x * inside.y * inside.z;
+        bool isInside = all(delta <= halfScale);
 
         zoneIndex = lerp(zoneIndex, i, isInside);
-        if (isInside > 0) return true;
+        if (isInside) return true;
     }
     return false;
 }
@@ -227,7 +226,7 @@ void Main(uint id : SV_DispatchThreadID)
 
     half distanceFromCamera = distance(sv.positionWS, _CameraPositionWS);
     half distanceFade = 1 - saturate((distanceFromCamera - _MinFadeDist) / (_MaxFadeDist - _MinFadeDist));
-    if (distanceFade < 0) return;
+    if (distanceFade <= 0) return;
 
     uint localVertexCount = 0;
     half cut = _CutBuffer[visibleID];
@@ -237,8 +236,8 @@ void Main(uint id : SV_DispatchThreadID)
     half grassWidth = sv.uv.x;
     half grassHeight = sv.uv.y;
 
-    grassHeight = clamp(grassHeight + randomOffset, _MinHeight, _MaxHeight);
     grassWidth = clamp(grassWidth, _MinWidth, _MaxWidth);
+    grassHeight = clamp(grassHeight + randomOffset, _MinHeight, _MaxHeight);
 
     int zoneIndex;
     half3 baseColor = sv.color;

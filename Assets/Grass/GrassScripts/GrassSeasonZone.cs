@@ -22,6 +22,13 @@ public class GrassSeasonZone : MonoBehaviour
     private Vector3 _lastScale;
     private CancellationTokenSource _transitionCts;
 
+    private TransitionType _lastTransitionType;
+    private float _lastStartValue;
+    private float _lastTargetValue;
+    private float _lastDuration;
+    private float _elapsedTime;
+    private bool _wasTransitioning;
+
     public event Action OnZoneStateChanged;
 
     public float MinRange => 0;
@@ -87,6 +94,26 @@ public class GrassSeasonZone : MonoBehaviour
     public Task PlayNextSeasonAsync(float transitionDuration = DefaultTransitionDuration) =>
         PlayTransition(TransitionType.NextSeason, transitionDuration);
 
+    public void ResumeTransition()
+    {
+        if (!_wasTransitioning) return;
+        Debug.Log("1");
+        var remainingTime = _lastDuration - _elapsedTime;
+        if (remainingTime <= 0) return;
+        Debug.Log("2");
+        switch (_lastTransitionType)
+        {
+            case TransitionType.FullCycle:
+                _ = PlayTransition(TransitionType.FullCycle, remainingTime);
+                Debug.Log("3");
+                break;
+            case TransitionType.NextSeason:
+                _ = PlayTransition(TransitionType.NextSeason, remainingTime);
+                Debug.Log("4");
+                break;
+        }
+    }
+
     public void PauseTransition()
     {
         if (_transitionCts?.IsCancellationRequested == false)
@@ -107,7 +134,6 @@ public class GrassSeasonZone : MonoBehaviour
     }
 
     public ZoneData GetZoneData() => _zoneData;
-
 
     public bool ContainsPosition(Vector3 position)
     {
@@ -166,6 +192,8 @@ public class GrassSeasonZone : MonoBehaviour
     {
         PauseTransition();
         _transitionCts = new CancellationTokenSource();
+        _lastTransitionType = transitionType;
+        _wasTransitioning = true;
 
         try
         {
@@ -177,6 +205,12 @@ public class GrassSeasonZone : MonoBehaviour
                 case TransitionType.NextSeason:
                     await TransitionToNext(transitionDuration, _transitionCts.Token);
                     break;
+            }
+
+            if (!_transitionCts.IsCancellationRequested)
+            {
+                _wasTransitioning = false;
+                _elapsedTime = 0;
             }
         }
         finally
@@ -218,11 +252,15 @@ public class GrassSeasonZone : MonoBehaviour
     {
         if (!HasValidSettings) return;
 
-        var elapsedTime = 0f;
-        while (elapsedTime < duration && !cancellationToken.IsCancellationRequested)
+        _lastStartValue = startValue;
+        _lastTargetValue = targetValue;
+        _lastDuration = duration;
+        _elapsedTime = 0;
+
+        while (_elapsedTime < duration && !cancellationToken.IsCancellationRequested)
         {
-            elapsedTime += Time.deltaTime;
-            var t = elapsedTime / duration;
+            _elapsedTime += Time.deltaTime;
+            var t = _elapsedTime / duration;
             var newValue = Mathf.Lerp(startValue, targetValue, t);
 
             await Task.Yield();
