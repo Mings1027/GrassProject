@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Profiling;
 
 public class CullingTree
 {
     private Bounds _bounds; // 현재 노드의 영역
     private CullingTree[] _children; // 자식 노드들
-    private readonly List<int> _grassIDHeld = new(); // 현재 노드에 포함된 잔디 ID들
+    private readonly List<int> _grassIDList = new(); // 현재 노드에 포함된 잔디 ID들
 
 #if UNITY_EDITOR
     private readonly List<Bounds> _boundsList = new();
@@ -27,7 +26,8 @@ public class CullingTree
         {
             // 프로파일링 해보고 4분할만 하든 4,8 번갈아 하든 선택하면 될듯함.
             CreateChild(depth);
-            // CreateChildEight(depth);
+            // CreateQuadChild(depth);
+            // CreateQctChild(depth);
         }
         else
         {
@@ -61,58 +61,61 @@ public class CullingTree
         }
     }
 
-    private void CreateChildEight(int depth)
+    private void CreateQuadChild(int depth)
+    {
+        var quarterSize = _bounds.size / 4.0f;
+        var childSize = _bounds.size / 2.0f;
+        var center = _bounds.center;
+
+        _children = new CullingTree[4];
+
+        for (int index = 0; index < 4; index++)
+        {
+            // index를 기반으로 x, z 오프셋 계산
+            // index: 0 = 좌하단, 1 = 우하단, 2 = 좌상단, 3 = 우상단
+            var x = (index & 1) == 0 ? -quarterSize.x : quarterSize.x;
+            var z = (index & 2) == 0 ? -quarterSize.z : quarterSize.z;
+
+            // 자식 노드의 중심점 계산 (y값은 부모와 동일)
+            var childCenter = new Vector3(x, 0, z) + center;
+
+            // 자식 노드의 크기 설정 (y값은 부모와 동일)
+            var childBounds = new Bounds(
+                childCenter,
+                new Vector3(childSize.x, _bounds.size.y, childSize.z)
+            );
+
+            // 자식 노드 생성 (depth를 1 감소시켜 재귀 호출)
+            _children[index] = new CullingTree(childBounds, depth - 1);
+        }
+    }
+
+    private void CreateQctChild(int depth)
     {
         var childSize = _bounds.size / 2.0f;
         var center = _bounds.center;
 
         _children = new CullingTree[8];
 
-        for (var i = 0; i < 8; i++)
+        for (var index = 0; index < 8; index++)
         {
-            var x = (i & 1) == 0 ? -childSize.x : childSize.x;
-            var y = (i & 2) == 0 ? -childSize.y : childSize.y;
-            var z = (i & 4) == 0 ? -childSize.z : childSize.z;
+            var x = (index & 1) == 0 ? -childSize.x : childSize.x;
+            var y = (index & 2) == 0 ? -childSize.y : childSize.y;
+            var z = (index & 4) == 0 ? -childSize.z : childSize.z;
 
             var childCenter = new Vector3(x / 2, y / 2, z / 2) + center;
-            _children[i] = new CullingTree(new Bounds(childCenter, childSize), depth - 1);
+            _children[index] = new CullingTree(new Bounds(childCenter, childSize), depth - 1);
         }
     }
 
-    /// <summary>
-    /// 카메라 프러스텀 내에 있는 잔디 찾아서 반환
-    /// </summary>
-    /// <param name="frustum">카메라 프러스텀 평면들</param>
-    /// <param name="visibleIDList">보이는 잔디 ID들을 저장할 리스트</param>
-    public void GetVisibleObjectsInFrustum(Plane[] frustum, List<int> visibleIDList)
+    public void InsertGrassData(List<GrassData> grassDataList, List<int> visibleIDList)
     {
-#if UNITY_EDITOR
-        _boundsList.Clear();
-#endif
-        if (GeometryUtility.TestPlanesAABB(frustum, _bounds)) // 프러스텀과 현재 노드 영역이 겹치는지
+        visibleIDList.Clear();
+        for (int i = 0; i < grassDataList.Count; i++)
         {
-            if (_children.Length == 0) // 리프 노드면 포함된 잔디들을 결과에 추가
+            if (FindLeaf(grassDataList[i].position, i))
             {
-                if (_grassIDHeld.Count > 0)
-                {
-                    visibleIDList.AddRange(_grassIDHeld);
-#if UNITY_EDITOR
-                    _boundsList.Add(_bounds);
-#endif
-                }
-            }
-            else // 내부 노드면 자식들 재귀 호출
-            {
-                for (var i = 0; i < _children.Length; i++)
-                {
-                    if (_children[i] != null)
-                    {
-                        _children[i].GetVisibleObjectsInFrustum(frustum, visibleIDList);
-#if UNITY_EDITOR
-                        _boundsList.AddRange(_children[i]._boundsList);
-#endif
-                    }
-                }
+                visibleIDList.Add(i);
             }
         }
     }
@@ -123,25 +126,86 @@ public class CullingTree
     /// <param name="point">잔디 위치</param>
     /// <param name="index">잔디 ID</param>
     /// <returns></returns>
-    public bool GetClosestNode(Vector3 point, int index)
+    private bool FindLeaf(Vector3 point, int index)
     {
-        if (!_bounds.Contains(point)) return false;
+        if (!_bounds.Contains(point)) return false; // 영역 체크
 
-        if (_children.Length == 0) // 내부 노드면 자식 검사
+        if (_children.Length == 0) // 리프 노드인지 확인
         {
-            _grassIDHeld.Add(index);
+            _grassIDList.Add(index); // 잔디 ID 저장
             return true;
         }
 
-        foreach (var child in _children)
+        foreach (var child in _children) // 자식 노드 탐색
         {
-            if (child != null && child.GetClosestNode(point, index))
+            if (child != null && child.FindLeaf(point, index))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// 카메라 프러스텀 내에 있는 잔디 찾아서 반환
+    /// </summary>
+    /// <param name="frustum">카메라 프러스텀 평면들</param>
+    /// <param name="visibleIDList">보이는 잔디 ID들을 저장할 리스트</param>
+    public void FrustumCull(Plane[] frustum, List<int> visibleIDList)
+    {
+        if (GeometryUtility.TestPlanesAABB(frustum, _bounds)) // 프러스텀과 현재 노드 영역이 겹치는지
+        {
+            if (_children.Length == 0) // 리프 노드면 포함된 잔디들을 결과에 추가
+            {
+                if (_grassIDList.Count > 0)
+                {
+                    visibleIDList.AddRange(_grassIDList);
+                }
+            }
+            else // 내부 노드면 자식들 재귀 호출
+            {
+                for (var i = 0; i < _children.Length; i++)
+                {
+                    if (_children[i] != null)
+                    {
+                        _children[i].FrustumCull(frustum, visibleIDList);
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 특정 위치를 중심으로 지정된 반경 내의 잔디 ID 반환
+    /// 잔디 전체 순회하지 않고 필요한 영역의 잔디만 효율적으로 찾음
+    /// </summary>
+    /// <param name="resultList"></param>
+    /// <param name="point"></param>
+    /// <param name="radius"></param>
+    public void GetObjectsInRadius(List<int> resultList, Vector3 point, float radius)
+    {
+        var expandedBounds = _bounds;
+        expandedBounds.Expand(radius * 2);
+        if (!expandedBounds.Contains(point))
+        {
+            return;
+        }
+
+        if (_children.Length == 0) // 리프 노드면 모든 ID 추가
+        {
+            resultList.AddRange(_grassIDList);
+        }
+        else // 내부 노드면 반경 내에 있는 자식들 재귀 호출
+        {
+            for (var i = 0; i < _children.Length; i++)
+            {
+                if (_children[i] != null && _children[i]._bounds.SqrDistance(point) <= radius * radius)
+                {
+                    _children[i].GetObjectsInRadius(resultList, point, radius);
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -194,43 +258,11 @@ public class CullingTree
 
             if (allChildrenEmpty)
             {
-                return _grassIDHeld.Count == 0;
+                return _grassIDList.Count == 0;
             }
         }
 
-        return _grassIDHeld.Count == 0 && _children.Length == 0;
-    }
-
-    /// <summary>
-    /// 특정 위치를 중심으로 지정된 반경 내의 잔디 ID 반환
-    /// 잔디 전체 순회하지 않고 필요한 영역의 잔디만 효율적으로 찾음
-    /// </summary>
-    /// <param name="resultList"></param>
-    /// <param name="point"></param>
-    /// <param name="radius"></param>
-    public void GetObjectsInRadius(List<int> resultList, Vector3 point, float radius)
-    {
-        var expandedBounds = _bounds;
-        expandedBounds.Expand(radius * 2);
-        if (!expandedBounds.Contains(point))
-        {
-            return;
-        }
-
-        if (_children.Length == 0) // 리프 노드면 모든 ID 추가
-        {
-            resultList.AddRange(_grassIDHeld);
-        }
-        else // 내부 노드면 반경 내에 있는 자식들 재귀 호출
-        {
-            for (var i = 0; i < _children.Length; i++)
-            {
-                if (_children[i] != null && _children[i]._bounds.SqrDistance(point) <= radius * radius)
-                {
-                    _children[i].GetObjectsInRadius(resultList, point, radius);
-                }
-            }
-        }
+        return _grassIDList.Count == 0 && _children.Length == 0;
     }
 
     /// <summary>
@@ -249,7 +281,7 @@ public class CullingTree
 
         if (_children.Length == 0)
         {
-            return _grassIDHeld.Remove(index);
+            return _grassIDList.Remove(index);
         }
 
         for (var i = 0; i < _children.Length; i++)
@@ -287,7 +319,7 @@ public class CullingTree
         var center = node._bounds.center + new Vector3(0, 0.01f, 0);
         if (node._children.Length == 0) // 리프 노드
         {
-            if (node._grassIDHeld.Count > 0) // 잔디가 있는 리프 노드만
+            if (node._grassIDList.Count > 0) // 잔디가 있는 리프 노드만
             {
                 // 리프 노드는 초록색으로 표시
                 Gizmos.color = new Color(0.0f, 1.0f, 0.0f, 0.3f);

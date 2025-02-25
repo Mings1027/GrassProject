@@ -1138,7 +1138,7 @@ namespace Grass.Editor
                     grassSetting.randomHeightMin = newRandomHeightMin;
                     grassSetting.randomHeightMax = newRandomHeightMax;
 
-                    grassCompute.BladeMinMaxSetting();
+                    grassCompute.SetBladeMinMax();
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
@@ -1162,7 +1162,7 @@ namespace Grass.Editor
                     grassSetting.bladeCurve = newBladeCurve;
                     grassSetting.bottomWidth = newBottomWidth;
 
-                    grassCompute.BladeShapeSetting();
+                    grassCompute.SetBladeShape();
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
@@ -1183,7 +1183,7 @@ namespace Grass.Editor
                     grassSetting.windStrength = newWindStrength;
                     grassSetting.WindDirection = newWindDirection;
 
-                    grassCompute.WindSetting();
+                    grassCompute.SetWind();
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
@@ -1199,7 +1199,7 @@ namespace Grass.Editor
                     grassSetting.topTint = newTopTint;
                     grassSetting.bottomTint = newBottomTint;
 
-                    grassCompute.TintSetting();
+                    grassCompute.SetTint();
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
@@ -1226,7 +1226,7 @@ namespace Grass.Editor
                     grassSetting.blendMultiply = newBlendMultiply;
                     grassSetting.blendOffset = newBlendOffset;
 
-                    grassCompute.BlendSetting();
+                    grassCompute.SetBlend();
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
@@ -1249,7 +1249,7 @@ namespace Grass.Editor
                     grassSetting.shadowBrightness = newShadowBrightness;
                     grassSetting.shadowColor = newShadowColor;
 
-                    grassCompute.ShadowSetting();
+                    grassCompute.SetShadow();
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
@@ -1273,7 +1273,7 @@ namespace Grass.Editor
                     grassSetting.additionalLightShadowStrength = newAdditionalLightShadowStrength;
                     grassSetting.additionalLightShadowColor = newAdditionalLightShadowColor;
 
-                    grassCompute.AdditionalLightSetting();
+                    grassCompute.SetAdditionalLight();
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
@@ -1295,27 +1295,27 @@ namespace Grass.Editor
                     grassSetting.specularStrength = newSpecularStrength;
                     grassSetting.specularHeight = newSpecularHeight;
 
-                    grassCompute.SpecularSetting();
+                    grassCompute.SetSpecular();
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
-            CustomEditorHelper.DrawFoldoutSection(new GUIContent(EditorIcons.Cube) { text = "Blade Amount Settings" },
+            CustomEditorHelper.DrawFoldoutSection(new GUIContent(EditorIcons.Cube) { text = "Grass Appearance" },
                 () =>
                 {
                     EditorGUI.BeginChangeCheck();
 
-                    var newBladesPerVertex = EditorGUILayout.IntSlider("Blades Per Vertex",
-                        grassSetting.bladesPerVertex, grassSetting.MinBladesPerVertex, grassSetting.MaxBladesPerVertex);
-                    var newSegmentsPerBlade = EditorGUILayout.IntSlider("Segments Per Blade",
-                        grassSetting.segmentsPerBlade, grassSetting.MinSegmentsPerBlade,
-                        grassSetting.MaxSegmentsPerBlade);
+                    var newGrassAmount = EditorGUILayout.IntSlider("Grass Amount",
+                        grassSetting.grassAmount, grassSetting.MinGrassAmount, grassSetting.MaxGrassAmount);
+                    var newGrassQuality = EditorGUILayout.IntSlider("Grass Quality",
+                        grassSetting.grassQuality, grassSetting.MinGrassQuality,
+                        grassSetting.MaxGrassQuality);
                     if (EditorGUI.EndChangeCheck())
                     {
-                        Undo.RecordObject(grassSetting, "Blade Amount Settings");
-                        grassSetting.bladesPerVertex = newBladesPerVertex;
-                        grassSetting.segmentsPerBlade = newSegmentsPerBlade;
+                        Undo.RecordObject(grassSetting, "Grass Appearance");
+                        grassSetting.grassAmount = newGrassAmount;
+                        grassSetting.grassQuality = newGrassQuality;
 
-                        grassCompute.BladeAmountSetting();
+                        grassCompute.SetGrassAppearance();
                         EditorUtility.SetDirty(grassSetting);
                     }
                 });
@@ -1334,7 +1334,7 @@ namespace Grass.Editor
                     grassSetting.minFadeDistance = newMinFadeDistance;
                     grassSetting.maxFadeDistance = newMaxFadeDistance;
 
-                    grassCompute.FadeSetting();
+                    grassCompute.SetFade();
                     EditorUtility.SetDirty(grassSetting);
                 }
             });
@@ -1397,7 +1397,7 @@ namespace Grass.Editor
                     grassSetting.interactorStrength = newInteractorStrength;
                     grassSetting.castShadow = newCastShadow;
 
-                    grassCompute.InteractorStrengthSetting();
+                    grassCompute.SetInteractorStrength();
                     EditorUtility.SetDirty(grassSetting);
                 }
             });

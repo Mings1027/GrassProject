@@ -63,13 +63,13 @@ public class GrassSettingSO : ScriptableObject
     }
 
     [Header("Grass")]
-    public int bladesPerVertex = 4;
-    public int MinBladesPerVertex => 1;
-    public int MaxBladesPerVertex => 30;
+    public int grassAmount = 4;
+    public int MinGrassAmount => 1;
+    public int MaxGrassAmount => 30;
 
-    public int segmentsPerBlade = 3;
-    public int MinSegmentsPerBlade => 1;
-    public int MaxSegmentsPerBlade => 3;
+    public int grassQuality = 3;
+    public int MinGrassQuality => 1;
+    public int MaxGrassQuality => 3;
 
     // Interactor
     [Header("Interactor Strength")]

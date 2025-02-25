@@ -31,8 +31,8 @@ namespace Grass.GrassScripts
         public static readonly int BladeForward = Shader.PropertyToID("_BladeForward");
         public static readonly int BladeCurve = Shader.PropertyToID("_BladeCurve");
         public static readonly int BottomWidth = Shader.PropertyToID("_BottomWidth");
-        public static readonly int MaxBladesPerVertex = Shader.PropertyToID("_MaxBladesPerVertex");
-        public static readonly int MaxSegmentsPerBlade = Shader.PropertyToID("_MaxSegmentsPerBlade");
+        public static readonly int GrassAmount = Shader.PropertyToID("_GrassAmount");
+        public static readonly int GrassQuality = Shader.PropertyToID("_GrassQuality");
         public static readonly int MinHeight = Shader.PropertyToID("_MinHeight");
         public static readonly int MinWidth = Shader.PropertyToID("_MinWidth");
         public static readonly int MaxHeight = Shader.PropertyToID("_MaxHeight");

@@ -51,8 +51,8 @@ float _BladeRadius;
 float _BladeForward;
 float _BladeCurve;
 float _BottomWidth;
-float _MaxBladesPerVertex;
-float _MaxSegmentsPerBlade;
+float _GrassAmount;
+float _GrassQuality;
 float _MinHeight, _MaxHeight;
 float _MinWidth, _MaxWidth;
 float _MinFadeDist, _MaxFadeDist;
@@ -225,8 +225,12 @@ void Main(uint id : SV_DispatchThreadID)
     SourceVertex sv = _SourceVertices[visibleID];
 
     half distanceFromCamera = distance(sv.positionWS, _CameraPositionWS);
-    half distanceFade = 1 - saturate((distanceFromCamera - _MinFadeDist) / (_MaxFadeDist - _MinFadeDist));
+    float segmentRatio = saturate((distanceFromCamera - _MinFadeDist) / (_MaxFadeDist - _MinFadeDist));
+    half distanceFade = 1 - segmentRatio;
     if (distanceFade <= 0) return;
+
+    uint dynamicSegments = lerp(_GrassQuality, 1, segmentRatio);
+    dynamicSegments = max(1, dynamicSegments); // Ensure at least 1 segment
 
     uint localVertexCount = 0;
     half cut = _CutBuffer[visibleID];
@@ -261,22 +265,21 @@ void Main(uint id : SV_DispatchThreadID)
     half3 wind = CalculationWind(sv.positionWS, grassHeight);
     half3 finalWind = wind * lerp(1.0, 0.1, interaction.windAttenuation);
 
-    half numTrianglesPerBlade = (_MaxSegmentsPerBlade - 1) * 2 + 1;
 
     half3 grassNormal = normalize(sv.normalOS);
     float3x3 tangentToWorld = CreateTangentToWorld(grassNormal);
 
-    uint numBlades = round(_MaxBladesPerVertex * distanceFade);
+    uint numBlades = round(_GrassAmount * distanceFade);
     for (uint j = 0; j < numBlades; j++)
     {
         DrawVertex drawVertices[GRASS_NUM_VERTICES_PER_BLADE];
         float3x3 facingRotationMatrix = AngleAxis3x3(Hash3DToFloat01(sv.positionWS, j) * TWO_PI, grassNormal);
-        float bladeRadius = j / _MaxBladesPerVertex;
+        float bladeRadius = j / _GrassAmount;
         float offset = (1 - bladeRadius) * _BladeRadius;
 
-        for (int i = 0; i < _MaxSegmentsPerBlade; i++)
+        for (int i = 0; i < dynamicSegments; i++)
         {
-            float heightRatio = i / _MaxSegmentsPerBlade;
+            float heightRatio = i / (float)dynamicSegments;
             float3 pos = sv.positionWS + (finalWind + grassNormal * grassHeight + interaction.bendOffset) * heightRatio;
             float segWidth = grassWidth * _BottomWidth * (1 - heightRatio);
 
@@ -288,9 +291,10 @@ void Main(uint id : SV_DispatchThreadID)
         }
 
         float3 topPos = sv.positionWS + finalWind + interaction.bendOffset + grassNormal * grassHeight;
-        drawVertices[_MaxSegmentsPerBlade * 2] = GrassVertex(topPos, 0, 1, grassHeight, offset, facingRotationMatrix,
-                                                             tangentToWorld);
+        drawVertices[dynamicSegments * 2] = GrassVertex(topPos, 0, 1, grassHeight, offset, facingRotationMatrix,
+                                                        tangentToWorld);
 
+        uint numTrianglesPerBlade = (dynamicSegments - 1) * 2 + 1;
         for (int k = 0; k < numTrianglesPerBlade; ++k)
         {
             DrawTriangle tri = (DrawTriangle)0;

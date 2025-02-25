@@ -16,7 +16,7 @@ public class GrassComputeScript : MonoBehaviour
 {
     private const int SourceVertStride = sizeof(float) * (3 + 3 + 2 + 3);
     private const int DrawStride = sizeof(float) * (3 + 3 + 4 + (3 + 2) * 3);
-    private const int MaxBufferSize = 2500000;
+    private const int MaxBufferSize = 3000000;
 
     [SerializeField, HideInInspector]
     private List<GrassData> grassData = new(); // base data lists
@@ -409,10 +409,10 @@ public class GrassComputeScript : MonoBehaviour
         if (_fastMode) return;
 #endif
         grassVisibleIDList.Clear();
-        _cullingTree?.GetVisibleObjectsInFrustum(_cameraFrustumPlanes, grassVisibleIDList);
+        _cullingTree?.FrustumCull(_cameraFrustumPlanes, grassVisibleIDList);
         _visibleIDBuffer?.SetData(grassVisibleIDList);
     }
-    
+
     // Update the shader with frame specific data
     private void SetGrassDataUpdate()
     {
@@ -542,21 +542,8 @@ public class GrassComputeScript : MonoBehaviour
         var extents = _bounds.extents;
         _bounds.extents = extents * 1.1f;
 
-        RecreateCullingTree();
-    }
-
-    private void RecreateCullingTree()
-    {
         _cullingTree = new CullingTree(_bounds, grassSetting.cullingTreeDepth);
-        grassVisibleIDList.Clear();
-
-        for (int i = 0; i < grassData.Count; i++)
-        {
-            if (_cullingTree.GetClosestNode(grassData[i].position, i))
-            {
-                grassVisibleIDList.Add(i);
-            }
-        }
+        _cullingTree.InsertGrassData(grassData, grassVisibleIDList);
     }
 
     public void GetNearbyGrass(Vector3 point, float radius)
@@ -573,26 +560,26 @@ public class GrassComputeScript : MonoBehaviour
     {
         // Send things to compute shader that dont need to be set every frame
         _instComputeShader.SetFloat(GrassShaderPropertyID.Time, Time.time);
-        InteractorStrengthSetting();
-        BladeMinMaxSetting();
-        BladeShapeSetting();
-        WindSetting();
-        TintSetting();
-        BlendSetting();
-        ShadowSetting();
-        AdditionalLightSetting();
-        SpecularSetting();
-        BladeAmountSetting();
-        FadeSetting();
+        SetInteractorStrength();
+        SetBladeMinMax();
+        SetBladeShape();
+        SetWind();
+        SetTint();
+        SetBlend();
+        SetShadow();
+        SetAdditionalLight();
+        SetSpecular();
+        SetGrassAppearance();
+        SetFade();
     }
 
-    public void InteractorStrengthSetting()
+    public void SetInteractorStrength()
     {
         if (_instComputeShader == null) return;
         _instComputeShader.SetFloat(GrassShaderPropertyID.InteractorStrength, grassSetting.interactorStrength);
     }
 
-    public void BladeMinMaxSetting()
+    public void SetBladeMinMax()
     {
         if (_instComputeShader == null) return;
         _instComputeShader.SetFloat(GrassShaderPropertyID.MinWidth, grassSetting.minWidth);
@@ -605,7 +592,7 @@ public class GrassComputeScript : MonoBehaviour
         _instComputeShader.SetFloat(GrassShaderPropertyID.GrassRandomHeightMax, grassSetting.randomHeightMax);
     }
 
-    public void BladeShapeSetting()
+    public void SetBladeShape()
     {
         if (_instComputeShader == null) return;
         _instComputeShader.SetFloat(GrassShaderPropertyID.BladeRadius, grassSetting.bladeRadius);
@@ -614,7 +601,7 @@ public class GrassComputeScript : MonoBehaviour
         _instComputeShader.SetFloat(GrassShaderPropertyID.BottomWidth, grassSetting.bottomWidth);
     }
 
-    public void WindSetting()
+    public void SetWind()
     {
         if (_instComputeShader == null) return;
         _instComputeShader.SetFloat(GrassShaderPropertyID.WindSpeed, grassSetting.windSpeed);
@@ -622,14 +609,14 @@ public class GrassComputeScript : MonoBehaviour
         _instComputeShader.SetVector(GrassShaderPropertyID.WindDirection, grassSetting.windDirectionVector);
     }
 
-    public void TintSetting()
+    public void SetTint()
     {
         if (_instantiatedMaterial == null) return;
         _instantiatedMaterial.SetColor(GrassShaderPropertyID.TopTint, grassSetting.topTint);
         _instantiatedMaterial.SetColor(GrassShaderPropertyID.BottomTint, grassSetting.bottomTint);
     }
 
-    public void BlendSetting()
+    public void SetBlend()
     {
         if (_instantiatedMaterial == null) return;
         _instantiatedMaterial.SetFloat(GrassShaderPropertyID.AmbientStrength, grassSetting.ambientStrength);
@@ -643,7 +630,7 @@ public class GrassComputeScript : MonoBehaviour
         }
     }
 
-    public void ShadowSetting()
+    public void SetShadow()
     {
         if (_instantiatedMaterial == null) return;
         _instantiatedMaterial.SetFloat(GrassShaderPropertyID.ShadowDistance, grassSetting.shadowDistance);
@@ -652,7 +639,7 @@ public class GrassComputeScript : MonoBehaviour
         _instantiatedMaterial.SetColor(GrassShaderPropertyID.ShadowColor, grassSetting.shadowColor);
     }
 
-    public void AdditionalLightSetting()
+    public void SetAdditionalLight()
     {
         if (_instantiatedMaterial == null) return;
         _instantiatedMaterial.SetFloat(GrassShaderPropertyID.AdditionalLightIntensity,
@@ -663,7 +650,7 @@ public class GrassComputeScript : MonoBehaviour
             grassSetting.additionalLightShadowColor);
     }
 
-    public void SpecularSetting()
+    public void SetSpecular()
     {
         if (_instantiatedMaterial == null) return;
         _instantiatedMaterial.SetFloat(GrassShaderPropertyID.SpecularFalloff, grassSetting.specularFalloff);
@@ -671,14 +658,14 @@ public class GrassComputeScript : MonoBehaviour
         _instantiatedMaterial.SetFloat(GrassShaderPropertyID.SpecularHeight, grassSetting.specularHeight);
     }
 
-    public void BladeAmountSetting()
+    public void SetGrassAppearance()
     {
         if (_instComputeShader == null) return;
-        _instComputeShader.SetInt(GrassShaderPropertyID.MaxBladesPerVertex, grassSetting.bladesPerVertex);
-        _instComputeShader.SetInt(GrassShaderPropertyID.MaxSegmentsPerBlade, grassSetting.segmentsPerBlade);
+        _instComputeShader.SetInt(GrassShaderPropertyID.GrassAmount, grassSetting.grassAmount);
+        _instComputeShader.SetInt(GrassShaderPropertyID.GrassQuality, grassSetting.grassQuality);
     }
 
-    public void FadeSetting()
+    public void SetFade()
     {
         if (_instComputeShader == null) return;
         _instComputeShader.SetFloat(GrassShaderPropertyID.MinFadeDist, grassSetting.minFadeDistance);
