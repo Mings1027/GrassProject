@@ -76,18 +76,10 @@ namespace Grass.Editor
 
                 if (distanceSqr <= _currentBrushSizeSqr)
                 {
-                    if (editOption == EditOption.SetSize)
-                    {
-                        grassData.widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight);
-                        _modifiedGrassData[index] = grassData;
-                        _processedIndices.Add(index);
-                        continue;
-                    }
-
                     _cumulativeChanges.TryAdd(index, 0f);
 
                     var currentValue = _cumulativeChanges[index];
-                    var speed = Mathf.Pow(toolSettings.BrushTransitionSpeed, 2) ;
+                    var speed = Mathf.Pow(toolSettings.BrushTransitionSpeed, 2);
                     _cumulativeChanges[index] = Mathf.Clamp01(currentValue + speed);
 
                     if (editOption is EditOption.EditColors or EditOption.Both)
@@ -95,7 +87,18 @@ namespace Grass.Editor
                         ProcessColorEdit(ref grassData, index, toolSettings);
                     }
 
-                    if (editOption is EditOption.EditWidthHeight or EditOption.Both)
+                    if (editOption == EditOption.EditWidthHeight)
+                    {
+                        if (toolSettings.SetGrassSizeImmediately)
+                        {
+                            InstantSizeChange(ref grassData, index, toolSettings);
+                        }
+                        else
+                        {
+                            ProcessWidthHeightEdit(ref grassData, index, toolSettings);
+                        }
+                    }
+                    else if (editOption == EditOption.Both)
                     {
                         ProcessWidthHeightEdit(ref grassData, index, toolSettings);
                     }
@@ -127,6 +130,13 @@ namespace Grass.Editor
 
             var t = _cumulativeChanges[index];
             grassData.widthHeight = Vector2.Lerp(grassData.widthHeight, targetSize, t);
+        }
+
+        private void InstantSizeChange(ref GrassData grassData, int index, GrassToolSettingSo toolSettings)
+        {
+            grassData.widthHeight = new Vector2(toolSettings.GrassWidth, toolSettings.GrassHeight);
+            _modifiedGrassData[index] = grassData;
+            _processedIndices.Add(index);
         }
 
         private void ApplyModifications(List<GrassData> grassDataList)

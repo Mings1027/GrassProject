@@ -25,12 +25,13 @@ MonoBehaviour:
   - 1.75
   vertexColorSettings: 0
   vertexFade: 0
-  grassWidth: 0.5
-  grassHeight: 1
+  grassWidth: 1.079
+  grassHeight: 0.75
   adjustWidth: 0.2
   adjustHeight: 0.01
   adjustWidthMax: 1
   adjustHeightMax: 0.01
+  setGrassSizeImmediately: 1
   rangeR: 0.3
   rangeG: 0.3
   rangeB: 0.3
@@ -47,7 +48,7 @@ MonoBehaviour:
   allowUndersideGrass: 1
   density: 126
   grassSpacing: 0.5
-  brushHeight: 28.199999
+  brushHeight: 28.749998
   generateGrassCount: 1000000
   grassMouseButton: 0
   brushSizeShortcut: 2

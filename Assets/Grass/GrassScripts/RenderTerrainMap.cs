@@ -156,8 +156,8 @@ public class RenderTerrainMap : MonoBehaviour
 
         Shader.SetGlobalFloat(OrthographicCamSizeTerrain, camToDrawWith.orthographicSize);
         Shader.SetGlobalVector(OrthographicCamPosTerrain, camToDrawWith.transform.position);
-        camToDrawWith.Render();
         Shader.SetGlobalTexture(target, _tempTex);
+        camToDrawWith.Render();
 
         camToDrawWith.enabled = false;
     }

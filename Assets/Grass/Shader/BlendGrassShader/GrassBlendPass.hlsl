@@ -1,3 +1,25 @@
+//get the data from the compute shader
+// void GetComputeData_float(uint vertexID, out float3 worldPos, out float3 normal, out float2 uv, out float3 col,
+//                           out float4 extraBuffer)
+// {
+//     DrawTriangle tri = _DrawTriangles[vertexID / 3];
+//     DrawVertex input = tri.vertices[vertexID % 3];
+//     worldPos = input.positionWS;
+//     normal = tri.normalOS;
+//     uv = input.uv;
+//     col = tri.diffuseColor;
+//
+//     // for some reason doing this with a comparison node results in a glitchy alpha, so we're doing it here, if your grass is at a point higher than 99999 Y position then you should make this even higher or find a different solution
+//     if (tri.extraBuffer.x == -1)
+//     {
+//         extraBuffer = float4(99999, tri.extraBuffer.y, tri.extraBuffer.z, tri.extraBuffer.w);
+//     }
+//     else
+//     {
+//         extraBuffer = tri.extraBuffer;
+//     }
+// }
+
 half4 SampleTerrainTexture(half3 worldPos)
 {
     half2 terrainUV = worldPos.xz - _OrthographicCamPosTerrain.xz;
@@ -99,8 +121,21 @@ FragmentData Vertex(VertexData input)
 {
     FragmentData output;
 
-    GetComputeData_float(input.vertexID, output.worldPos, output.normalWS, output.uv, output.diffuseColor,
-                         output.extraBuffer);
+    DrawTriangle tri = _DrawTriangles[input.vertexID / 3];
+    DrawVertex vert = tri.vertices[input.vertexID % 3];
+    output.worldPos = vert.positionWS;
+    output.normalWS = tri.normalOS;
+    output.uv = vert.uv;
+    output.diffuseColor = tri.diffuseColor;
+
+    if (tri.extraBuffer.x == -1)
+    {
+        output.extraBuffer = float4(99999, tri.extraBuffer.y, tri.extraBuffer.z, tri.extraBuffer.w);
+    }
+    else
+    {
+        output.extraBuffer = tri.extraBuffer;
+    }
     output.positionCS = TransformObjectToHClip(output.worldPos);
     output.terrainBlendingColor = SampleTerrainTexture(output.worldPos);
     return output;

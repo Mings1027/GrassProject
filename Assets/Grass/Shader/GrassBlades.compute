@@ -113,11 +113,11 @@ float3x3 AngleAxis3x3(float angle, float3 axis)
 
 float3x3 CreateTangentToWorld(float3 normal)
 {
-    float3 tangentX = float3(-normal.y, normal.x, 0); // x축 기준 탄젠트 계산
-    float3 tangentZ = float3(0, -normal.z, normal.y); // z축 기준 탄젠트 계산
+    float3 tangentX = normalize(float3(-normal.y, normal.x, 0)); // x축 기준 탄젠트 계산
+    float3 tangentZ = normalize(float3(0, -normal.z, normal.y)); // z축 기준 탄젠트 계산
 
     // normal.x와 normal.z의 상대적 크기에 따라 보간
-    float blendFactor = smoothstep(0.0, 1.0, abs(normal.x) / (abs(normal.x) + abs(normal.z)));
+    float blendFactor = saturate(abs(normal.x) - abs(normal.z) + 0.5);
 
     // 두 탄젠트 벡터를 블렌딩
     float3 tangent = normalize(lerp(tangentZ, tangentX, blendFactor));
@@ -135,18 +135,28 @@ bool IsInAnyZone(float3 position, out int zoneIndex)
 {
     zoneIndex = -1;
     for (int i = _ZoneCount - 1; i >= 0; i--)
+    // for (int i = 0; i < _ZoneCount; i++)
     {
+        // 현재 구역이 비활성화된 경우 (w 값이 0.5 미만) 이 구역은 건너뜀
         if (_ZonePositions[i].w < 0.5) continue;
 
+        // 주어진 위치와 현재 구역 중심점 사이 거리 차이로 각 축(x,y,z) 별로 계산하고 절대값 취함
         float3 delta = abs(position - _ZonePositions[i].xyz);
+
+        // 현재 구역 크기의 절반
         float3 halfScale = _ZoneScales[i].xyz * 0.5;
 
-        // 모든 축에 대해 범위 안에 있는지 체크
-        bool isInside = all(delta <= halfScale);
+        // halfScale를 쓰는 이유는 (0,0,0)을 중심으로 하는 사각형과 한점을 비교해보면 알 수 있다.
+        if (delta.x > halfScale.x) continue; // x축에서 이미 벗어났으면 나머지 검사 스킵
+        if (delta.y > halfScale.y) continue; // y축에서 이미 벗어났으면 나머지 검사 스킵
+        if (delta.z > halfScale.z) continue; // z축에서 이미 벗어났으면 나머지 검사 스킵
 
-        zoneIndex = lerp(zoneIndex, i, isInside);
-        if (isInside) return true;
+        // 여기까지 왔다면 모든 축에서 범위 내에 있음
+        zoneIndex = i;
+        return true;
     }
+
+    // 모든 구역 확인했는데도 위치가 어떤 구역 내부에도 없으면 false
     return false;
 }
 
@@ -277,7 +287,7 @@ void Main(uint id : SV_DispatchThreadID)
         float bladeRadius = j / _GrassAmount;
         float offset = (1 - bladeRadius) * _BladeRadius;
 
-        for (int i = 0; i < dynamicSegments; i++)
+        for (uint i = 0; i < dynamicSegments; i++)
         {
             float heightRatio = i / (float)dynamicSegments;
             float3 pos = sv.positionWS + (finalWind + grassNormal * grassHeight + interaction.bendOffset) * heightRatio;
@@ -286,8 +296,7 @@ void Main(uint id : SV_DispatchThreadID)
             drawVertices[i * 2] = GrassVertex(pos, segWidth, heightRatio, grassHeight, offset, facingRotationMatrix,
                                               tangentToWorld);
             drawVertices[i * 2 + 1] = GrassVertex(pos, -segWidth, heightRatio, grassHeight, offset,
-                                                  facingRotationMatrix,
-                                                  tangentToWorld);
+                                                  facingRotationMatrix, tangentToWorld);
         }
 
         float3 topPos = sv.positionWS + finalWind + interaction.bendOffset + grassNormal * grassHeight;

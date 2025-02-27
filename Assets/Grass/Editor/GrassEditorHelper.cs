@@ -29,7 +29,6 @@ namespace Grass.Editor
         EditColors,
         EditWidthHeight,
         Both,
-        SetSize
     }
 
     public enum ModifyOption

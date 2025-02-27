@@ -45,3 +45,25 @@ CBUFFER_START(UnityPerMaterial)
     float _SpecularStrength; // 반사광의 강도
     float _SpecularHeight;
 CBUFFER_END
+
+float _OrthographicCamSizeTerrain;
+float3 _OrthographicCamPosTerrain;
+
+// This describes a vertex on the generated mesh
+struct DrawVertex
+{
+    float3 positionWS; // The position in world space
+    float2 uv;
+};
+
+// A triangle on the generated mesh
+struct DrawTriangle
+{
+    float3 normalOS;
+    float3 diffuseColor;
+    float4 extraBuffer;
+    DrawVertex vertices[3]; // The three points on the triangle
+};
+
+// A buffer containing the generated mesh
+StructuredBuffer<DrawTriangle> _DrawTriangles;  // 읽는 역할

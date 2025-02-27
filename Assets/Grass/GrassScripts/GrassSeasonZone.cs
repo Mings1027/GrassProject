@@ -97,19 +97,15 @@ public class GrassSeasonZone : MonoBehaviour
     public void ResumeTransition()
     {
         if (!_wasTransitioning) return;
-        Debug.Log("1");
         var remainingTime = _lastDuration - _elapsedTime;
         if (remainingTime <= 0) return;
-        Debug.Log("2");
         switch (_lastTransitionType)
         {
             case TransitionType.FullCycle:
                 _ = PlayTransition(TransitionType.FullCycle, remainingTime);
-                Debug.Log("3");
                 break;
             case TransitionType.NextSeason:
                 _ = PlayTransition(TransitionType.NextSeason, remainingTime);
-                Debug.Log("4");
                 break;
         }
     }
@@ -155,36 +151,38 @@ public class GrassSeasonZone : MonoBehaviour
 
     private void UpdateZoneState()
     {
-        var state = CalculateZoneState();
-        _zoneData = state.ToZoneData(gameObject.activeInHierarchy);
-        _zoneColor = gameObject.activeInHierarchy ? state.color : Color.white;
+        if (!HasValidSettings)
+        {
+            _zoneData.position = transform.position;
+            _zoneData.scale = transform.localScale;
+            _zoneData.color = Color.white;
+            _zoneData.width = 1f;
+            _zoneData.height = 1f;
+            _zoneData.isActive = false;
+        }
+        else
+        {
+            var settings = SeasonSettingsList;
+            var normalizedValue = seasonValue % settings.Count;
+            var currentIndex = Mathf.FloorToInt(normalizedValue);
+            var nextIndex = (currentIndex + 1) % settings.Count;
+
+            var currentSeason = settings[currentIndex];
+            var nextSeason = settings[nextIndex];
+            var transitionProgress = normalizedValue - currentIndex;
+
+            _zoneData.position = transform.position;
+            _zoneData.scale = transform.localScale;
+            _zoneData.color = Color.Lerp(currentSeason.seasonColor, nextSeason.seasonColor, transitionProgress);
+            _zoneData.width = Mathf.Lerp(currentSeason.width, nextSeason.width, transitionProgress);
+            _zoneData.height = Mathf.Lerp(currentSeason.height, nextSeason.height, transitionProgress);
+            _zoneData.isActive = gameObject.activeInHierarchy;
+        }
+
+        _zoneColor = gameObject.activeInHierarchy ? _zoneData.color : Color.white;
         _zoneColor.a = 1;
 
         OnZoneStateChanged?.Invoke();
-    }
-
-    private SeasonState CalculateZoneState()
-    {
-        if (!HasValidSettings)
-            return SeasonState.Default(transform);
-
-        var settings = SeasonSettingsList;
-        var normalizedValue = seasonValue % settings.Count;
-        var currentIndex = Mathf.FloorToInt(normalizedValue);
-        var nextIndex = (currentIndex + 1) % settings.Count;
-
-        var currentSeason = settings[currentIndex];
-        var nextSeason = settings[nextIndex];
-        var transitionProgress = normalizedValue - currentIndex;
-
-        return new SeasonState
-        (
-            transform.position,
-            transform.localScale,
-            Color.Lerp(currentSeason.seasonColor, nextSeason.seasonColor, transitionProgress),
-            Mathf.Lerp(currentSeason.width, nextSeason.width, transitionProgress),
-            Mathf.Lerp(currentSeason.height, nextSeason.height, transitionProgress)
-        );
     }
 
     private async Task PlayTransition(TransitionType transitionType,

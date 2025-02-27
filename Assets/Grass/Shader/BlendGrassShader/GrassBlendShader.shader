@@ -62,7 +62,6 @@ Shader "Custom/GrassShader"
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "GrassBlendInput.hlsl"
-			#include "GrassTerrainBlend.hlsl"
 			#include "GrassBlendPass.hlsl"
 			ENDHLSL
 		}

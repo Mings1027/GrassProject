@@ -1,7 +1,6 @@
 using Editor;
 using UnityEditor;
 using UnityEngine;
-using Grass.GrassScripts;
 
 namespace Grass.Editor
 {

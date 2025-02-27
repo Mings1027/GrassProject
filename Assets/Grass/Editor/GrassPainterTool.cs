@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
-using Cysharp.Threading.Tasks;
 using Editor;
 using Grass.GrassScripts;
 using UnityEditor;
@@ -13,12 +11,6 @@ using UnityEngine.SceneManagement;
 
 namespace Grass.Editor
 {
-    public class ObjectProgress
-    {
-        public float progress;
-        public string progressMessage;
-    }
-
     public class GrassPainterTool : EditorWindow
     {
         private Vector2 _scrollPos;
@@ -29,7 +21,7 @@ namespace Grass.Editor
 
         private readonly string[] _mainTabBarStrings = { "Paint/Edit", "Modify", "Generate", "General Settings" };
         private readonly string[] _toolbarStrings = { "Add", "Remove", "Edit", "Reposition" };
-        private readonly string[] _editOptionStrings = { "Edit Colors", "Edit Width/Height", "Both", "Set Size" };
+        private readonly string[] _editOptionStrings = { "Edit Colors", "Edit Width/Height", "Both" };
         private readonly string[] _modifyOptionStrings = { "Color", "Width/Height", "Both" };
         private readonly string[] _generateTabStrings = { "Mesh", "Terrain" };
         private Vector3 _hitPos;
@@ -59,7 +51,6 @@ namespace Grass.Editor
 
         private bool _isInit;
         private CancellationTokenSource _cts;
-        private readonly ObjectProgress _objectProgress = new();
 
         private bool _isMousePressed;
         private bool _isPainting;
@@ -764,8 +755,10 @@ namespace Grass.Editor
         {
             EditorGUILayout.Separator();
 
-            _selectedEditOption =
-                (EditOption)GUILayout.Toolbar((int)_selectedEditOption, _editOptionStrings, GUILayout.Height(25));
+            _selectedEditOption = (EditOption)GUILayout.Toolbar(
+                (int)_selectedEditOption,
+                _editOptionStrings,
+                GUILayout.Height(25));
 
             switch (_selectedEditOption)
             {
@@ -775,15 +768,21 @@ namespace Grass.Editor
                     break;
                 case EditOption.EditWidthHeight:
                     DrawTransitionSpeedSlider();
-                    DrawGrassAdjustmentSettings();
+                    DrawInstantSizeChangeSettings();
+                    if (toolSettings.SetGrassSizeImmediately)
+                    {
+                        DrawWidthHeightSliders();
+                    }
+                    else
+                    {
+                        DrawGrassAdjustmentSettings();
+                    }
+
                     break;
                 case EditOption.Both:
                     DrawTransitionSpeedSlider();
                     DrawGrassAdjustmentSettings();
                     DrawGrassColorSettings();
-                    break;
-                case EditOption.SetSize:
-                    DrawWidthHeightSliders();
                     break;
             }
         }
@@ -804,6 +803,14 @@ namespace Grass.Editor
                 Undo.RecordObject(toolSettings, "Brush Transition Speed");
                 toolSettings.BrushTransitionSpeed = newBrushTransitionSpeed;
             }
+        }
+
+        private void DrawInstantSizeChangeSettings()
+        {
+            toolSettings.SetGrassSizeImmediately = EditorGUILayout.Toggle(
+                new GUIContent("Set grass size immediately",
+                    "Set grass size immediately"),
+                toolSettings.SetGrassSizeImmediately);
         }
 
         private void DrawGrassAdjustmentSettings()
@@ -1644,18 +1651,6 @@ namespace Grass.Editor
             Init();
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
             Debug.Log("Removed all grass from the scene");
-        }
-
-        public async UniTask UpdateProgress(int currentPoint, int totalPoints, string progressMessage)
-        {
-            _objectProgress.progress = (float)currentPoint / totalPoints;
-            _objectProgress.progressMessage = $"{progressMessage} {currentPoint / (float)totalPoints * 100:F1}%";
-
-            if (currentPoint % Mathf.Max(1, totalPoints / 100) == 0)
-            {
-                await UniTask.Yield(_cts.Token);
-                Repaint();
-            }
         }
 
         private void GenerateGrassFromSelection(GameObject[] selectedObjects)
