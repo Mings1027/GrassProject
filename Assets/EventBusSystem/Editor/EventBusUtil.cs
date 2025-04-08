@@ -86,7 +86,7 @@ public static class EventBusUtil
 #endif
     }
 
-    static List<Type> InitializeAllBuses()
+    private static List<Type> InitializeAllBuses()
     {
         var eventBusTypes = new List<Type>();
 

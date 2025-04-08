@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using EventBusSystem.Scripts;
-using Grass.GrassScripts;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,6 +11,7 @@ public class GrassSeasonManager : MonoBehaviour
     private EventBinding<GrassColorRequest> _colorRequestBinding;
 
     [SerializeField] private float globalSeasonValue;
+    [SerializeField] private float transitionDuration;
     [SerializeField] private List<GrassSeasonZone> seasonZones = new();
 
     private void OnEnable()
@@ -151,35 +151,65 @@ public class GrassSeasonManager : MonoBehaviour
             widthHeights[i] = new Vector4(data.width, data.height, 0, 0);
         }
 
-        _grassComputeScript.UpdateSeasonData(positions, scales, colors, widthHeights, seasonZones.Count);
+        _grassComputeScript.UpdateSeasonData(ref positions, ref scales, ref colors, ref widthHeights,
+            seasonZones.Count);
     }
 
     private const float DefaultTransitionDuration = 2.0f;
+    private bool _isTransitioning;
+    public bool IsTransitioning => _isTransitioning;
 
-    public void PlayCycles(float transitionDuration = DefaultTransitionDuration)
+    private async Task PlayCycleTask(float duration)
     {
+        _isTransitioning = true;
+
+        var tasks = new List<Task>();
         foreach (var zone in seasonZones)
         {
             if (zone != null && zone.gameObject.activeInHierarchy)
             {
-                zone.PlayCycle(transitionDuration);
+                tasks.Add(zone.PlayCycleAsync(duration));
             }
         }
+
+        await Task.WhenAll(tasks);
+
+        _isTransitioning = false;
     }
 
-    public void PlayNextSeasons(float transitionDuration = DefaultTransitionDuration)
+    public void PlayCycles(float duration = DefaultTransitionDuration)
     {
+        if (_isTransitioning) return;
+        _ = PlayCycleTask(duration);
+    }
+
+    private async Task PlayNextSeasonTask(float duration)
+    {
+        _isTransitioning = true;
+        var tasks = new List<Task>();
         foreach (var zone in seasonZones)
         {
             if (zone != null && zone.gameObject.activeInHierarchy)
             {
-                zone.PlayNextSeason(transitionDuration);
+                tasks.Add(zone.PlayNextSeasonAsync(duration));
             }
         }
+
+        await Task.WhenAll(tasks);
+        _isTransitioning = false;
+    }
+
+    public void PlayNextSeasons(float duration = DefaultTransitionDuration)
+    {
+        if (_isTransitioning) return;
+        _ = PlayNextSeasonTask(duration);
     }
 
     public void ResumeTransitions()
     {
+        if (_isTransitioning) return;
+        _isTransitioning = true;
+
         foreach (var zone in seasonZones)
         {
             if (zone != null && zone.gameObject.activeInHierarchy)
@@ -189,8 +219,10 @@ public class GrassSeasonManager : MonoBehaviour
         }
     }
 
-    public void PauseTransitions(float transitionDuration = DefaultTransitionDuration)
+    public void PauseTransitions(float duration = DefaultTransitionDuration)
     {
+        if (!_isTransitioning) return;
+
         foreach (var zone in seasonZones)
         {
             if (zone != null && zone.gameObject.activeInHierarchy)
@@ -198,6 +230,8 @@ public class GrassSeasonManager : MonoBehaviour
                 zone.PauseTransition();
             }
         }
+
+        _isTransitioning = false;
     }
 
 #if UNITY_EDITOR

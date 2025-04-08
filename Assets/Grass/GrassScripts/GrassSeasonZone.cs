@@ -23,8 +23,6 @@ public class GrassSeasonZone : MonoBehaviour
     private CancellationTokenSource _transitionCts;
 
     private TransitionType _lastTransitionType;
-    private float _lastStartValue;
-    private float _lastTargetValue;
     private float _lastDuration;
     private float _elapsedTime;
     private bool _wasTransitioning;
@@ -78,7 +76,6 @@ public class GrassSeasonZone : MonoBehaviour
         seasonValue = useLocalSeasonSettings
             ? Mathf.Lerp(MinRange, MaxRange, Mathf.InverseLerp(globalMin, globalMax, globalValue))
             : Mathf.Clamp(globalValue, globalMin, globalMax);
-
         UpdateZoneState();
     }
 
@@ -115,6 +112,7 @@ public class GrassSeasonZone : MonoBehaviour
         if (_transitionCts?.IsCancellationRequested == false)
         {
             _transitionCts.Cancel();
+            _transitionCts = null;
         }
     }
 
@@ -125,7 +123,7 @@ public class GrassSeasonZone : MonoBehaviour
             seasonValue = value % settings.Count;
         else
             seasonValue = value;
-
+        
         UpdateZoneState();
     }
 
@@ -236,12 +234,7 @@ public class GrassSeasonZone : MonoBehaviour
 
         var startValue = seasonValue;
         var targetValue = Mathf.Floor(startValue) + 1;
-
-        if (targetValue >= SeasonSettingsList.Count)
-        {
-            targetValue = 0;
-        }
-
+        
         await TransitionToValue(startValue, targetValue, transitionDuration, cancellationToken);
     }
 
@@ -250,8 +243,6 @@ public class GrassSeasonZone : MonoBehaviour
     {
         if (!HasValidSettings) return;
 
-        _lastStartValue = startValue;
-        _lastTargetValue = targetValue;
         _lastDuration = duration;
         _elapsedTime = 0;
 

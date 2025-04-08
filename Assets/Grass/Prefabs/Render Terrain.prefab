@@ -51,10 +51,10 @@ MonoBehaviour:
     m_Bits: 8
   renderers: []
   terrains: []
-  resolution: 512
+  resolution: 256
   adjustScaling: 2.5
-  realTimeDiffuse: 0
   repeatRate: 5
+  realTimeDiffuse: 0
 --- !u!1 &3666046615731175918
 GameObject:
   m_ObjectHideFlags: 0

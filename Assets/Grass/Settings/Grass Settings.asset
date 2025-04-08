@@ -24,7 +24,7 @@ MonoBehaviour:
   maxHeight: 3
   randomHeightMin: 0
   randomHeightMax: 0.49999997
-  windSpeed: 6
+  windSpeed: 8
   windStrength: 0.3
   windDirection: 45
   windDirectionVector: {x: 0.70710677, y: 0.70710677}
@@ -32,21 +32,21 @@ MonoBehaviour:
   grassQuality: 2
   interactorStrength: 1
   topTint: {r: 1, g: 1, b: 1, a: 1}
-  bottomTint: {r: 0.103773594, g: 0.103773594, b: 0.103773594, a: 1}
+  bottomTint: {r: 0.14150941, g: 0.14150941, b: 0.14150941, a: 1}
   ambientStrength: 0.2
   blendMultiply: 1
   blendOffset: 0.2
   ambientAdjustmentColor: {r: 0, g: 0, b: 0, a: 1}
-  shadowDistance: 157
+  shadowDistance: 120
   shadowFadeRange: 30
   shadowBrightness: 0
   shadowColor: {r: 0, g: 0, b: 0, a: 1}
-  additionalLightIntensity: 0.57
+  additionalLightIntensity: 0.5
   additionalLightShadowStrength: 1
-  additionalLightShadowColor: {r: 0, g: 0.09767294, b: 1, a: 1}
+  additionalLightShadowColor: {r: 1, g: 0, b: 0.052129745, a: 1}
   specularFalloff: 4
   specularStrength: 1
-  specularHeight: 0.6
+  specularHeight: 0.499
   maxZoneCount: 20
   seasonSettings:
   - {fileID: 11400000, guid: 1e808a7ca6a4444a498ce34f86acbb5b, type: 2}
@@ -57,7 +57,7 @@ MonoBehaviour:
   drawAllBounds: 0
   seasonSettingFolder: {fileID: 102900000, guid: bfcf47eb377b24fd4a75c76b1bfc8fb7, type: 3}
   cullingTreeDepth: 5
-  minFadeDistance: 22.6
-  maxFadeDistance: 150
+  minFadeDistance: 40
+  maxFadeDistance: 200
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}
   castShadow: 0

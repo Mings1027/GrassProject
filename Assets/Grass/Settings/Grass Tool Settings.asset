@@ -12,21 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e75937a28f6b4052a5569264b304e07, type: 3}
   m_Name: Grass Tool Settings
   m_EditorClassIdentifier: 
-  layerEnabled: 01000101
+  layerEnabled: 01010001
   widthFading:
   - 1
+  - 2
   - 1
-  - 1
-  - 1.5
+  - 0.5
   heightFading:
   - 1
-  - 0
+  - 0.5
+  - 1
   - 0.2
-  - 1.75
   vertexColorSettings: 0
   vertexFade: 0
-  grassWidth: 1.079
-  grassHeight: 0.75
+  grassWidth: 0.5
+  grassHeight: 0.7
   adjustWidth: 0.2
   adjustHeight: 0.01
   adjustWidthMax: 1
@@ -35,7 +35,7 @@ MonoBehaviour:
   rangeR: 0.3
   rangeG: 0.3
   rangeB: 0.3
-  brushColor: {r: 0.7647059, g: 0.2959176, b: 0.14117646, a: 0}
+  brushColor: {r: 0.17865972, g: 0.6039216, b: 0.1490196, a: 0}
   paintMask:
     serializedVersion: 2
     m_Bits: 8
@@ -47,7 +47,7 @@ MonoBehaviour:
   normalLimit: 1
   allowUndersideGrass: 1
   density: 126
-  grassSpacing: 0.5
+  grassSpacing: 0.7
   brushHeight: 28.749998
   generateGrassCount: 1000000
   grassMouseButton: 0

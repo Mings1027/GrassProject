@@ -12,6 +12,7 @@ public class CullingTree
     private Bounds _bounds; // 현재 노드의 영역
     private CullingTree[] _children; // 자식 노드들
     private readonly List<int> _grassIDList = new(); // 현재 노드에 포함된 잔디 ID들
+    private readonly Plane[] _cameraFrustumPlanes = new Plane[6];
 
 #if UNITY_EDITOR
     private readonly List<Bounds> _boundsList = new();
@@ -176,7 +177,7 @@ public class CullingTree
         visibleIDList.Clear();
         for (int i = 0; i < grassDataList.Count; i++)
         {
-            if (FindLeaf(grassDataList[i].position, i))
+            if (FindLeafTest(grassDataList[i].position, i))
             {
                 visibleIDList.Add(i);
             }
@@ -204,6 +205,35 @@ public class CullingTree
             if (child != null && child.FindLeaf(point, index))
             {
                 return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool FindLeafTest(Vector3 point, int index)
+    {
+        _nodeProcessStack.Clear();
+        _nodeProcessStack.Push(this);
+
+        while (_nodeProcessStack.Count > 0)
+        {
+            var currentNode = _nodeProcessStack.Pop();
+
+            if (!currentNode._bounds.Contains(point)) continue;
+
+            if (currentNode._children.Length == 0)
+            {
+                currentNode._grassIDList.Add(index);
+                return true;
+            }
+
+            for (int i = currentNode._children.Length - 1; i >= 0; i--)
+            {
+                if (currentNode._children[i] != null)
+                {
+                    _nodeProcessStack.Push(currentNode._children[i]);
+                }
             }
         }
 
@@ -258,10 +288,15 @@ public class CullingTree
 
     private static readonly Stack<CullingTree> _nodeProcessStack = new();
 
-    public void FrustumCullTest(Plane[] frustum, List<int> visibleIDList)
+    public void FrustumCullTest(Camera mainCamera,  List<int> visibleIDList)
     {
         Profiler.BeginSample("FrustumCull With Stack");
+
+        // Get frustum data from the main camera without modifying far clip plane
+        GeometryUtility.CalculateFrustumPlanes(mainCamera, _cameraFrustumPlanes);
+#if UNITY_EDITOR
         _boundsList.Clear();
+#endif
         _nodeProcessStack.Clear();
         _nodeProcessStack.Push(this);
 
@@ -269,7 +304,7 @@ public class CullingTree
         {
             var currentNode = _nodeProcessStack.Pop();
 
-            if (GeometryUtility.TestPlanesAABB(frustum, currentNode._bounds))
+            if (GeometryUtility.TestPlanesAABB(_cameraFrustumPlanes, currentNode._bounds))
             {
                 if (currentNode._children.Length == 0)
                 {

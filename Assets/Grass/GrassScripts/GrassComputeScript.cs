@@ -21,18 +21,17 @@ public class GrassComputeScript : MonoBehaviour
     private List<GrassData> grassData = new(); // base data lists
     [SerializeField] private GrassSettingSO grassSetting;
 
-    private readonly List<int> _nearbyGrassIds = new();
-
     [SerializeField, HideInInspector]
     private List<int> grassVisibleIDList = new();
     [SerializeField, HideInInspector]
     private float[] cutIDs;
 
+    private readonly List<int> _nearbyGrassIds = new();
     private Bounds _bounds; // bounds of the total grass 
-
     private CullingTree _cullingTree;
     private Camera _mainCamera;
-    private List<IInteractorData> _interactors = new();
+    private List<GrassInteractor> _interactors;
+    private Vector4[] _interactorData;
 
     private ComputeBuffer _sourceVertBuffer; // A compute buffer to hold vertex data of the source mesh
     private ComputeBuffer _drawBuffer; // A compute buffer to hold vertex data of the generated mesh
@@ -46,9 +45,6 @@ public class GrassComputeScript : MonoBehaviour
     private int _idGrassKernel; // The id of the kernel in the grass compute shader
     private int _dispatchSize; // The x dispatch size for the grass compute shader
     private uint _threadGroupSize; // compute shader thread group size
-
-    // culling tree data ----------------------------------------------------------------------
-    private readonly Plane[] _cameraFrustumPlanes = new Plane[6];
 
     private Vector3 _cachedCamPos;
     private Quaternion _cachedCamRot;
@@ -74,11 +70,8 @@ public class GrassComputeScript : MonoBehaviour
         set => grassSetting = value;
     }
 
-    // ======================================= Event Bus ==============================================================================================================================
-    private EventBinding<InteractorAddedEvent> _addBinding;
-    private EventBinding<InteractorRemovedEvent> _removeBinding;
-    //==============================================================================================================================
-
+    private EventBinding<CutGrass> _cutGrassEvent;
+    
     public void Reset()
     {
 #if UNITY_EDITOR
@@ -86,9 +79,6 @@ public class GrassComputeScript : MonoBehaviour
 #endif
         ReleaseResources();
         MainSetup(true);
-
-        UnregisterEvents();
-        RegisterEvents();
     }
 
     private void ReleaseResources()
@@ -155,8 +145,29 @@ public class GrassComputeScript : MonoBehaviour
 
     private void OnEnable()
     {
+        _interactors = new List<GrassInteractor>();
+        _interactorData = Array.Empty<Vector4>();
+        
         RegisterEvents();
         MainSetup(true);
+    }
+
+    private void Start()
+    {
+#if UNITY_EDITOR
+        var interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None);
+        for (int i = 0; i < interactors.Length; i++)
+        {
+            _interactors.Add(interactors[i]);
+        }
+
+        _interactorData = new Vector4[_interactors.Count];
+        for (int i = 0; i < _interactors.Count; i++)
+        {
+            var pos = _interactors[i].transform.position;
+            _interactorData[i] = new Vector4(pos.x, pos.y, pos.z, _interactors[i].radius);
+        }
+#endif
     }
 
     // LateUpdate is called after all Update calls
@@ -202,7 +213,9 @@ public class GrassComputeScript : MonoBehaviour
     {
         UnregisterEvents();
         ReleaseBuffer();
-        _interactors.Clear();
+        _interactors = null;
+        _interactorData = null;
+
         if (!Application.isPlaying)
         {
             DestroyImmediate(_grassComputeShader);
@@ -242,16 +255,19 @@ public class GrassComputeScript : MonoBehaviour
 
     private void RegisterEvents()
     {
-        _addBinding = new EventBinding<InteractorAddedEvent>(AddInteractorEvent);
-        EventBus<InteractorAddedEvent>.Register(_addBinding);
-        _removeBinding = new EventBinding<InteractorRemovedEvent>(RemoveInteractorEvent);
-        EventBus<InteractorRemovedEvent>.Register(_removeBinding);
+        EventBus.Register<GrassInteractor>(new InteractorAddEvent(), AddInteractor);
+        EventBus.Register<GrassInteractor>(new InteractorRemoveEvent(), RemoveInteractor);
+
+        _cutGrassEvent = new EventBinding<CutGrass>(CutGrass);
+        EventBus<CutGrass>.Register(_cutGrassEvent);
     }
 
     private void UnregisterEvents()
     {
-        EventBus<InteractorAddedEvent>.Deregister(_addBinding);
-        EventBus<InteractorRemovedEvent>.Deregister(_removeBinding);
+        EventBus.Deregister<GrassInteractor>(new InteractorAddEvent(), AddInteractor);
+        EventBus.Deregister<GrassInteractor>(new InteractorRemoveEvent(), RemoveInteractor);
+
+        EventBus<CutGrass>.Deregister(_cutGrassEvent);
     }
 
     private void ReleaseBuffer()
@@ -266,7 +282,7 @@ public class GrassComputeScript : MonoBehaviour
 
     private void MainSetup(bool full)
     {
-        SetupCamera();
+        SetCamera();
         if (grassData.Count <= 0)
         {
             ClearAllData();
@@ -276,15 +292,12 @@ public class GrassComputeScript : MonoBehaviour
         if (ValidateSetup()) return;
         InitResources();
         InitBuffers();
-        SetupComputeShader();
-        SetupQuadTree(full);
-#if UNITY_EDITOR
-        var interactors = FindObjectsByType<GrassInteractor>(FindObjectsSortMode.None).ToList();
-        _interactors = new List<IInteractorData>(interactors);
-#endif
+        InitComputeShader();
+        SetShaderData();
+        InitQuadTree(full);
     }
 
-    private void SetupCamera()
+    private void SetCamera()
     {
 #if UNITY_EDITOR
         SceneView.duringSceneGui -= OnScene;
@@ -350,7 +363,7 @@ public class GrassComputeScript : MonoBehaviour
         _cutBuffer.SetData(cutIDs);
     }
 
-    private void SetupComputeShader()
+    private void InitComputeShader()
     {
         _grassComputeShader.SetBuffer(_idGrassKernel, GrassShaderPropertyID.SourceVertices, _sourceVertBuffer);
         _grassComputeShader.SetBuffer(_idGrassKernel, GrassShaderPropertyID.DrawTriangles, _drawBuffer);
@@ -363,15 +376,23 @@ public class GrassComputeScript : MonoBehaviour
 
         _dispatchSize = (grassData.Count + (int)_threadGroupSize - 1) >>
                         (int)Math.Log((int)_threadGroupSize, 2);
-
-        SetShaderData();
     }
 
-    private void SetupQuadTree(bool full)
+    private void InitQuadTree(bool full)
     {
         if (full)
         {
-            InitCullingTree();
+            _bounds = new Bounds(grassData[0].position, Vector3.zero);
+            foreach (var grass in grassData)
+            {
+                _bounds.Encapsulate(grass.position);
+            }
+
+            var extents = _bounds.extents;
+            _bounds.extents = extents * 1.1f;
+
+            _cullingTree = new CullingTree(_bounds, grassSetting.cullingTreeDepth);
+            _cullingTree.InsertGrassData(grassData, grassVisibleIDList);
         }
         else
         {
@@ -401,14 +422,11 @@ public class GrassComputeScript : MonoBehaviour
         _cachedCamPos = _mainCamera.transform.position;
         _cachedCamRot = _mainCamera.transform.rotation;
 
-        // Get frustum data from the main camera without modifying far clip plane
-        GeometryUtility.CalculateFrustumPlanes(_mainCamera, _cameraFrustumPlanes);
-
 #if UNITY_EDITOR
         if (_fastMode) return;
 #endif
         grassVisibleIDList.Clear();
-        _cullingTree?.FrustumCullTest(_cameraFrustumPlanes, grassVisibleIDList);
+        _cullingTree?.FrustumCullTest(_mainCamera, grassVisibleIDList);
         _visibleIDBuffer?.SetData(grassVisibleIDList);
     }
 
@@ -417,10 +435,7 @@ public class GrassComputeScript : MonoBehaviour
     {
         _grassComputeShader.SetFloat(GrassShaderPropertyID.Time, Time.time);
 
-        if (_interactors.Count >= 0)
-        {
-            UpdateInteractors();
-        }
+        UpdateInteractors();
 
         if (_mainCamera)
         {
@@ -430,16 +445,46 @@ public class GrassComputeScript : MonoBehaviour
 
     private void UpdateInteractors()
     {
-        var positions = new Vector4[_interactors.Count];
-        for (var i = _interactors.Count - 1; i >= 0; i--)
+        var interactorCount = _interactors.Count;
+
+        if (interactorCount <= 0)
         {
-            var interactor = _interactors[i];
-            var pos = interactor.Position;
-            positions[i] = new Vector4(pos.x, pos.y, pos.z, interactor.Radius);
+            _grassComputeShader.SetFloat(GrassShaderPropertyID.InteractorsLength, 0);
+            return;
         }
 
-        _grassComputeShader.SetVectorArray(GrassShaderPropertyID.InteractorData, positions);
-        _grassComputeShader.SetFloat(GrassShaderPropertyID.InteractorsLength, _interactors.Count);
+        for (int i = 0; i < interactorCount; i++)
+        {
+            var pos = _interactors[i].transform.position;
+            _interactorData[i] = new Vector4(pos.x, pos.y, pos.z, _interactors[i].radius);
+        }
+
+        _grassComputeShader.SetVectorArray(GrassShaderPropertyID.InteractorData, _interactorData);
+        _grassComputeShader.SetFloat(GrassShaderPropertyID.InteractorsLength, interactorCount);
+    }
+
+    public void AddInteractor(GrassInteractor interactor)
+    {
+        if (_interactors.Contains(interactor)) return;
+        _interactors.Add(interactor);
+        ResizeInteractorData();
+    }
+
+    public void RemoveInteractor(GrassInteractor interactor)
+    {
+        if (_interactors == null || !_interactors.Contains(interactor)) return;
+        _interactors.Remove(interactor);
+        ResizeInteractorData();
+    }
+
+    private void ResizeInteractorData()
+    {
+        var interactorsLength = _interactors.Count;
+
+        if (_interactorData == null || _interactorData.Length != interactorsLength)
+        {
+            _interactorData = new Vector4[interactorsLength];
+        }
     }
 
     public void RemoveGrassInRadius(Vector3 position, float radius)
@@ -464,19 +509,19 @@ public class GrassComputeScript : MonoBehaviour
         _cutBuffer.SetData(cutIDs);
     }
 
-    public void CutGrass(Vector3 hitPoint, float radius)
+    private void CutGrass(CutGrass cutGrass)
     {
         if (grassData.Count <= 0) return;
 
-        GetNearbyGrass(hitPoint, radius);
+        GetNearbyGrass(cutGrass.position, cutGrass.radius);
 
-        var squaredRadius = radius * radius;
-        var hitPointY = hitPoint.y;
+        var squaredRadius = cutGrass.radius * cutGrass.radius;
+        var hitPointY = cutGrass.position.y;
 
         // 가져온 ID들에 대해서만 잘리는 검사를 수행
         foreach (var currentIndex in _nearbyGrassIds)
         {
-            if (!ShouldCutGrass(currentIndex, hitPointY, hitPoint, squaredRadius)) continue;
+            if (!ShouldCutGrass(currentIndex, hitPointY, cutGrass.position, squaredRadius)) continue;
             if (IsFirstCutAtHeight(currentIndex, hitPointY))
             {
                 var grassPosition = grassData[currentIndex].position;
@@ -518,31 +563,6 @@ public class GrassComputeScript : MonoBehaviour
     {
         var leafParticle = PoolObjectManager.Get<ParticleSystem>(PoolObjectKey.Leaf, position).main;
         leafParticle.startColor = new ParticleSystem.MinMaxGradient(col);
-    }
-
-    private void AddInteractorEvent(InteractorAddedEvent evt)
-    {
-        _interactors.Add(evt.data);
-    }
-
-    private void RemoveInteractorEvent(InteractorRemovedEvent evt)
-    {
-        _interactors.Remove(evt.data);
-    }
-
-    private void InitCullingTree()
-    {
-        _bounds = new Bounds(grassData[0].position, Vector3.zero);
-        foreach (var grass in grassData)
-        {
-            _bounds.Encapsulate(grass.position);
-        }
-
-        var extents = _bounds.extents;
-        _bounds.extents = extents * 1.1f;
-
-        _cullingTree = new CullingTree(_bounds, grassSetting.cullingTreeDepth);
-        _cullingTree.InsertGrassData(grassData, grassVisibleIDList);
     }
 
     public void GetNearbyGrass(Vector3 point, float radius)
@@ -676,7 +696,8 @@ public class GrassComputeScript : MonoBehaviour
     }
     #endregion
 
-    public void UpdateSeasonData(Vector4[] positions, Vector4[] scales, Vector4[] colors, Vector4[] widthHeights,
+    public void UpdateSeasonData(ref Vector4[] positions, ref Vector4[] scales, ref Vector4[] colors,
+                                 ref Vector4[] widthHeights,
                                  int zoneCount)
     {
         if (_grassComputeShader == null) return;

@@ -9,11 +9,13 @@ namespace Grass.Editor
     {
         private bool _showAllGizmos;
         private GrassSeasonManager _manager;
-        private SerializedProperty _seasonValue;
+        private SerializedProperty _globalSeasonValue;
+        private SerializedProperty _transitionDuration;
 
         private void OnEnable()
         {
-            _seasonValue = serializedObject.FindProperty("globalSeasonValue");
+            _globalSeasonValue = serializedObject.FindProperty("globalSeasonValue");
+            _transitionDuration = serializedObject.FindProperty("transitionDuration");
             _manager = (GrassSeasonManager)target;
             var volumes = _manager.GetComponentsInChildren<GrassSeasonZone>();
             _showAllGizmos = AreAllGizmosEnabled(volumes);
@@ -26,7 +28,8 @@ namespace Grass.Editor
             DrawGizmosToggle();
             DrawCreateSeasonZoneButton();
             DrawGlobalSeasonValueSlider();
-            EditorGUILayout.Space(10);
+            EditorGUILayout.Space(5);
+            DrawSeasonControlButtons();
 
             serializedObject.ApplyModifiedProperties();
         }
@@ -95,12 +98,37 @@ namespace Grass.Editor
             EditorGUI.BeginChangeCheck();
             var grassCompute = FindAnyObjectByType<GrassComputeScript>();
 
-            var newValue = EditorGUILayout.Slider(_seasonValue.floatValue, 0,
+            var newValue = EditorGUILayout.Slider(_globalSeasonValue.floatValue, 0,
                 grassCompute.GrassSetting.seasonSettings.Count);
             if (EditorGUI.EndChangeCheck())
             {
-                _seasonValue.floatValue = newValue;
+                _globalSeasonValue.floatValue = newValue;
                 _manager.UpdateAllSeasonZones();
+            }
+        }
+
+        private void DrawSeasonControlButtons()
+        {
+            _transitionDuration.floatValue =
+                EditorGUILayout.FloatField("Transition Duration", _transitionDuration.floatValue);
+            if (GUILayout.Button("Play Full Cycle"))
+            {
+                _manager.PlayCycles(_transitionDuration.floatValue);
+            }
+            
+            if (GUILayout.Button("Play Next Season"))
+            {
+                _manager.PlayNextSeasons(_transitionDuration.floatValue);
+            }
+
+            if (GUILayout.Button("Pause Transition"))
+            {
+                _manager.PauseTransitions();
+            }
+            
+            if (GUILayout.Button("Resume Transition"))
+            {
+                _manager.ResumeTransitions();
             }
         }
     }

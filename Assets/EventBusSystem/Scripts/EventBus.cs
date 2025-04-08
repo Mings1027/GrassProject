@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading;
 
 #if UNITY_EDITOR
 using System.Diagnostics;
@@ -33,8 +31,8 @@ namespace EventBusSystem.Scripts
                 return;
             }
 
-#endif
             Debug.Log($"Registering {typeof(T).Name}");
+#endif
             Bindings.Add(binding);
         }
 
@@ -47,8 +45,8 @@ namespace EventBusSystem.Scripts
                 return;
             }
 
-#endif
             Debug.Log($"Deregistering {typeof(T).Name}");
+#endif
             Bindings.Remove(binding);
         }
 
@@ -195,9 +193,95 @@ namespace EventBusSystem.Scripts
             ResponseMap[_currentRequestId] = response;
         }
 
-        internal static void ClearResponses()
+        public static void ClearResponses()
         {
             ResponseMap.Clear();
         }
+    }
+
+    public static class EventBus
+    {
+        private static readonly Dictionary<IEventMethod, Action> actionTable = new();
+        private static readonly Dictionary<IEventMethod, Delegate> actionTableWithParams = new();
+
+        #region Register Methods
+        public static void Register(IEventMethod eventType, Action action)
+        {
+            if (actionTable.TryGetValue(eventType, out var existingAction))
+            {
+                actionTable[eventType] = existingAction + action;
+            }
+            else
+            {
+                actionTable[eventType] = action;
+            }
+        }
+
+        public static void Register<T>(IEventMethod eventType, Action<T> action)
+        {
+            if (actionTableWithParams.TryAdd(eventType, action)) return;
+            actionTableWithParams[eventType] = Delegate.Combine(actionTableWithParams[eventType], action);
+        }
+
+        public static void Register<T1, T2>(IEventMethod eventType, Action<T1, T2> action)
+        {
+            if (actionTableWithParams.TryAdd(eventType, action)) return;
+            actionTableWithParams[eventType] = Delegate.Combine(actionTableWithParams[eventType], action);
+        }
+        #endregion
+
+        #region Deregister Methods
+        public static void Deregister(IEventMethod eventType, Action action)
+        {
+            if (!actionTable.TryGetValue(eventType, out var existingAction)) return;
+            var result = existingAction - action;
+            if (result == null) actionTable.Remove(eventType);
+            else actionTable[eventType] = result;
+        }
+
+        public static void Deregister<T>(IEventMethod eventType, Action<T> action)
+        {
+            if (actionTableWithParams.ContainsKey(eventType))
+            {
+                actionTableWithParams[eventType] = Delegate.Remove(actionTableWithParams[eventType], action);
+                if (actionTableWithParams[eventType] == null) actionTableWithParams.Remove(eventType);
+            }
+        }
+
+        public static void Deregister<T1, T2>(IEventMethod eventType, Action<T1, T2> action)
+        {
+            if (actionTableWithParams.ContainsKey(eventType))
+            {
+                actionTableWithParams[eventType] = Delegate.Remove(actionTableWithParams[eventType], action);
+                if (actionTableWithParams[eventType] == null) actionTableWithParams.Remove(eventType);
+            }
+        }
+        #endregion
+
+        #region Raise Methods
+        public static void Raise(IEventMethod eventType)
+        {
+            if (actionTable.TryGetValue(eventType, out var action))
+            {
+                action?.Invoke();
+            }
+        }
+
+        public static void Raise<T>(IEventMethod eventType, T arg)
+        {
+            if (actionTableWithParams.TryGetValue(eventType, out var action))
+            {
+                action?.DynamicInvoke(arg);
+            }
+        }
+
+        public static void Raise<T1, T2>(IEventMethod eventType, T1 arg1, T2 arg2)
+        {
+            if (actionTableWithParams.TryGetValue(eventType, out var action))
+            {
+                action?.DynamicInvoke(arg1, arg2);
+            }
+        }
+        #endregion
     }
 }

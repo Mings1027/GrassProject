@@ -10,27 +10,16 @@ namespace Pool
         [SerializeField] private bool autoPoolCleaner;
         [SerializeField] private byte poolMaxSize;
 
-        private readonly PoolObjectFactory _poolObjectFactor = new();
         private static PoolObjectManager _inst;
         private Dictionary<PoolObjectKey, Stack<GameObject>> _poolStackTable;
+        private Dictionary<PoolObjectKey, GameObject> _prefabTable;
 
         private void Awake()
         {
             _inst = this;
             _poolStackTable = new Dictionary<PoolObjectKey, Stack<GameObject>>();
-            _poolObjectFactor.InitFactory(poolObjectData);
-            for (int i = 0; i < poolObjectData.Length; i++)
-            {
-                var pool = poolObjectData[i];
-                _poolStackTable.Add(pool.poolObjectKey, new Stack<GameObject>());
-                for (int j = 0; j < pool.initSize; j++)
-                {
-                    var obj = _poolObjectFactor.CreatePoolObject(pool.poolObjectKey);
-#if UNITY_EDITOR
-                    obj.transform.SetParent(transform);
-#endif
-                }
-            }
+            _prefabTable = new Dictionary<PoolObjectKey, GameObject>();
+            InitTable();
         }
 
         private void Start()
@@ -39,6 +28,40 @@ namespace Pool
             {
                 _ = PoolCleaner();
             }
+        }
+
+        public void InitTable()
+        {
+            for (int i = 0; i < poolObjectData.Length; i++)
+            {
+                var pool = poolObjectData[i];
+                _poolStackTable.Add(pool.poolObjectKey, new Stack<GameObject>());
+                for (int j = 0; j < pool.initSize; j++)
+                {
+                    var obj = CreatePoolObject(pool.poolObjectKey);
+#if UNITY_EDITOR
+                    obj.transform.SetParent(transform);
+#endif
+                }
+            }
+
+            foreach (var data in poolObjectData)
+            {
+                _prefabTable.Add(data.poolObjectKey, data.prefab);
+            }
+        }
+
+        private GameObject CreatePoolObject(PoolObjectKey poolObjectKey)
+        {
+            var prefab = _prefabTable[poolObjectKey];
+            if (prefab.TryGetComponent(out IPoolObject poolObject))
+            {
+                poolObject.poolObjectKey = poolObjectKey;
+            }
+
+            var obj = Object.Instantiate(prefab);
+            obj.SetActive(false);
+            return obj;
         }
 
         public static void Get(PoolObjectKey poolObjectKey, Transform t) =>
@@ -63,7 +86,7 @@ namespace Pool
             var poolStack = _poolStackTable[poolObjectKey];
             if (poolStack.Count <= 0)
             {
-                var obj = _poolObjectFactor.CreatePoolObject(poolObjectKey);
+                var obj = CreatePoolObject(poolObjectKey);
 #if UNITY_EDITOR
                 obj.transform.SetParent(transform);
 #endif
