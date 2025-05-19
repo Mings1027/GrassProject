@@ -62,18 +62,18 @@ half3 CalculateAdditionalLight(half3 worldPos, half3 worldNormal)
     half3 diffuseColor = 0;
 
     LIGHT_LOOP_BEGIN(pixelLightCount)
-        Light light = GetAdditionalLight(lightIndex, worldPos, shadowMask);
+    Light light = GetAdditionalLight(lightIndex, worldPos, shadowMask);
 
-        #ifdef _LIGHT_LAYERS
+    #ifdef _LIGHT_LAYERS
         uint meshRenderingLayers = GetMeshRenderingLayer();
         if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-        #endif
-        {
-            half NdotL = saturate(dot(worldNormal, light.direction));
-            half3 lightColor = light.color * light.distanceAttenuation * NdotL * _AdditionalLightIntensity;
-            half shadowAttenuation = lerp(1, light.shadowAttenuation, _AdditionalLightShadowStrength);
-            diffuseColor += lerp(lightColor * _AdditionalShadowColor.rgb, lightColor, shadowAttenuation);
-        }
+    #endif
+    {
+        half NdotL = saturate(dot(worldNormal, light.direction));
+        half3 lightColor = light.color * light.distanceAttenuation * NdotL * _AdditionalLightIntensity;
+        half shadowAttenuation = lerp(1, light.shadowAttenuation, _AdditionalLightShadowStrength);
+        diffuseColor += lerp(lightColor * _AdditionalShadowColor.rgb, lightColor, shadowAttenuation);
+    }
     LIGHT_LOOP_END
     return diffuseColor;
 }

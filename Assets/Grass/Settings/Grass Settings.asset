@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Grass Settings
   m_EditorClassIdentifier: 
   shaderToUse: {fileID: 7200000, guid: 11036af5f2d1499c8845585fb5fadb4c, type: 3}
-  materialToUse: {fileID: 2100000, guid: 62e33da08240646939128cbd216c0c12, type: 2}
+  materialToUse: {fileID: 2100000, guid: 7725493650b5a4b4d9c0d612493ca34d, type: 2}
   bladeRadius: 0.5
   bladeForward: 1
   bladeCurve: 2
@@ -43,7 +43,7 @@ MonoBehaviour:
   shadowColor: {r: 0, g: 0, b: 0, a: 1}
   additionalLightIntensity: 0.5
   additionalLightShadowStrength: 1
-  additionalLightShadowColor: {r: 1, g: 0, b: 0.052129745, a: 1}
+  additionalLightShadowColor: {r: 0, g: 0.34171963, b: 1, a: 1}
   specularFalloff: 4
   specularStrength: 1
   specularHeight: 0.499

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using EventBusSystem.Scripts;
 using Grass.GrassScripts;
 using Pool;
@@ -43,7 +42,7 @@ public class GrassComputeScript : MonoBehaviour
     private Material _grassMaterial;
 
     private int _idGrassKernel; // The id of the kernel in the grass compute shader
-    private int _dispatchSize; // The x dispatch size for the grass compute shader
+    private int _dispatchSize; // The x dispatch size for the grass computes shader
     private uint _threadGroupSize; // compute shader thread group size
 
     private Vector3 _cachedCamPos;
@@ -177,7 +176,7 @@ public class GrassComputeScript : MonoBehaviour
         GetFrustumData();
         SetGrassDataUpdate();
 
-        // Clear the draw and indirect args buffers of last frame's data
+        // Clear the draw and indirect args buffers of the last frame's data
         _drawBuffer.SetCounterValue(0);
         _argsBuffer.SetData(_argsBufferReset);
 
@@ -185,7 +184,7 @@ public class GrassComputeScript : MonoBehaviour
                         (int)Math.Log(_threadGroupSize, 2);
         if (grassVisibleIDList.Count > 0)
         {
-            // make sure the compute shader is dispatched even when theres very little grass
+            // make sure the compute shader is dispatched even when there's very little grass
             _dispatchSize += 1;
         }
 
@@ -229,7 +228,7 @@ public class GrassComputeScript : MonoBehaviour
     }
 
 #if UNITY_EDITOR
-    // draw the bounds gizmos
+    // draw the bound gizmos
     private void OnDrawGizmos()
     {
         if (grassSetting)
@@ -418,7 +417,7 @@ public class GrassComputeScript : MonoBehaviour
         if (_cachedCamRot == _mainCamera.transform.rotation && _cachedCamPos == _mainCamera.transform.position)
             return; // Camera hasn't moved, no need for frustum culling
 
-        // Cache camera position and rotation for next frame
+        // Cache camera position and rotation for the next frame
         _cachedCamPos = _mainCamera.transform.position;
         _cachedCamRot = _mainCamera.transform.rotation;
 
@@ -430,7 +429,7 @@ public class GrassComputeScript : MonoBehaviour
         _visibleIDBuffer?.SetData(grassVisibleIDList);
     }
 
-    // Update the shader with frame specific data
+    // Update the shader with frame-specific data
     private void SetGrassDataUpdate()
     {
         _grassComputeShader.SetFloat(GrassShaderPropertyID.Time, Time.time);
@@ -577,7 +576,7 @@ public class GrassComputeScript : MonoBehaviour
     #region Set Shader Data
     public void SetShaderData()
     {
-        // Send things to compute shader that dont need to be set every frame
+        // Send things to compute shader that don't need to be set every frame
         _grassComputeShader.SetFloat(GrassShaderPropertyID.Time, Time.time);
         SetInteractorStrength();
         SetBladeMinMax();

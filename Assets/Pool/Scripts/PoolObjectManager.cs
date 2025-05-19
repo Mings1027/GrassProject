@@ -32,6 +32,10 @@ namespace Pool
 
         public void InitTable()
         {
+            foreach (var data in poolObjectData)
+            {
+                _prefabTable.Add(data.poolObjectKey, data.prefab);
+            }
             for (int i = 0; i < poolObjectData.Length; i++)
             {
                 var pool = poolObjectData[i];
@@ -45,10 +49,6 @@ namespace Pool
                 }
             }
 
-            foreach (var data in poolObjectData)
-            {
-                _prefabTable.Add(data.poolObjectKey, data.prefab);
-            }
         }
 
         private GameObject CreatePoolObject(PoolObjectKey poolObjectKey)
