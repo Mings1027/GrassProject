@@ -96,7 +96,7 @@ namespace Grass.Editor
             EditorGUILayout.LabelField("Global Season Value", EditorStyles.boldLabel);
 
             EditorGUI.BeginChangeCheck();
-            var grassCompute = FindAnyObjectByType<GrassComputeScript>();
+            var grassCompute = FindAnyObjectByType<GrassCompute>();
 
             var newValue = EditorGUILayout.Slider(_globalSeasonValue.floatValue, 0,
                 grassCompute.GrassSetting.seasonSettings.Count);

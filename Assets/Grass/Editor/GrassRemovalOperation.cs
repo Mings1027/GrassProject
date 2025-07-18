@@ -6,12 +6,12 @@ namespace Grass.Editor
 {
     public class SyncGrassRemovalOperation
     {
-        private readonly GrassComputeScript _grassCompute;
+        private readonly GrassCompute _grassCompute;
         private readonly SpatialGrid _spatialGrid;
         private readonly List<int> _tempList = new();
         private readonly HashSet<int> _grassToRemove = new();
 
-        public SyncGrassRemovalOperation(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
+        public SyncGrassRemovalOperation(GrassCompute grassCompute, SpatialGrid spatialGrid)
         {
             _grassCompute = grassCompute;
             _spatialGrid = spatialGrid;

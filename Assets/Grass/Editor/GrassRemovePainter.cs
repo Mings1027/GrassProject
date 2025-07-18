@@ -11,7 +11,7 @@ public sealed class GrassRemovePainter : BasePainter
     private const float MinRemoveDistanceFactor = 0.25f;
     private float _currentBrushRadiusSqr;
 
-    public GrassRemovePainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
+    public GrassRemovePainter(GrassCompute grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
         spatialGrid) { }
 
     public void RemoveGrass(Ray mousePointRay, float radius)

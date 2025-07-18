@@ -5,105 +5,32 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="84e81331-7910-473f-9ad1-7a03a025416d" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/projectSettingsUpdater.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/projectSettingsUpdater.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.GrassProject/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/EventBusSystem/Scripts/EventBusDebug.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/EventBusSystem/Scripts/EventBusDebug.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/BasePainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/BasePainter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassAddPainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassAddPainter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassEditPainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassEditPainter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassGenerationOperation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassGenerationOperation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassModifyOperation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassModifyOperation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterTool.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassPainterTool.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassRemovalOperation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassRemovalOperation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassRemovePainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassRemovePainter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassRepositionPainter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassRepositionPainter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Editor/GrassSeasonManagerEditor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Editor/GrassSeasonManagerEditor.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/CullingTree.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/CullingTree.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassCompute.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassCompute.cs.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSeasonManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSeasonManager.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSeasonZone.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSeasonZone.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/GrassScripts/RuntimeGrassGenerator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/GrassScripts/RuntimeGrassGenerator.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Scenes/GrassScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Scenes/GrassScene.unity" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Settings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassInput.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassInput.hlsl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Settings/Grass Tool Settings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassBlades.compute" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/Grass.compute" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/GrassBlades.compute.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/Grass.compute.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassPass.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassPass.hlsl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassShader.shader" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Shader/NormalGrassShader/GrassShader.shader" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Grass/Stylized Terrain Textures/Custom Materials/WinterRock.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Grass/Stylized Terrain Textures/Custom Materials/WinterRock.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Pool/Scripts/PoolObjectManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Pool/Scripts/PoolObjectManager.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Settings/Mobile_RPAsset.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Settings/Mobile_RPAsset.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Settings/Mobile_Renderer.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Settings/Mobile_Renderer.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Settings/UniversalRenderPipelineGlobalSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Settings/UniversalRenderPipelineGlobalSettings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Shaders/Custom_TerrainShader.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Shaders/Custom_TerrainShader.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Fonts.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Fonts/LiberationSans - OFL.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Fonts/LiberationSans - OFL.txt.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Fonts/LiberationSans.ttf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Fonts/LiberationSans.ttf.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Fonts &amp; Materials.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Fonts &amp; Materials/LiberationSans SDF - Drop Shadow.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Fonts &amp; Materials/LiberationSans SDF - Drop Shadow.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Fonts &amp; Materials/LiberationSans SDF - Fallback.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Fonts &amp; Materials/LiberationSans SDF - Fallback.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Fonts &amp; Materials/LiberationSans SDF - Outline.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Fonts &amp; Materials/LiberationSans SDF - Outline.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Fonts &amp; Materials/LiberationSans SDF.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Fonts &amp; Materials/LiberationSans SDF.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/LineBreaking Following Characters.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/LineBreaking Following Characters.txt.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/LineBreaking Leading Characters.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/LineBreaking Leading Characters.txt.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Sprite Assets.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Sprite Assets/EmojiOne.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Sprite Assets/EmojiOne.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Style Sheets.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Style Sheets/Default Style Sheet.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Style Sheets/Default Style Sheet.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/TMP Settings.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/TMP Settings.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/SDFFunctions.hlsl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/SDFFunctions.hlsl.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_Bitmap-Custom-Atlas.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_Bitmap-Custom-Atlas.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_Bitmap-Mobile.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_Bitmap-Mobile.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_Bitmap.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_Bitmap.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF Overlay.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF Overlay.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF SSD.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF SSD.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-HDRP LIT.shadergraph" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-HDRP LIT.shadergraph.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-HDRP UNLIT.shadergraph" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-HDRP UNLIT.shadergraph.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile Masking.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile Masking.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile Overlay.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile Overlay.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile SSD.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile SSD.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile-2-Pass.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile-2-Pass.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-Surface-Mobile.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-Surface-Mobile.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-Surface.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-Surface.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-URP Lit.shadergraph" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-URP Lit.shadergraph.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-URP Unlit.shadergraph" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF-URP Unlit.shadergraph.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_SDF.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_Sprite.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMP_Sprite.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMPro.cginc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMPro.cginc.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMPro_Mobile.cginc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMPro_Mobile.cginc.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMPro_Properties.cginc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMPro_Properties.cginc.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMPro_Surface.cginc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Shaders/TMPro_Surface.cginc.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Sprites.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Sprites/EmojiOne Attribution.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Sprites/EmojiOne Attribution.txt.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Sprites/EmojiOne.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Sprites/EmojiOne.json.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Sprites/EmojiOne.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Sprites/EmojiOne.png.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Packages/manifest.json" beforeDir="false" afterPath="$PROJECT_DIR$/Packages/manifest.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Packages/packages-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Packages/packages-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/ProjectVersion.txt" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/ProjectVersion.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/EditorSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/EditorSettings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -118,6 +45,8 @@
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/27bd554a9f0e46179afd19da1336e638469400/61/c4e0cf77/ThrowHelper.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/369f0fe1111e44998b7032b88e383dec9bc400/19/f0f7aeac/EditorWindow.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/369f0fe1111e44998b7032b88e383dec9bc400/ae/f33400ad/Editor.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/c8326d16d59341db9a23e81244a55ebe1df400/34/18201ff3/Graphics.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/EventBusSystem/Scripts/EventBinding.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/EventBusSystem/Scripts/EventBus.cs" root0="FORCE_HIGHLIGHTING" />
@@ -128,7 +57,7 @@
     <setting file="file://$PROJECT_DIR$/Assets/Grass/Editor/GrassRemovePainter.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/Grass/Editor/GrassRepositionPainter.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/Grass/GrassScripts/CullingTree.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassComputeScript.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassCompute.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSeasonManager.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassSeasonZone.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/Grass/GrassScripts/GrassShaderPropertyID.cs" root0="FORCE_HIGHLIGHTING" />
@@ -198,7 +127,7 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.sourceCode.C#&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
@@ -593,6 +522,18 @@
       <workItem from="1745992146978" duration="1052000" />
       <workItem from="1746153354902" duration="2011000" />
       <workItem from="1746327906531" duration="16000" />
+      <workItem from="1748312313405" duration="744000" />
+      <workItem from="1748495654011" duration="2456000" />
+      <workItem from="1748825586150" duration="753000" />
+      <workItem from="1748835628270" duration="572000" />
+      <workItem from="1749619203716" duration="10239000" />
+      <workItem from="1749967755745" duration="2531000" />
+      <workItem from="1750935892754" duration="283000" />
+      <workItem from="1750936598156" duration="184000" />
+      <workItem from="1751582491214" duration="2975000" />
+      <workItem from="1752454229278" duration="133000" />
+      <workItem from="1752454381212" duration="10721000" />
+      <workItem from="1752819551539" duration="2800000" />
     </task>
     <servers />
   </component>

@@ -7,7 +7,7 @@ namespace Grass.Editor
     {
         private readonly List<int> _changedIndices = new();
 
-        public GrassRepositionPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
+        public GrassRepositionPainter(GrassCompute grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
             spatialGrid) { }
 
         public void RepositionGrass(Ray mousePointRay, GrassToolSettingSo toolSettings)

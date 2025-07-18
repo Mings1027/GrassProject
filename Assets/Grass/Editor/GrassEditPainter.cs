@@ -12,7 +12,7 @@ namespace Grass.Editor
         private float _currentBrushSizeSqr;
         private Vector3 _currentHitPoint;
 
-        public GrassEditPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
+        public GrassEditPainter(GrassCompute grassCompute, SpatialGrid spatialGrid) : base(grassCompute,
             spatialGrid) { }
 
         public void EditGrass(Ray mousePointRay, GrassToolSettingSo toolSettings, EditOption editOption)

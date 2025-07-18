@@ -7,7 +7,7 @@ using UnityEngine;
 [ExecuteInEditMode]
 public class GrassSeasonManager : MonoBehaviour
 {
-    private GrassComputeScript _grassComputeScript;
+    private GrassCompute _grassCompute;
     private EventBinding<GrassColorRequest> _colorRequestBinding;
 
     [SerializeField] private float globalSeasonValue;
@@ -16,7 +16,7 @@ public class GrassSeasonManager : MonoBehaviour
 
     private void OnEnable()
     {
-        _grassComputeScript = FindAnyObjectByType<GrassComputeScript>();
+        _grassCompute = FindAnyObjectByType<GrassCompute>();
         foreach (var zone in seasonZones)
         {
             SubscribeToZone(zone);
@@ -94,16 +94,17 @@ public class GrassSeasonManager : MonoBehaviour
     {
         for (int i = 0; i < seasonZones.Count; i++)
         {
-            seasonZones[i].Init(_grassComputeScript.GrassSetting);
+            if (seasonZones[i] == null) continue;
+            seasonZones[i].Init(_grassCompute.GrassSetting);
         }
     }
 
-    private void UpdateSeasonZones()
+    public void UpdateSeasonZones()
     {
         seasonZones.Clear();
         var foundZones =
             GetComponentsInChildren<GrassSeasonZone>(true); // 파라미터인 includeInactive를 true로 설정하여 비활성화된 zone도 가져옴
-        var maxCount = _grassComputeScript.GrassSetting.maxZoneCount;
+        var maxCount = _grassCompute.GrassSetting.maxZoneCount;
 
         foreach (var zone in foundZones)
         {
@@ -151,13 +152,12 @@ public class GrassSeasonManager : MonoBehaviour
             widthHeights[i] = new Vector4(data.width, data.height, 0, 0);
         }
 
-        _grassComputeScript.UpdateSeasonData(ref positions, ref scales, ref colors, ref widthHeights,
+        _grassCompute.UpdateSeasonData(ref positions, ref scales, ref colors, ref widthHeights,
             seasonZones.Count);
     }
 
     private const float DefaultTransitionDuration = 2.0f;
     private bool _isTransitioning;
-    public bool IsTransitioning => _isTransitioning;
 
     private async Task PlayCycleTask(float duration)
     {
@@ -240,7 +240,7 @@ public class GrassSeasonManager : MonoBehaviour
     {
         foreach (var seasonZone in seasonZones)
         {
-            seasonZone.UpdateSeasonValue(globalSeasonValue, 0, _grassComputeScript.GrassSetting.seasonSettings.Count);
+            seasonZone.UpdateSeasonValue(globalSeasonValue, 0, _grassCompute.GrassSetting.seasonSettings.Count);
         }
     }
 
@@ -251,7 +251,7 @@ public class GrassSeasonManager : MonoBehaviour
         var seasonZone = zoneObject.AddComponent<GrassSeasonZone>();
         zoneObject.transform.localPosition = Vector3.zero;
         zoneObject.transform.localScale = new Vector3(10f, 10f, 10f);
-        seasonZone.Init(_grassComputeScript.GrassSetting);
+        seasonZone.Init(_grassCompute.GrassSetting);
 
         SubscribeToZone(seasonZone);
         Init();

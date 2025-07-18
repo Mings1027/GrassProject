@@ -7,10 +7,10 @@ namespace Grass.Editor
     {
         private Vector3 _lastPosition = Vector3.zero;
         private readonly List<int> _nearbyGrassIds = new();
-        private readonly GrassComputeScript _grassCompute;
+        private readonly GrassCompute _grassCompute;
         private readonly SpatialGrid _spatialGrid;
 
-        public GrassAddPainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
+        public GrassAddPainter(GrassCompute grassCompute, SpatialGrid spatialGrid)
         {
             _grassCompute = grassCompute;
             _spatialGrid = spatialGrid;

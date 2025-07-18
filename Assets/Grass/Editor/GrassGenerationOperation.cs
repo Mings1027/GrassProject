@@ -7,7 +7,7 @@ namespace Grass.Editor
 {
     public class SyncGrassGenerationOperation
     {
-        private readonly GrassComputeScript _grassCompute;
+        private readonly GrassCompute _grassCompute;
         private readonly GrassToolSettingSo _toolSettings;
         private readonly SpatialGrid _spatialGrid;
 
@@ -47,7 +47,7 @@ namespace Grass.Editor
             public readonly List<TriangleData> triangles = new();
         }
 
-        public SyncGrassGenerationOperation(GrassComputeScript grassCompute,
+        public SyncGrassGenerationOperation(GrassCompute grassCompute,
                                             GrassToolSettingSo toolSettings, SpatialGrid spatialGrid)
         {
             _grassCompute = grassCompute;

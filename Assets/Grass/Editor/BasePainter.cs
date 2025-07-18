@@ -4,11 +4,11 @@ namespace Grass.Editor
 {
     public abstract class BasePainter
     {
-        protected readonly GrassComputeScript grassCompute;
+        protected readonly GrassCompute grassCompute;
         protected readonly SpatialGrid spatialGrid;
         protected readonly List<int> sharedIndices = new();
 
-        protected BasePainter(GrassComputeScript grassCompute, SpatialGrid spatialGrid)
+        protected BasePainter(GrassCompute grassCompute, SpatialGrid spatialGrid)
         {
             this.grassCompute = grassCompute;
             this.spatialGrid = spatialGrid;

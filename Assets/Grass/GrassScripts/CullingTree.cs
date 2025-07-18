@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Profiling;
 
 /// <summary>
-/// GrassComputeScript의 GrassData 리스트원소 중 카메라 영역 내에 위치한 잔디의 인덱스만 visibleIDList에 저장해준다.
+/// GrassCompute의 GrassData 리스트원소 중 카메라 영역 내에 위치한 잔디의 인덱스만 visibleIDList에 저장해준다.
 /// 이를 가지고 Compute Shader에 넘겨 visibleIDList원소를 인덱스로 하는 GrassData 리스트만 GPU 연산을 한다. 
 /// </summary>
 public class CullingTree

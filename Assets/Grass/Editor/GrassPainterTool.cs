@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using System.Threading;
 using Editor;
 using Grass.GrassScripts;
@@ -34,6 +33,7 @@ namespace Grass.Editor
         {
             set => _grassEditorTab = value;
         }
+
         private GrassEditorTab _grassEditorTab;
         private BrushOption _selectedToolOption;
         private EditOption _selectedEditOption;
@@ -45,7 +45,7 @@ namespace Grass.Editor
         private Vector3 _cachedPos;
         private Bounds _grassBounds;
 
-        [SerializeField] private GrassComputeScript grassCompute;
+        [SerializeField] private GrassCompute grassCompute;
 
         private GrassSeasonManager _seasonManager;
 
@@ -67,7 +67,7 @@ namespace Grass.Editor
         {
             var window =
                 (GrassPainterTool)GetWindow(typeof(GrassPainterTool), false, "Grass Tool", true);
-            var icon = EditorGUIUtility.FindTexture("tree_icon");
+            // var icon = EditorGUIUtility.FindTexture("tree_icon");
             var mToolSettings =
                 (GrassToolSettingSo)AssetDatabase.LoadAssetAtPath("Assets/Grass/Settings/Grass Tool Settings.asset",
                     typeof(GrassToolSettingSo));
@@ -89,7 +89,7 @@ namespace Grass.Editor
                 AssetDatabase.Refresh();
             }
 
-            window.titleContent = new GUIContent("Grass Tool", icon);
+            window.titleContent = new GUIContent("Grass Tool");
             window.toolSettings = mToolSettings;
             window.Show();
         }
@@ -98,7 +98,7 @@ namespace Grass.Editor
         {
             if (grassCompute == null)
             {
-                grassCompute = FindAnyObjectByType<GrassComputeScript>();
+                grassCompute = FindAnyObjectByType<GrassCompute>();
             }
 
             if (grassCompute == null)
@@ -125,13 +125,6 @@ namespace Grass.Editor
             if (grassCompute != null && _enableGrass != grassCompute.enabled)
             {
                 _enableGrass = grassCompute.enabled;
-            }
-
-            if (GUILayout.Button("Update All Shader Data", GUILayout.Height(30)))
-            {
-                InitSeasonManager();
-                UpdateSeasonZones();
-                grassCompute.SetShaderData();
             }
 
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
@@ -197,8 +190,8 @@ namespace Grass.Editor
             toolSettings = (GrassToolSettingSo)EditorGUILayout.ObjectField(
                 "Grass Tool Settings", toolSettings, typeof(GrassToolSettingSo), false);
 
-            grassCompute = (GrassComputeScript)EditorGUILayout.ObjectField(
-                "Grass Compute Object", grassCompute, typeof(GrassComputeScript), true);
+            grassCompute = (GrassCompute)EditorGUILayout.ObjectField(
+                "Grass Compute Object", grassCompute, typeof(GrassCompute), true);
 
             if (grassCompute.GrassSetting == null)
             {
@@ -393,8 +386,6 @@ namespace Grass.Editor
             {
                 DrawPanelHeader("Modify Tools");
                 DrawModifyToolbar();
-                DrawModifyContent();
-                DrawModifyApplyButton();
 
                 var warningStyle = new GUIStyle(EditorStyles.boldLabel)
                 {
@@ -411,6 +402,9 @@ namespace Grass.Editor
                 );
                 EditorGUILayout.EndHorizontal();
                 EditorGUILayout.EndVertical();
+
+                DrawModifyContent();
+                DrawModifyApplyButton();
             }
         }
 
@@ -532,45 +526,11 @@ namespace Grass.Editor
 
         private void Init()
         {
-            UpdateGrassData();
-            InitSeasonManager();
-            UpdateSeasonZones();
-            InitPainters();
-        }
-
-        private void InitSeasonManager()
-        {
+            InitSpatialGrid();
+            grassCompute.Reset();
             if (_seasonManager == null) _seasonManager = FindAnyObjectByType<GrassSeasonManager>();
-            if (_seasonManager == null) return;
-
-            var initMethod = _seasonManager.GetType().GetMethod("Init",
-                BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod);
-
-            if (initMethod != null)
-            {
-                initMethod.Invoke(_seasonManager, null);
-            }
-            else
-            {
-                Debug.LogError("Failed to find Init method in GrassSeasonManager");
-            }
-        }
-
-        private void UpdateSeasonZones()
-        {
-            if (_seasonManager == null) return;
-
-            var updateMethod = _seasonManager.GetType().GetMethod("UpdateSeasonZones",
-                BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod);
-
-            if (updateMethod != null)
-            {
-                updateMethod.Invoke(_seasonManager, null);
-            }
-            else
-            {
-                Debug.LogError("Failed to find UpdateSeasonZones method in GrassSeasonManager");
-            }
+            _seasonManager?.UpdateSeasonZones();
+            InitPainters();
         }
 
         private void InitPainters()
@@ -1412,7 +1372,8 @@ namespace Grass.Editor
 
         private void DrawSeasonSettings(GrassSettingSO grassSetting)
         {
-            InitSeasonManager();
+            if (_seasonManager == null) _seasonManager = FindAnyObjectByType<GrassSeasonManager>();
+            _seasonManager?.UpdateSeasonZones();
             if (_seasonManager == null)
             {
                 EditorGUILayout.HelpBox("No GrassSeasonManager found in scene. Season effects are disabled.",
@@ -1439,8 +1400,6 @@ namespace Grass.Editor
             {
                 Undo.RecordObject(grassSetting, "Season Settings");
                 grassSetting.maxZoneCount = newMaxZoneCount;
-                UpdateSeasonZones();
-                InitSeasonManager();
                 EditorUtility.SetDirty(grassSetting);
             }
         }
@@ -1469,7 +1428,7 @@ namespace Grass.Editor
             {
                 name = "Grass Compute System"
             };
-            grassCompute = grassObject.AddComponent<GrassComputeScript>();
+            grassCompute = grassObject.AddComponent<GrassCompute>();
             grassCompute.GrassSetting = CreateOrGetGrassSetting();
 
             InitSpatialGrid();
@@ -1805,12 +1764,6 @@ namespace Grass.Editor
                 var grass = grassData[i];
                 _spatialGrid.AddObject(grass.position, i);
             }
-        }
-
-        private void UpdateGrassData()
-        {
-            InitSpatialGrid();
-            grassCompute.Reset();
         }
     }
 }

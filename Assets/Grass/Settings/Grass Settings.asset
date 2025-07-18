@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shaderToUse: {fileID: 7200000, guid: 11036af5f2d1499c8845585fb5fadb4c, type: 3}
   materialToUse: {fileID: 2100000, guid: 7725493650b5a4b4d9c0d612493ca34d, type: 2}
-  bladeRadius: 0.5
+  bladeRadius: 0.644
   bladeForward: 1
   bladeCurve: 2
   bottomWidth: 0.3
@@ -25,10 +25,10 @@ MonoBehaviour:
   randomHeightMin: 0
   randomHeightMax: 0.49999997
   windSpeed: 8
-  windStrength: 0.3
+  windStrength: 0
   windDirection: 45
   windDirectionVector: {x: 0.70710677, y: 0.70710677}
-  grassAmount: 10
+  grassAmount: 6
   grassQuality: 2
   interactorStrength: 1
   topTint: {r: 1, g: 1, b: 1, a: 1}
@@ -37,7 +37,7 @@ MonoBehaviour:
   blendMultiply: 1
   blendOffset: 0.2
   ambientAdjustmentColor: {r: 0, g: 0, b: 0, a: 1}
-  shadowDistance: 120
+  shadowDistance: 89
   shadowFadeRange: 30
   shadowBrightness: 0
   shadowColor: {r: 0, g: 0, b: 0, a: 1}

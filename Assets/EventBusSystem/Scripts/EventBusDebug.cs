@@ -1,8 +1,6 @@
 #if UNITY_EDITOR
 using UnityEditor;
-#endif
 
-#if UNITY_EDITOR
 namespace EventBusSystem.Scripts
 {
     public static class EventBusDebug

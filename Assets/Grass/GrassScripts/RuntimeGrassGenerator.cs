@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class RuntimeGrassGenerator : MonoBehaviour
 {
-    [SerializeField] private GrassComputeScript grassCompute;
+    [SerializeField] private GrassCompute grassCompute;
     [SerializeField] private GrassToolSettingSo toolSettings;
     [SerializeField] private bool forceGenerate;
     [SerializeField] private GameObject[] targetObjects;

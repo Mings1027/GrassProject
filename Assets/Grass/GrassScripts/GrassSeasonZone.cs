@@ -166,7 +166,9 @@ public class GrassSeasonZone : MonoBehaviour
             var nextIndex = (currentIndex + 1) % settings.Count;
 
             var currentSeason = settings[currentIndex];
+            if (currentSeason == null) return;
             var nextSeason = settings[nextIndex];
+            if (nextSeason == null) return;
             var transitionProgress = normalizedValue - currentIndex;
 
             _zoneData.position = transform.position;

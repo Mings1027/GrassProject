@@ -22,8 +22,7 @@ half3 CalculateMainLight(half3 albedo, FragmentData input)
 
     // 그림자 영역의 최소 밝기 보장
     float shadowAtten = lerp(_MinShadowBrightness, 1, rawShadowAtten);
-
-    // Diffuse with shadow color
+    
     half NdotL = saturate(dot(input.normalWS, mainLight.direction));
     half3 shadowedAlbedo = lerp(albedo * _ShadowColor.rgb, albedo, shadowAtten);
     half3 diffuse = shadowedAlbedo * (mainLight.color * NdotL);

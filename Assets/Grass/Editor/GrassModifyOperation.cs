@@ -25,10 +25,10 @@ namespace Grass.Editor
 
     public class SyncGrassModifyOperation
     {
-        private readonly GrassComputeScript _grassCompute;
+        private readonly GrassCompute _grassCompute;
         private readonly GrassToolSettingSo _toolSettings;
 
-        public SyncGrassModifyOperation(GrassComputeScript grassCompute, GrassToolSettingSo toolSettings)
+        public SyncGrassModifyOperation(GrassCompute grassCompute, GrassToolSettingSo toolSettings)
         {
             _grassCompute = grassCompute;
             _toolSettings = toolSettings;
