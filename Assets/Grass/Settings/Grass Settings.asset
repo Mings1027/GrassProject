@@ -25,10 +25,10 @@ MonoBehaviour:
   randomHeightMin: 0
   randomHeightMax: 0.49999997
   windSpeed: 8
-  windStrength: 0
+  windStrength: 0.27
   windDirection: 45
   windDirectionVector: {x: 0.70710677, y: 0.70710677}
-  grassAmount: 6
+  grassAmount: 7
   grassQuality: 2
   interactorStrength: 1
   topTint: {r: 1, g: 1, b: 1, a: 1}
@@ -56,7 +56,7 @@ MonoBehaviour:
   drawBounds: 0
   drawAllBounds: 0
   seasonSettingFolder: {fileID: 102900000, guid: bfcf47eb377b24fd4a75c76b1bfc8fb7, type: 3}
-  cullingTreeDepth: 5
+  cullingTreeDepth: 6
   minFadeDistance: 40
   maxFadeDistance: 200
   cuttingParticles: {fileID: 5537321350018533219, guid: 256d735f02b4d4427baf66d56e5676d3, type: 3}

@@ -32,8 +32,8 @@ public class CullingTree
         {
             // 프로파일링 해보고 4분할만 하든 4,8 번갈아 하든 선택하면 될듯함.
             // CreateChild(depth);
-            // CreateQuadChild(depth);
-            CreateQctChild(depth);
+            CreateQuadChild(depth);
+            // CreateQctChild(depth);
         }
         else
         {
@@ -200,8 +200,9 @@ public class CullingTree
             return true;
         }
 
-        foreach (var child in _children) // 자식 노드 탐색
+        for (var i = 0; i < _children.Length; i++)
         {
+            var child = _children[i];
             if (child != null && child.FindLeaf(point, index))
             {
                 return true;
@@ -211,7 +212,7 @@ public class CullingTree
         return false;
     }
 
-    private bool FindLeafTest(Vector3 point, int index)
+    private bool FindLeafTest(Vector3 grassPosition, int index)
     {
         _nodeProcessStack.Clear();
         _nodeProcessStack.Push(this);
@@ -220,7 +221,7 @@ public class CullingTree
         {
             var currentNode = _nodeProcessStack.Pop();
 
-            if (!currentNode._bounds.Contains(point)) continue;
+            if (!currentNode._bounds.Contains(grassPosition)) continue;
 
             if (currentNode._children.Length == 0)
             {

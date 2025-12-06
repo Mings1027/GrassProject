@@ -263,13 +263,6 @@ void Main(uint id : SV_DispatchThreadID)
         grassWidth *= _ZoneWidthHeights[zoneIndex].x;
     }
 
-    // half finalSizeFade = lerp(0.3, 1, distanceFade);
-    //
-    // grassWidth *= finalSizeFade * finalSizeFade;
-    // grassHeight *= finalSizeFade;
-
-    // _BladeForward *= grassHeight;
-
     InteractionResult interaction = CalculateInteraction(sv.positionWS, grassHeight, cut);
 
     half3 wind = CalculationWind(sv.positionWS, grassHeight);
